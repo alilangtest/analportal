@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.osdp.base.dao.AuthUserDao">
+
+
+	<!-- 查询列表 -->
+	<select id="pagedQuery" parameterType="java.util.Map" resultType="java.util.Map">
+		<!-- select t.id id,t.username as username,t.code as code,t.name as name,t.enabled as enabled,t.sex as sex,o.name orgName as orgname  from AUTH_USER t  left join AUTH_ORG o on t.org_id = o.id where 1=1 --> 
+		  select t.id id,
+		       t.username as username,
+		       t.code as code,
+		       t.name as name,
+		       t.enabled as enabled,
+		       t.sex as sex,
+		       o.name as orgname
+		  from AUTH_USER t
+		  left join AUTH_ORG o on t.org_id = o.code
+		  where 1 = 1
+		  
+		<if test="orgId!=null and orgId!=''">
+		         and o.id in (select org.id from auth_org org start with org.id=#{orgId,jdbcType=VARCHAR} connect by prior org.id=org.parent_id)
+		</if>
+		<if test="username!=null and username!=''">
+		         and t.username LIKE CONCAT(CONCAT('%',#{username,jdbcType=VARCHAR}),'%')
+		</if>
+		  order by t.create_time desc
+	</select>
+	
+	<!-- 根据用户名查找用户信息 -->
+	<select id="getByUsername" resultType="byit.osdp.base.entity.AuthUserEntity" parameterType="java.lang.String">
+	   select * from AUTH_USER t where t.username = #{username}
+	</select>
+	
+	<!-- 根据用户编码查询用户信息 -->
+	<select id="getByCode" resultType="byit.osdp.base.entity.AuthUserEntity" parameterType="java.lang.String">
+	   select * from AUTH_USER t where t.code = #{code}
+	</select>
+	
+	<!-- 根据用户id查询用户信息 -->
+	<select id="getById" resultType="byit.osdp.base.entity.AuthUserEntity" parameterType="java.lang.String">
+	   select * from AUTH_USER t where t.id = #{id}
+	</select>
+	
+	<!-- 根据用户id查询用户信息 -->
+	<select id="getVoById" resultType="byit.osdp.base.model.AuthUserVo" parameterType="java.lang.String">
+	    select t.*,t.org_Id orgId , t. o.Name orgName ,t.id_card idCard from
+	     AUTH_USER t left join AUTH_ORG o on t.org_id = o.code
+	      where  t.id = #{id}
+	</select>
+	
+	<!--新增  -->						
+  <insert id="save"   parameterType="byit.osdp.base.entity.AuthUserEntity" >
+    INSERT INTO AUTH_USER
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+	    <if test= "id != null ">
+		    ID ,
+		  </if>
+	     <if test= "username != null and username != '' ">
+	      USERNAME ,
+	      </if>
+	      <if test= "password != null and password != '' ">
+	      PASSWORD,
+	      </if>
+	      <if test= "code != null and code != '' ">
+	      CODE ,
+	      </if>
+	     <if test= "name != null and name != '' ">
+	      NAME,
+	      </if>
+	      <if test= "enabled != null and enabled != '' ">
+	      ENABLED,
+	      </if>
+	      <if test= "orgId != null and orgId != '' ">
+	      ORG_ID,
+	      </if>
+	      <if test= "sex != null and sex != '' ">
+	      SEX,
+	      </if>
+	       <if test= "phone != null and phone != '' ">
+	      PHONE,
+	      </if>
+	      <if test= "mobile != null and mobile != '' ">
+	      MOBILE,
+	      </if>
+	      <if test= "birthday != null and birthday != '' ">
+	      BIRTHDAY,
+	      </if>
+	      <if test= "email != null and email != '' ">
+	      EMAIL,
+	      </if>
+	       <if test= "creatorId != null and creatorId != '' ">
+	      CREATOR_ID,
+	      </if>
+	      
+	      <if test= "createTime != null and createTime != '' ">
+	      CREATE_TIME,
+	      </if>
+	      <if test= "state != null and state != '' ">
+	      STATE,
+	      </if>
+	      <if test= "remark != null and remark != '' ">
+	      REMARK,
+	      </if>
+	       <if test= "idCard != null and idCard != '' ">
+	      ID_CARD,
+	      </if>
+	       <if test= "validity != null and validity != '' ">
+	      VALIDITY,
+	      </if>
+	      <if test= "userDistinguish != null and userDistinguish != '' ">
+	      USERDISTINGUISH,
+	      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+	      
+	      <if test= "id != null ">
+		    #{id,jdbcType=BIGINT},
+		  </if>
+	     <if test= "username != null and username != '' ">
+	      #{username,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "password != null and password != '' ">
+	     #{password,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "code != null and code != '' ">
+	      #{code,jdbcType=VARCHAR},
+	      </if>
+	     <if test= "name != null and name != '' ">
+	      #{name,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "enabled != null and enabled != '' ">
+	      #{enabled,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "orgId != null and orgId != '' ">
+	      #{orgId,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "sex != null and sex != '' ">
+	      #{sex,jdbcType=VARCHAR},
+	      </if>
+	       <if test= "phone != null and phone != '' ">
+	      #{phone,jdbcType=VARCHAR},
+	      </if>
+	    
+	      <if test= "mobile != null and mobile != '' ">
+	      #{mobile,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "birthday != null and birthday != '' ">
+	      #{birthday,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "email != null and email != '' ">
+	     #{email,jdbcType=VARCHAR},
+	      </if>
+	       <if test= "creatorId != null and creatorId != '' ">
+	      #{creatorId},
+	      </if>
+	    
+	      <if test= "createTime != null and createTime != '' ">
+	      #{createTime},
+	      </if>
+	      <if test= "state != null and state != '' ">
+	     #{state,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "remark != null and remark != '' ">
+	      #{remark,jdbcType=VARCHAR},
+	      </if>
+	       <if test= "idCard != null and idCard != '' ">
+	      #{idCard,jdbcType=VARCHAR},
+	      </if>
+	     <if test= "validity != null and validity != '' ">
+	      #{validity},
+	      </if>
+	      <if test= "userDistinguish != null and userDistinguish != '' ">
+	      #{userDistinguish},
+	      </if>
+    </trim>
+  </insert>
+	
+
+  
+ <!--修改-->	
+ <update id="update"  parameterType="byit.osdp.base.model.AuthUserVo" >
+    update AUTH_USER
+    <set>
+	    <trim  suffixOverrides=",">
+	     <if test= "username != null and username != '' ">
+	      USERNAME = #{username,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "password != null and password != '' ">
+	      PASSWORD = #{password,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "code != null and code != '' ">
+	      CODE = #{code,jdbcType=VARCHAR},
+	      </if>
+	     <if test= "name != null and name != '' ">
+	      NAME =  #{name,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "enabled != null and enabled != '' ">
+	      ENABLED =  #{enabled,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "orgId != null and orgId != '' ">
+	      ORG_ID = #{orgId,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "sex != null and sex != '' ">
+	      SEX =  #{sex,jdbcType=VARCHAR},
+	      </if>
+	      <!--  <if test= "phone != null and phone != '' "> -->
+	      PHONE = #{phone,jdbcType=VARCHAR},
+	      <!-- </if> 
+	      <if test= "mobile != null and mobile != '' ">-->
+	      MOBILE = #{mobile,jdbcType=VARCHAR},
+	      <!-- </if>
+	      <if test= "birthday != null and birthday != '' "> -->
+	      BIRTHDAY = #{birthday,jdbcType=VARCHAR},
+	     <!--  </if> -->
+	      <if test= "email != null and email != '' ">
+	      EMAIL = #{email,jdbcType=VARCHAR},
+	      </if>
+	       <if test= "updaterId != null and updaterId != '' ">
+	      UPDATER_ID =  #{updaterId,jdbcType=VARCHAR},
+	      </if>
+	      
+	      <if test= "updateTime != null and updateTime != '' ">
+	      UPDATE_TIME=  #{updateTime},
+	      </if>
+	      <if test= "state != null and state != '' ">
+	      STATE =  #{state,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "remark != null and remark != '' ">
+	      REMARK = #{remark,jdbcType=VARCHAR},
+	      </if>
+	       <if test= "idCard != null and idCard != '' ">
+	      ID_CARD =  #{idCard,jdbcType=VARCHAR},
+	      </if>
+	       <if test= "validity != null and validity != '' ">
+	      VALIDITY=  #{validity},
+	      </if>
+	      <if test= "userDistinguish != null and userDistinguish != '' ">
+	      USERDISTINGUISH = #{userDistinguish},
+	      </if>
+	    </trim>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  
+  	
+   <!--修改密码-->	
+ <update id="updatePassword"  parameterType="byit.osdp.base.model.AuthUserVo" >
+    update AUTH_USER
+    <set>
+	    <trim  suffixOverrides=",">
+	      <if test= "password != null and password != '' ">
+	      PASSWORD = #{password,jdbcType=VARCHAR},
+	      </if>
+	    </trim>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  
+<!-- 删除用户角色关联 -->
+ <delete id="removeByUserId"   parameterType="java.lang.String">
+     delete from  AUTH_USER_ROLE where USER_ID = #{id}
+  </delete>
+	
+	
+<!-- 删除用户-->
+ <delete id="removeById"   parameterType="java.lang.String">
+     delete from  AUTH_USER where ID = #{id}
+  </delete>
+  
+   <!-- 根据用户ID查询用户角色关联-->
+	<select id="findByUserId" resultType="byit.osdp.base.model.AuthUserRoleVo" parameterType="java.lang.String">
+	   select * from AUTH_USER_ROLE t where t.user_Id = #{userId}
+	</select>
+	
+	<!-- 根据用户ID查询用户角色信息-->
+	<select id="findUserRoleByUserId" resultType="java.lang.String" parameterType="java.lang.String">
+	   select t.role_id roleId from AUTH_USER_ROLE t where t.user_Id= #{userId}
+	</select>
+	
+<!-- 删除用户角色关联 -->
+ <delete id="deleteUserRole"   parameterType="java.lang.String">
+     delete from  AUTH_USER_ROLE where USER_ID = #{userId} and ROLE_ID = #{roleId}
+  </delete>
+  
+	
+  <!--保存用户角色关联  -->						
+  <insert id="addUserRole"   parameterType="byit.osdp.base.entity.AuthUserRoleEntity" >
+    INSERT INTO AUTH_USER_ROLE
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+	    <if test= "id != null ">
+		    ID ,
+		  </if>
+	     <if test= "userId != null and userId != '' ">
+	      user_id ,
+	      </if>
+	      <if test= "roleId != null and roleId != '' ">
+	      role_id,
+	      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+	      
+	      <if test= "id != null ">
+		    #{id,jdbcType=BIGINT},
+		  </if>
+	     <if test= "userId != null and userId != '' ">
+	      #{userId,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "roleId != null and roleId != '' ">
+	     #{roleId,jdbcType=VARCHAR},
+	      </if>
+    </trim>
+  </insert>
+	<select id="findSystemDomainByType" resultType="java.lang.String" parameterType="java.lang.String">
+		SELECT CODENAME FROM SYSTEMDOMAIN WHERE DOMAINID=#{type,jdbcType=VARCHAR} 
+	</select>
+	<select id="findSystemAll" resultType="byit.osdp.base.entity.SsoClientEntity">
+		select id,client_id clientId, client_name clientName, client_url clientUrl, remark, status from sso_client where status='1'
+	</select>
+	<!-- 根据用户ID查询用户已分配系统信息-->
+	<select id="findUserSystemByUserId" resultType="java.lang.String" parameterType="java.lang.String">
+	   select t.sso_id ssoId from auth_user_sso t where t.user_Id= #{userId}
+	</select>
+	<!--保存用户角色关联  -->						
+  <insert id="addUserSystem"   parameterType="byit.osdp.base.entity.AuthUserSso" >
+    INSERT INTO auth_user_sso
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+	    <if test= "id != null ">
+		    ID ,
+		  </if>
+	     <if test= "userId != null and userId != '' ">
+	      user_id ,
+	      </if>
+	      <if test= "roleId != null and roleId != '' ">
+	      role_id,
+	      </if>
+	      <if test= "ssoId != null and ssoId != '' ">
+	      sso_id,
+	      </if>
+	      <if test= "creatorId != null and creatorId != '' ">
+	      creator_Id,
+	      </if>
+	      <if test= "createTime != null and createTime != '' ">
+	      create_Time,
+	      </if>
+	      <if test= "updaterId != null and updaterId != '' ">
+	      updater_Id,
+	      </if>
+	      <if test= "updateTime != null and updateTime != '' ">
+	      update_Time,
+	      </if>
+	      <if test= "state != null and state != '' ">
+	      state,
+	      </if>
+	      <if test= "remark != null and remark != '' ">
+	      remark,
+	      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+	      
+	      <if test= "id != null ">
+		    #{id,jdbcType=BIGINT},
+		  </if>
+	     <if test= "userId != null and userId != '' ">
+	      #{userId,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "roleId != null and roleId != '' ">
+	     #{roleId,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "ssoId != null and ssoId != '' ">
+	      #{ssoId,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "creatorId != null and creatorId != '' ">
+	      #{creatorId,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "createTime != null and createTime != '' ">
+	      #{createTime},
+	      </if>
+	      <if test= "updaterId != null and updaterId != '' ">
+	      #{updaterId,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "updateTime != null and updateTime != '' ">
+	      #{updateTime},
+	      </if>
+	      <if test= "state != null and state != '' ">
+	      #{state,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "remark != null and remark != '' ">
+	      #{remark,jdbcType=VARCHAR},
+	      </if>
+    </trim>
+  </insert>
+  <!-- 删除用户系统关联 -->
+ <delete id="deleteUserSystem"   parameterType="java.lang.String">
+     delete from  auth_user_sso where USER_ID = #{userId}
+  </delete>
+</mapper>

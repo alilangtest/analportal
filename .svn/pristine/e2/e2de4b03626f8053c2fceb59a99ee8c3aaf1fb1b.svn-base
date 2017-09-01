@@ -1,0 +1,272 @@
+package byit.osdp.base.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import byit.core.util.page.Page;
+import byit.core.util.page.Pagination;
+import byit.osdp.base.common.BaseConstants;
+import byit.osdp.base.common.easyui.DataGridAdapter;
+import byit.osdp.base.entity.EmailEntity;
+import byit.osdp.base.entity.SsoClientEntity;
+import byit.osdp.base.model.AuthUserVo;
+import byit.osdp.base.model.PasswordUpdateDto;
+import byit.osdp.base.security.UserHolder;
+import byit.osdp.base.service.AuthRoleService;
+import byit.osdp.base.service.AuthUserService;
+import byit.tableausubscribe.tab.service.EmailService;
+import byit.utils.MailSenderInfo;
+import byit.utils.SimpleMailSender;
+
+/**
+ * 用户管理
+ */
+@Controller
+@RequestMapping(value = "/auth_user")
+public class AuthUserController {
+	// ==============================Fields===========================================
+	@Autowired
+	private AuthUserService authUserService;
+
+	@Autowired
+	private AuthRoleService authRoleService;
+
+	@Autowired
+	private DataGridAdapter dataGridAdapter;
+
+	// ==============================Methods==========================================
+	/** 用户管理主页 */
+	//~/auth_user/auth_user_main.html
+	@RequestMapping(value = "/auth_user_main.html")
+	public String main() {
+		return "auth_user/auth_user_main";
+	}
+
+	/** 用户编辑 */
+	//~/auth_user/auth_user_edit.html
+	@RequestMapping(value = "/auth_user_edit.html")
+	public String edit() {
+		return "auth_user/auth_user_edit";
+	}
+
+	/** 关联角色 */
+	//~/auth_user/auth_user_role_choose.html
+	@RequestMapping(value = "/auth_user_role_choose.html")
+	public String roleChoose() {
+		return "auth_user/auth_user_role_choose";
+	}
+	/**
+	* @Description: 系统分配
+	* @author wangxingfei   
+	* @param @return
+	* @date 2017年8月11日 上午9:40:28 
+	* @version V1.0
+	 */
+	//~/auth_user/auth_user_role_choose.html
+	@RequestMapping(value = "/auth_user_system_choose.html")
+	public String systemChoose() {
+		return "auth_user/auth_user_system_choose";
+	}
+	/** 密码修改 */
+	//~/auth_user/auth_user_password.html
+	@RequestMapping(value = "/auth_user_password.html")
+	public String editPassword() {
+		return "auth_user/auth_user_password";
+	}
+
+	/** 查询数据列表 */
+	@SuppressWarnings("unchecked")
+	//~/auth_user/pageQuery.do
+	@RequestMapping(value = "/pagedQuery.do")
+	@ResponseBody
+	private Object pagedQuery() {
+		Pagination pagination = dataGridAdapter.getPagination();
+//		Page<AuthUserVo> page = authUserService.pagedQuery(pagination);
+//		return dataGridAdapter.wrap(page);
+		
+		Map<String, Object> result = new HashMap<String, Object>();
+		try{
+			Page<Map<String, Object>> page = (Page<Map<String, Object>>) this.authUserService.pagedQuery(pagination);
+			result.put("rows", page.getRecords());
+    		result.put("total", page.getTotal());
+    		result.put("success",1);
+    	}catch(Exception e){
+    		result.put("error", -1);
+            result.put("msg", "加载数据失败");
+            e.printStackTrace();
+            e = null;
+    	}
+		return result;
+	}
+
+	/** 查看数据 */
+	//~/auth_user/load.do
+	@RequestMapping(value = "/load.do")
+	@ResponseBody
+	private Object load(String id) {
+		AuthUserVo vo = authUserService.getById(id);
+		return vo;
+	}
+
+	/** 保存数据 */
+	//~/auth_user/save.do
+	@RequestMapping(value = "/save.do")
+	@ResponseBody
+	private Object save(AuthUserVo vo) {
+		if (StringUtils.isEmpty(vo.getId())) {
+			authUserService.save(vo);
+			String url = authUserService.findSystemDomainByType("loginUrl");
+			//这个类主要是设置邮件  
+			MailSenderInfo mailInfo = new MailSenderInfo();
+			
+			EmailService emailService=new EmailService();
+			EmailEntity tEmailEntity=emailService.getEmail();
+			
+			//邮件服务器ip与端口号
+			mailInfo.setMailServerHost(tEmailEntity.getHost());   
+			mailInfo.setMailServerPort(tEmailEntity.getPort());
+			//是否需要身份验证
+			mailInfo.setValidate(tEmailEntity.getValidate());
+			//登陆邮件发送服务器的用户名和密码
+			mailInfo.setUserName(tEmailEntity.getUsername());   
+			mailInfo.setPassword(tEmailEntity.getPassword());//您的邮箱密码   
+			//邮件发送者的地址  
+			mailInfo.setFromAddress(tEmailEntity.getAddress());  
+			//邮件接收者的地址
+			mailInfo.setToAddress(vo.getEmail());   
+			mailInfo.setSubject("数据分析平台用户已创建");   
+			mailInfo.setContent("你好，数据分析平台的用户已创建。\r\n第一次登录时需要修改密码。\r\n \r\n用户名："+vo.getName()+"\r\n密码："+BaseConstants.DEFAULT_PASSWORD+"\r\n登陆URL：" + url);   
+			//这个类主要来发送邮件  
+			SimpleMailSender sms = new SimpleMailSender();  
+			sms.sendTextMail(mailInfo);//发送文体格式 		
+		} else {
+			authUserService.update(vo);
+		}
+		return Boolean.TRUE;
+	}
+
+	/** 删除数据 */
+	//~/auth_user/remove.do
+	@RequestMapping(value = "/remove.do")
+	@ResponseBody
+	private Object remove(String id) {
+		authUserService.removeById(id);
+		return Boolean.TRUE;
+	}
+
+	/** 启用 */
+	//~/auth_user/remove.do
+	@RequestMapping(value = "/enable.do")
+	@ResponseBody
+	public Object enable(String id) {
+		authUserService.enable(id, "1");
+		return Boolean.TRUE;
+	}
+
+	/** 禁用 */
+	//~/auth_user/remove.do
+	@RequestMapping(value = "/disable.do")
+	@ResponseBody
+	public Object disable(String id) {
+		authUserService.enable(id,"0");
+		return Boolean.TRUE;
+	}
+
+	/** 获得角色关联 */
+	//~/auth_user/findRoleId.do
+	@RequestMapping(value = "/findRoldId.do")
+	@ResponseBody
+	public Object findRoldId(String id) {
+		return authUserService.findIdByUserId(id);
+	}
+	
+	//依据用户id查询用户和角色关联信息
+	//add by lisw
+	@RequestMapping(value = "/findUserRold.do")
+	@ResponseBody
+	public Object findUserRold(String id) {
+		return authUserService.findUserRoleByUserId(id);
+	}
+
+	/** 保存角色关联 */
+	//~/auth_user/updateUserRole.do
+	@RequestMapping(value = "/updateUserRole.do")
+	@ResponseBody
+	public Object updateUserRole(String userId, String[] roleIds) {
+		authUserService.updateUserRole(userId, roleIds == null ? ArrayUtils.EMPTY_STRING_ARRAY : roleIds);
+		return Boolean.TRUE;
+	}
+
+	/** 修改当前用户密码 */
+	//~/auth_user/updatePassword.do
+	@RequestMapping(value = "/updatePassword.do")
+	@ResponseBody
+	public Object updatePassword(String oldPassword, String newPassword) {
+		PasswordUpdateDto dto = new PasswordUpdateDto();
+		String id = UserHolder.getId();
+		dto.setUserId(id);
+		dto.setOldPassword(oldPassword);
+		dto.setNewPassword(newPassword);
+		authUserService.updatePassword(dto);
+		return Boolean.TRUE;
+	}
+
+	/** 重置用户密码 */
+	//~/auth_user/resetPasswordById.do
+	@RequestMapping(value = "/resetPasswordById.do")
+	@ResponseBody
+	public void resetPasswordById(String id) {
+		authUserService.resetPasswordById(id);
+	}
+	/**
+	* @Description: 查询分配系统字典表信息 
+	* @author wangxingfei   
+	* @param @return
+	* @date 2017年8月11日 上午9:53:16 
+	* @version V1.0
+	 */
+	@RequestMapping(value = "/findSystemAll.do")
+	@ResponseBody
+	private Object findSystemAll() {
+		List<SsoClientEntity> records = authUserService.findSystemAll();
+		return records;
+	}
+	/**
+	* @Description: 根据用户id查询已分配的系统信息 
+	* @author wangxingfei   
+	* @param @param id
+	* @param @return
+	* @date 2017年8月11日 上午10:14:51 
+	* @version V1.0
+	 */
+	@RequestMapping(value = "/findUserSystem.do")
+	@ResponseBody
+	public Object findUserSystem(String id) {
+		return authUserService.findUserSystemByUserId(id);
+	}
+	
+	/**
+	* @Description: 保存分配系统关联关系
+	* @author wangxingfei   
+	* @param @param userId
+	* @param @param roleIds
+	* @param @return
+	* @date 2017年8月11日 上午10:15:10 
+	* @version V1.0
+	 */
+	//~/auth_user/updateUserRole.do
+	@RequestMapping(value = "/updateUserSystem.do")
+	@ResponseBody
+	public Object updateUserSystem(String userId, String[] roleIds) {
+		authUserService.updateUserSystem(userId, roleIds == null ? ArrayUtils.EMPTY_STRING_ARRAY : roleIds);
+		return Boolean.TRUE;
+	}
+}

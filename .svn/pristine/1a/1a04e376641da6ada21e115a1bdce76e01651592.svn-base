@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+<!-- 	<result>
+			<reportId>仪表板[,仪表板1...]</reportId>
+			<mail id="邮箱1">
+				<sendtime>实际发送时间</sendtime>
+				<sendState>发送状态:Y,N</sendState>
+			</mail>
+			<mail id="邮箱2">
+				<sendtime>实际发送时间</sendtime>
+				<sendState>发送状态:Y,N</sendState>
+			</mail>
+	</result> -->
+	<result> 
+			<reportId>1</reportId>
+			<mail id="1_1@byitgroup.com">
+				<sendtime>01</sendtime>
+				<sendState>Y</sendState>
+			</mail>
+			<mail id="1_1@byitgroup.com">
+				<sendtime>02</sendtime>
+				<sendState>N</sendState>
+			</mail>
+			<mail id="1_1@byitgroup.com">
+				<sendtime>03</sendtime>
+				<sendState>Y</sendState>
+			</mail>
+	</result>
+	<result>
+			<reportId>2</reportId>
+			<mail id="2_1@byitgroup.com">
+				<sendtime>02</sendtime>
+				<sendState>Y</sendState>
+			</mail>
+			<mail id="2_1@byitgroup.com">
+				<sendtime>02</sendtime>
+				<sendState>N</sendState>
+			</mail>
+			<mail id="2_1@byitgroup.com">
+				<sendtime>03</sendtime>
+				<sendState>Y</sendState>
+			</mail>
+	</result>
+</root>

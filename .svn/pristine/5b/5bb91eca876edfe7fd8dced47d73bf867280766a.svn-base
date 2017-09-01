@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.osdp.base.dao.AuthPermissionsDao">
+	<resultMap type="byit.osdp.base.entity.AuthPermissionEntity"
+		id="AuthPermissionMap">
+		<id column="ID" property="id" />
+		<result column="name" property="name" />
+		<result column="parent_id" property="parentId" />
+		<result column="path" property="path" />
+		<result column="code" property="code" />
+		<result column="type" property="type" />
+		<result column="ordinal" property="ordinal" />
+		<result column="state" property="state" />
+		<result column="remark" property="remark" />
+		<result column="icon_cls" property="iconCls" />
+		<result column="id_path" property="idPath" />
+		<result column="lev" property="level" />
+		<result column="create_time" property="createTime" />
+		<result column="updater_id" property="updaterId" />
+		<result column="update_time" property="updateTime" />
+	</resultMap>
+	<sql id="allColumn">
+		ID,
+		NAME,
+		PARENT_ID,
+		PATH,
+		CODE,
+		TYPE,
+		ORDINAL,
+		CREATE_TIME,
+		UPDATER_ID,
+		UPDATE_TIME,
+		STATE,
+		REMARK,
+		ICON_CLS,
+		LEV,
+		ID_PATH
+	</sql>
+	<!-- 查询所有数据 -->
+	<select id="find" resultMap="AuthPermissionMap">
+		select 
+		<include refid="allColumn"></include> 
+		from AUTH_PERMISSION order by ORDINAL asc
+	</select>
+	<!-- 根据parentId查询所有子节点个数 -->
+	<select id="findListByParentId" resultMap="AuthPermissionMap" parameterType="java.lang.String">
+		select 
+		<include refid="allColumn"></include>
+		from AUTH_PERMISSION where parent_id = #{parnetId,jdbcType=VARCHAR}
+	</select>
+	<!-- 根据parentId查询所有子节点个数 -->
+	<select id="findByParentId" resultType="java.lang.Integer" parameterType="java.lang.String">
+		select count(id) from AUTH_PERMISSION where parent_id = #{parnetId,jdbcType=VARCHAR}
+	</select>
+	<!-- 根据id删除数据-->
+	<delete id="deleteAuthPermissionById"  parameterType="java.lang.String">
+		DELETE FROM AUTH_PERMISSION WHERE ID=#{id,jdbcType=VARCHAR}
+	</delete>
+	<!-- 根据权限ID删除角色关联关系-->
+	<delete id="deleteAuthRolePermissionByPermissionId"  parameterType="java.lang.String">
+		DELETE FROM AUTH_ROLE_PERMISSION WHERE PERMISSION_ID=#{permissionId,jdbcType=VARCHAR}
+	</delete>
+	<!-- 根据功能编码查询 -->
+	<select id="getByCode" resultMap="AuthPermissionMap" parameterType="java.lang.String">
+		select 
+		<include refid="allColumn"></include> 
+		from AUTH_PERMISSION where CODE=#{code,jdbcType=VARCHAR}
+	</select>
+	<!-- 根据功能编码查询ID -->
+	<select id="getIdByCode" resultMap="AuthPermissionMap" parameterType="java.lang.String">
+		select 
+		ID
+		from AUTH_PERMISSION where CODE=#{code,jdbcType=VARCHAR}
+	</select>
+	<!-- 根据功能编码查询 -->
+	<select id="findById" resultMap="AuthPermissionMap" parameterType="java.lang.String">
+		select 
+		<include refid="allColumn"></include> 
+		from AUTH_PERMISSION where ID=#{id,jdbcType=VARCHAR}
+	</select>
+	<!--新增数据-->
+	<insert id="addAuthRolePermission" parameterType="byit.osdp.base.entity.AuthPermissionEntity" >
+		INSERT INTO AUTH_PERMISSION(ID,NAME,PARENT_ID,PATH,CODE,TYPE,ORDINAL,STATE,REMARK,ICON_CLS,ID_PATH,LEV,CREATOR_ID,CREATE_TIME)
+		VALUES(
+			#{id},#{name},#{parentId},#{path},#{code},#{type},#{ordinal},#{state},#{remark},#{iconCls},#{idPath},#{level},#{creatorId},#{createTime}
+		)
+	</insert>
+	<!--修改数据-->
+	<update id="updateAuthRolePermission" parameterType="byit.osdp.base.entity.AuthPermissionEntity" >
+		UPDATE AUTH_PERMISSION SET NAME=#{name},PARENT_ID=#{parentId},PATH=#{path},CODE=#{code},TYPE=#{type},ORDINAL=#{ordinal},STATE=#{state},REMARK=#{remark},ICON_CLS=#{iconCls},
+		ID_PATH=#{idPath},LEV=#{level},UPDATER_ID=#{updaterId},UPDATE_TIME=#{updateTime} WHERE ID=#{id}
+	</update>
+	<!--修改数据IDpath-->
+	<update id="updateAuthRolePermissionByIdPath" parameterType="byit.osdp.base.entity.AuthPermissionEntity" >
+		UPDATE AUTH_PERMISSION SET ID_PATH=#{idPath},LEV=#{level} WHERE ID=#{id}
+	</update>
+	<!-- 查询所有数据 -->
+	<select id="findEntityByRoleId" resultMap="AuthPermissionMap" parameterType="java.lang.String">
+		select a.ID,
+		a.NAME,
+		a.PARENT_ID,
+		a.PATH,
+		a.CODE,
+		a.TYPE,
+		a.ORDINAL,
+		a.CREATE_TIME,
+		a.UPDATER_ID,
+		a.UPDATE_TIME,
+		a.STATE,
+		a.REMARK,
+		a.ICON_CLS,
+		a.LEV,
+		a.ID_PATH from auth_permission a left join auth_role_permission b on a.ID=b.PERMISSION_ID where b.ROLE_ID in 
+		<foreach item="item" index="index" collection="roleIds" open="("
+	            separator="," close=")">
+	            	#{item}  
+       	</foreach>
+		order by  a.ORDINAL,a.NAME,a.CREATE_TIME asc
+	</select>
+</mapper>

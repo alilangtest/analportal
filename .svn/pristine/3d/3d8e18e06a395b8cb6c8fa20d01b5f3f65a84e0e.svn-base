@@ -1,0 +1,11 @@
+tableau.task.refreshtimes=5
+tableau.task.refreshinterval=2
+#
+tableau.server.ip=10.94.66.126:80
+#tableau version
+tableau.version=2.5
+#
+scheduler.rootPath=D:/workbooksDownload
+#
+tableau.server.admin.username=admin
+tableau.server.admin.password=qiyaxia

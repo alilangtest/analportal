@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.osdp.portal.interceptor.dao.InsertSystemLogDao">
+	<!-- 根据pageurl查询数据（system_path） -->
+	<select id="queryByPageurl" resultType="byit.osdp.portal.interceptor.entity.SystemPathEntity" parameterType="java.lang.String">
+		select * from system_path where pageurl=#{pageurl}
+	</select>
+	<!--  -->
+	<insert id="insertSystemLog" parameterType="byit.osdp.portal.interceptor.entity.SystemLogEntity">
+		INSERT INTO SYSTEM_LOG VALUES(
+			#{eventid,jdbcType=VARCHAR},
+			#{logdate,jdbcType=VARCHAR},
+			#{url,jdbcType=VARCHAR},
+			#{menu,jdbcType=VARCHAR},
+			#{menuid,jdbcType=VARCHAR},
+			#{userid,jdbcType=VARCHAR},
+			#{type,jdbcType=VARCHAR},
+			#{days,jdbcType=VARCHAR},
+			#{hours,jdbcType=VARCHAR},
+			#{ipaddress,jdbcType=VARCHAR},
+			#{opertype,jdbcType=VARCHAR},
+			#{opercontent,jdbcType=VARCHAR}
+		)
+	</insert>
+</mapper>

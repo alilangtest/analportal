@@ -1,0 +1,103 @@
+package byit.tableausubscribe.tab.init;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
+
+import byit.tableausubscribe.common.util.Constants;
+import byit.tableausubscribe.tab.bean.ExcelColumnSubscribe;
+
+
+public class InitExcelColumnSubscribeConfig {
+	
+	private final static Logger logger = Logger.getLogger(InitExcelColumnSubscribeConfig.class);
+	private static InitExcelColumnSubscribeConfig messageConfig = new InitExcelColumnSubscribeConfig();
+	
+	private InitExcelColumnSubscribeConfig(){
+	}
+	public static InitExcelColumnSubscribeConfig getInstance(){
+		return messageConfig;
+	}
+	
+	public void initConfigData(){
+		excelColumnSubscribe = getExcelColumnSubscribe(Constants.excelColumnSubscribeXML);
+	}
+	
+	public static Map<String,List<ExcelColumnSubscribe>>  excelColumnSubscribe = new HashMap<>() ;
+	
+
+	/**
+	 * 读取发送结果
+	 * @param fileName
+	 * @param rootNode
+	 * @return
+	 */
+	private Map<String,List<ExcelColumnSubscribe>> getExcelColumnSubscribe(String fileName)  {
+		////logger.info("------------start getSendExcelResult-------------");
+		Map<String,List<ExcelColumnSubscribe>>  excelColumnSubscribeMap =new HashMap<String,List<ExcelColumnSubscribe>>() ;
+		try { 
+			SAXReader reader = new SAXReader();
+			String xmlFile = Constants.CLASSPATH+"/"+fileName;
+			Document doc = reader.read(new File(xmlFile));
+			//Document doc = reader.read(new File(fileName));
+			Element root = doc.getRootElement();
+			List<Element> elementList = root.elements("column");
+			
+			for (Element e : elementList) {
+				
+				String tableId=(String)e.element("tableId").getData();
+				List<ExcelColumnSubscribe> excelColumnSubscribeList=excelColumnSubscribeMap.get(tableId);
+				if(excelColumnSubscribeList==null){
+					excelColumnSubscribeList = new ArrayList<>();
+					excelColumnSubscribeMap.put(tableId, excelColumnSubscribeList);
+				}
+				List<Element> checkedColumnIdExcel = e.elements("checkedColumnId");
+				for(Element maExcel:checkedColumnIdExcel){
+					ExcelColumnSubscribe excelColumnSubscribe = new ExcelColumnSubscribe();
+//					excelColumnSubscribe.setTableId(tableId);
+//					excelColumnSubscribe.setCheckedColumnId((String)maExcel.attributeValue("id"));
+//					excelColumnSubscribe.setIsChecked((String)maExcel.element("isChecked").getData());
+//					excelColumnSubscribe.setAddDate((String)maExcel.element("addDate").getData());
+//					excelColumnSubscribeList.add(excelColumnSubscribe);
+					if(tableId!=null && !"null".equals(tableId)&& !"".equals(tableId)){
+						excelColumnSubscribe.setTableId(tableId);
+					}
+					 if((String)maExcel.attributeValue("id")!=null && !"null".equals((String)maExcel.attributeValue("id"))&& !"".equals((String)maExcel.attributeValue("id"))){
+						 excelColumnSubscribe.setCheckedColumnId((String)maExcel.attributeValue("id"));
+					 }
+					if((String)maExcel.element("isChecked").getData()!=null && !"null".equals((String)maExcel.element("isChecked").getData())&& !"".equals((String)maExcel.element("isChecked").getData())){
+						excelColumnSubscribe.setIsChecked((String)maExcel.element("isChecked").getData());
+					}
+					if((String)maExcel.element("addDate").getData()!=null && !"null".equals((String)maExcel.element("addDate").getData())&& !"".equals((String)maExcel.element("addDate").getData())){
+						excelColumnSubscribe.setAddDate((String)maExcel.element("addDate").getData());
+					}
+					excelColumnSubscribeList.add(excelColumnSubscribe);
+					 
+				}
+			}
+			
+		} catch (DocumentException e) {
+			e.printStackTrace();
+		}
+		////logger.info("------------end getSendExcelResult-------------");
+		return excelColumnSubscribeMap;
+	}
+	
+	
+//	public static void main(String arg[]){
+//		String path="E:\\excelSubscribe.xml";
+//		List<ExcelSubscribe> list = InitExcelSubscribeConfig.getInstance().getExcelConfig(path);
+//		for(ExcelSubscribe es:list){
+//			System.out.println(es);
+//		}
+//	}
+	 
+}

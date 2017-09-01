@@ -1,0 +1,72 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@page import="byit.osdp.base.security.UserHolder" %>
+<%@include file="../../_include/_taglib.jsp"%>
+<%
+String useid=UserHolder.getId();
+String menuid=request.getParameter("menuid");
+String parentid=request.getParameter("parentid");
+%>
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<%@include file="../../_include/_meta.jsp"%>
+<%@include file="../../_include/_s0.jsp"%>
+<script type="text/javascript">
+  var userid="<%=useid%>";
+  var menuid="<%=menuid%>";
+  var parentid="<%=parentid%>";
+</script>
+
+<script type="text/javascript" src="${ctx}/assets/_osdp/js/report/reportMenu/relateRole.js"></script>
+<style type="text/css">
+	.panel-header-noborder{background:none;border:none;font-size:13px;color:#666;text-align:center;}
+</style>
+</head>
+<body class='table_css'>
+	 <div id="cc" class="easyui-layout" fit="true">
+			<div  id="left" region="west" split="false" style="width:350px; height: 90%;">
+				<table id="leftrole"></table>
+			</div>
+		
+			<div id="right" region="center" align="center">
+				<div>
+					<div id="menuid" hidden="true">${menuid}</div>
+					<div id="parentid"  hidden="true">${parentid}</div>
+				</div>
+				<div style="padding-top: 200px;">
+					<!-- <a href="#" id="savebutton" class="easyui-linkbutton" onclick="rightRole()"><span>右移  >></span></a>
+
+					<a href="#" class="easyui-linkbutton" onclick="leftRole()"><span><< 左移</span></a> -->
+					<button type="button"  id="savebutton" class="btn btn-primary"  onclick="rightRole()">
+	                   	 添加 →
+	                 </button>
+	                 <br/>
+					 <br/>
+	                 <button type="button" class="btn btn-primary" onclick="leftRole()">
+                    	← 删除
+                  	</button>
+				</div>
+			</div>
+			<div id="east" region="east"  style="width: 350px; height: 90%;">
+				<table id="rightrole"></table>
+			</div>
+			<div id="south" region="south" align="center" style='line-height:47px;padding:0;'>
+				<table class="button_area_absolute" align="center">
+       				<tr align="center">
+       					 <td>
+       					    
+       						<button type="button"  id="savebutton" class="btn btn-primary" style='margin-right:15px;'  onclick="saveRole()">
+		                   		 保存
+		                 	</button>
+							<button type="button" class="btn btn-danger" style='margin-right:15px;' onclick="closeEmployee()">
+		                    	取消
+		                  	</button>
+       					 </td>
+       				</tr>
+     			</table>
+			</div>
+			
+		</div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+package byit.tableausubscribe.common.listener;
+
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+
+import byit.tableausubscribe.tab.init.InitExcelSubscribeConfig;
+import byit.tableausubscribe.tab.init.InitReportSubscribeConfig;
+
+/**
+ * 初始化
+ *
+ */
+public class ConfigListener implements ServletContextListener {
+
+    @Override
+    public void contextDestroyed(ServletContextEvent context) {
+    }
+
+    @Override
+    public void contextInitialized(ServletContextEvent context) {
+        //初始化配置文件
+    	InitReportSubscribeConfig.getInstance().initConfigData();
+    	InitExcelSubscribeConfig.getInstance().initConfigData();
+    	
+    }
+
+}

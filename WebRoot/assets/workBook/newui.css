@@ -1,0 +1,195 @@
+.table_div{
+	padding:15px;
+}
+.select2-container--default .select2-selection--single{
+	border-radius:0;border:1px solid #d2d2d2;font-size:13px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow{
+	border-left:1px solid #d2d2d2;
+}
+.select2-results__option{font-size:13px;}
+.header_div{
+	margin-top: 10px;
+	position:relative;
+	float:right;margin-right:15px;margin-bottom:10px;
+}
+.data-grid td{
+	padding:0 12px;
+	height:37px;
+	line-height:37px;
+	font-size:13px;
+	color:#333;
+}
+.data-grid thead tr td{
+	border-right:1px solid #cdcdcd;
+}
+.data-grid thead tr td:last-child{
+	border-right:none;
+}
+a.x-link{
+	color:#367e9c;
+}
+a.x-link:hover{
+	text-decoration:underline;
+}
+.data-grid tbody tr td{
+	color:#666;
+	font-size:12px;
+}
+.sp_textarea .sp_model{
+	padding:20px;
+}
+
+span.spanion{
+    float: left;
+    color: #666;
+    font-size: 13px;
+    margin-top: 5px;
+    font:14px Tahoma, Verdana, Arial, Helvetica, sans-serif;
+}
+textarea.auditReason{
+	width:310px;
+	height:75px;
+	padding:15px;
+	padding-top:10px;
+	resize:none;
+	border:1px solid #cdcdcd;
+	outline:none;
+	font-size:14px;
+}
+textarea.auditReason:focus{
+	border:1px solid #367e9c;
+}
+.data-grid thead tr td:first-child{
+	width:10px;
+}
+.x-form-buttons{
+	width:100%;
+	text-align:right;
+	margin-top:20px;
+}
+.x-form-buttons button{
+	background:none;
+	padding:0 22px;
+	margin-left:10px;
+	cursor:pointer;
+	background-color: #b2b2b2;
+    color: #fff;
+    height:22px;
+    border-radius:2px;
+    border:none;
+}
+.x-form-buttons button.sp{
+	background:#367e9c;
+
+}
+.x-form-buttons button.bh{
+	background:#eb8f50;
+}
+.x-form-buttons button.qx{
+	background:#b2b2b2;
+}
+select.select_id{
+	height:28px;
+	border:1px solid #d2d2d2;
+}
+.post-div .post-btn{
+	padding:5px 13px;margin:0 auto;
+	border:none;border-radius:2px;
+	background:#367e9c;color:#fff;
+	display:inherit;cursor:pointer;
+}
+.model_div table tr td.hop{
+	text-align:right;
+	padding-right:5px;
+}
+.model_div table tr td lable{
+	font-size:14px;color:#666;
+}
+.model_div table tr td input{
+	width:200px;
+	height:28px;
+	margin:5px;
+	border:1px solid #d2d2d2;
+	text-indent:5px;font-size:13px;color:#666;
+}
+.model_div table tr td select{
+	width:202px;
+	height:30px;
+	margin:5px;
+	border:1px solid #d2d2d2;
+	text-indent:1px;font-size:13px;color:#666;
+}
+.model_div table tr td textarea{
+	resize:none;
+	width:180px;
+	height:80px;
+	border:1px solid #d2d2d2;
+	padding:10px;
+}
+.model_input{
+	padding:15px;
+}
+.model_input .model_h{
+	font-size:14px;
+	color:#666;
+	text-align:right;
+	padding-right:8px;
+	width:100px;
+}
+.model_input table tr{
+	margin-bottom:5px;
+}
+.model_input table tr td input[type='text']{
+	width:290px;
+	height:28px;
+	text-indent:5px;
+	font-size:14px;
+	color:#666;
+	border:1px solid #d2d2d2;
+	margin:5px;
+}
+.model_input table tr td input[type='number']{
+	width:50px;
+	height:28px;
+	text-indent:5px;
+	font-size:14px;
+	color:#666;
+	border:1px solid #d2d2d2;
+	margin:5px;
+}
+.model_input table tr td input[type='radio']{
+	margin-right:5px;
+	margin-left: 5px;
+}
+.model_input table tr td p{
+	font-size:14px;
+	color:#666;
+}
+.model_input .tanc_c_center ul li{
+	display:inline-block;
+}
+.model_input .select2-container{
+	margin:5px;
+}
+.model_input .select2-container .select2-selection--multiple{
+	min-height:28px;
+}
+.model_input .select2-container--default .select2-selection--multiple{
+	border-radius:0;
+	border:1px solid #d2d2d2;
+	width: 290px;
+    font-size: 13px;
+}
+.model_input .x-form-buttons button.sq_{
+	background:#367e9c;
+}
+.model_input2 .select2-container{
+	width: 257px;
+	margin:5px 0;
+}
+.sp_textarea .sp_model input{
+	width: 336px;
+    height: 25px;
+    margin-bottom: 5px;
+}

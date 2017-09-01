@@ -1,0 +1,27 @@
+# \u7968\u636e  \u6d4b\u8bd5\u73af\u5883 
+#tableau.trusted.host=25.0.89.91
+#tableau.jdbc.driver=org.postgresql.Driver
+#tableau.postgresql.ip=25.0.89.91:8060
+#tableau.postgresql.url=jdbc:postgresql://25.0.89.91:8060/workgroup
+#tableau.postgresql.username=readonly
+#tableau.postgresql.password=p@ssword
+
+
+tableau.server.admin.username=admin
+tableau.server.admin.password=qiyaxia
+
+tableau.task.refreshtimes=5
+tableau.task.refreshinterval=2
+#tableau version
+tableau.version=2.5
+
+#
+scheduler.rootPath=D:/workbooksDownload
+
+#\u751f\u4ea7\u73af\u5883      10.17.2.12  host \u6539\u4e3a\u57df\u540d
+tableau.trusted.host=tableau.yiguanjinrong.yg
+tableau.jdbc.driver=org.postgresql.Driver
+tableau.postgresql.ip=tableau.yiguanjinrong.yg:80
+tableau.postgresql.url=jdbc:postgresql://tableau.yiguanjinrong.yg:80/workgroup
+tableau.postgresql.username=readonly
+tableau.postgresql.password=tableau

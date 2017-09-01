@@ -1,0 +1,201 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@page import="byit.osdp.base.security.UserHolder" %>
+<%@include file="../_include/_taglib.jsp"%><%
+String from = request.getParameter("from");
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>数据分析</title>
+	<link rel="stylesheet" href="${ctx}/assets/bootstrap/css/common.css">
+    <link href="${ctx}/assets/font-awesome/css/font-awesome.css" rel="stylesheet"><!-- FONT AWESOME ICON STYLESHEET -->
+	<link rel="stylesheet" href="${ctx}/assets/bootstrap/css/animations.css">
+	<link rel="stylesheet" href="${ctx}/assets/bootstrap/css/byit.css">
+	<link rel="stylesheet" href="${ctx}/assets/bootstrap/css/newuAdowncss/css.css">
+	<link rel="stylesheet" href="${ctx}/assets/bootstrap/css/layui.css">
+	
+	<link rel="stylesheet" href="${ctx}/assets/css/dataindexshow.css">
+	<link rel="stylesheet" href="${ctx}/assets/css/dataindexshowskin.css" id="layout-skin" />
+	<link rel="stylesheet" href="${ctx}/assets/css/reportshensuomenu.css" />
+	<link rel="stylesheet" href="${ctx}/assets/iconfont/1.0.2/iconfont.css" id="layout-skin" />
+	
+	<script type="text/javascript">;var _ctx = '${ctx}',EL=EL||{},FN=FN||{},GV=GV||{},URLS=URLS||{};</script>
+	<script src='${ctx}/assets/bootstrap/js/jquery-1.11.1.min.js'></script>
+	<script src="${ctx}/assets/layer/layer.js"></script>
+	<script src="${ctx}/assets/bootstrap/js/layui.all.js"></script>
+	<style type="text/css">
+	.btn-info{
+		background-color: #58c9f3;
+    	border-color: #58c9f3;
+	    color: #FFFFFF;
+	}
+	.btn-info:hover{	    
+	    background-color: #53bee6;
+    	border-color: #53BEE6;
+	}
+	.btn-infos{
+		background-color: #f5c86e;
+	}
+	.btn-infos:hover {
+		background-color: #f5c056;
+	}
+	.btn{
+		display: inline-block;
+	    margin-bottom: 0;
+	    font-weight: 400;
+	    text-align: center;
+	    vertical-align: middle;
+	    cursor: pointer;
+	    background-image: none;
+	    border: 1px solid transparent;
+	    white-space: nowrap;
+	    padding: 6px 18px;
+	    font-size: 14px;
+	    line-height: 1.428571429;
+	    border-radius: 4px;
+	    -webkit-user-select: none;
+    }
+    #reportNames li{
+		text-align:center;
+		font-size:14px;
+		line-height: 30px;
+	}
+	.side-menu .menu-item a:hover{
+			text-decoration: none;
+			color:#428bca;
+		}
+	.reportNameA{
+		color : #36a4ff;
+	}
+	.reportAs{
+		color:#667fa0;
+	}
+	.layui-laypage{
+		margin:0;
+	}
+	</style>
+	<script type="text/javascript">
+		$(function (){
+			//IE浏览器需要修改左、中部分的宽度
+			if(isIE()){
+				document.getElementById("div1").style.width = "190px";
+				document.getElementById("div2").style.width = "173px";
+			}
+		});
+		function isIE() { //ie?
+			if (!!window.ActiveXObject || "ActiveXObject" in window)
+			 return true;
+			 else
+			 return false;
+		}
+	</script>
+</head>
+<body>
+<div id="parentDiv" class="div">
+	<div class="layout-side">
+		<div id="div1" class="left-menu div">
+			<!-- <p>即时查询</p>
+			<ul style="margin-left:30px;" id="parentNode">
+			</ul>
+			<p>报表分类</p> -->
+			<!--菜单 -->
+			<ul class="side-menu div">	  
+			</ul>	
+		</div>
+		<div id="div2" class="left-menu-son">
+			<div class="search-box">
+				<input class="iptsty" type="text" onkeydown="keyDown(event, this)" placeholder="报表名称" />
+				<img src="${ctx}/assets/images/search.png" class="search-icon" />
+			</div>
+			<ul id="reportNames">
+			</ul>
+		</div>
+	</div>
+	<!--伸缩按钮-->
+	<div class="layout-side-arrow"><div class="layout-side-arrow-icon"><i class="icon-font icon-jiantou-copy"></i></div></div>
+	<div id ="div3" class="layout-main rightcon">
+		<div class="header-top-search">
+			<em class="local-sub"><i class="local-icon"></i><span>数据指标</span></em>
+			<b class="search-right">
+				<input type="text" class="iptname" placeholder="报表名称" id="vagueReportName" onkeydown="reportNameOrIndexNamekeyDown(event, this)">
+				<input type="text" class="iptname" placeholder="指标名称" id="indexName" onkeydown="reportNameOrIndexNamekeyDown(event, this)">
+				<button id="search" onclick="queryIndexName();" class="btn btn-info green">搜索</button>
+				<button id="search" onclick="clearInfo();" class="btn btn-infos green" style="color:#fff;">清空</button>
+				<!-- <button id="empty" onclick="clearInfo();" class="btn btn-default">清空</button> -->
+			</b>
+		</div>
+		<div class="zhibiao-tab">
+		<h3 class="zhibiao-title">指标</h3>
+			<div class="tabbox">
+				<table class="layui-table" lay-even="" lay-skin="row">
+				  <colgroup>
+				    <col width="60">
+				    <col width="100">
+				    <col width="100">
+				    <col width="100">
+				    <col width="120">
+				    <col>
+				    <col>
+				    <col width="100">
+				  </colgroup>
+				  <thead>
+				    <tr>
+				      <th>序号</th>
+				      <th>报表分类</th>
+				      <th>报表名称</th>
+				      <th>指标名称</th>
+				      <th>数据元名称</th>
+				      <th>含义描述</th>
+				      <th>计算公式</th>
+				      <th>操作</th>
+				    </tr> 
+				  </thead>
+				  <tbody id="indexTbody">
+				  </tbody>
+				</table>
+			</div>
+			<div class="pagetation">
+				<div id="demo7"></div>
+			</div>
+		</div>
+		<div class="zhibiao-tab mgtop30">
+			<h3 class="zhibiao-title">维度</h3>
+			<div class="tabbox">
+				<table class="layui-table" lay-even="" lay-skin="row">
+				  <colgroup>
+				    <col width="60">
+				    <col width="100">
+				    <col width="100">
+				    <col width="100">
+				    <col width="120">
+				    <col>
+				    <col width="100">
+				  </colgroup>
+				  <thead>
+				    <tr>
+				      <th>序号</th>
+				      <th>报表分类</th>
+				      <th>报表名称</th>
+				      <th>维度名称</th>
+				      <th>数据元名称</th>
+				      <th>含义描述</th>
+				       <th>操作</th>
+				    </tr> 
+				  </thead>
+				  <tbody id="weiduTbody">
+				  </tbody>
+			</table>
+			</div>
+			<div class="pagetation">
+				<div id="demo8"></div>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript" src="${ctx}/assets/js/sccl.js"></script>
+<script type="text/javascript" src="${ctx}/assets/js/sccl-util.js"></script>
+</body> <script src="${ctx}/assets/_osdp/js/dataIndex/dataIndexShow.js"></script>
+    <script type="text/javascript">
+    </script>
+</html>

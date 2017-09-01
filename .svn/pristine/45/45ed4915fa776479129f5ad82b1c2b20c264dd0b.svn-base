@@ -1,0 +1,49 @@
+# \u5e38\u7528\u65e5\u5fd7\u7ea7\u522b
+# DEBUG < INFO < WARN < ERROR < FATAL
+# \u5b9a\u4e49C\u4e3a\u8f93\u51fa\u5230console\u4e2d\uff0cF\u4e3a\u8f93\u51fa\u5230File\u4e2d
+#log4j.rootLogger=DEBUG, C,F
+log4j.rootLogger=WARN, C, F
+
+
+# console\u65e5\u5fd7\u8bbe\u7f6e
+log4j.appender.C=org.apache.log4j.ConsoleAppender
+log4j.appender.C.Target=System.out
+log4j.appender.C.layout=org.apache.log4j.PatternLayout
+#log4j.appender.C.layout.ConversionPattern=[%-5p] %d{yyyy-MM-dd HH:mm:ss} %t %c - %m%n
+log4j.appender.C.layout.ConversionPattern=[%-5p]_%d{yyyy-MM-dd HH:mm:ss} :%m%n
+
+# File\u65e5\u5fd7\u8bbe\u7f6e\uff1a\u4fdd\u7559\u6700\u8fd1255\u4efd\u65e5\u5fd7\uff0c\u6bcf\u4e2a\u65e5\u5fd710MB
+log4j.appender.F=org.apache.log4j.DailyRollingFileAppender
+#log4j.appender.F.file=D:\\hfportal_logs\\analportal.yiguanjinrong.yg.log
+log4j.appender.F.file=/${catalina.base}/logs/analportal.yiguanjinrong.yg.log
+log4j.appender.F.Append=WARN
+log4j.appender.F.ImmediateFlush = WARN
+log4j.appender.F.layout=org.apache.log4j.PatternLayout
+#log4j.appender.F.layout.ConversionPattern=[%-5p]_%d{yyyy-MM-dd HH:mm:ss} :%m%n
+log4j.appender.F.layout.ConversionPattern=[%-5p]_%d{yyyy-MM-dd HH:mm:ss} :%m%n
+#log4j.appender.F.MaxBackupIndex=255
+#log4j.appender.F.MaxFileSize =1MB
+
+
+#log4j.logger.bisoft.supercenter.ambari.debug.AmbariServerHttpDebugInterceptor=DEBUG,F_01
+#log4j.additivity.bisoft.supercenter.debug.AmbariServerHttpDebugInterceptor=true
+#log4j.appender.F_01.Append=false
+#log4j.appender.F_01=org.apache.log4j.FileAppender
+#log4j.appender.F_01.File=/supercenter_ambarihttp.log
+#log4j.appender.F_01.layout=org.apache.log4j.PatternLayout
+#log4j.appender.F_01.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss} - %m%n
+
+## \u9650\u5236spring\u6846\u67b6\u7684log\u8f93\u51fa
+#log4j.logger.org.springframework=ERROR
+## \u9650\u5236apache\u7ec4\u4ef6\u7684log\u8f93\u51fa
+#log4j.logger.org.apache=ERROR
+
+
+log4j.logger.com.ibatis=WARN
+log4j.logger.com.ibatis.common.jdbc.SimpleDataSource=WARN
+log4j.logger.com.ibatis.common.jdbc.ScriptRunner=WARN
+log4j.logger.com.ibatis.sqlmap.engine.impl.SqlMapClientDelegate=WARN
+log4j.logger.java.sql.ResultSet=WARN
+log4j.logger.java.sql.Connection=WARN
+log4j.logger.java.sql.Statement=WARN
+log4j.logger.java.sql.PreparedStatement=WARN,F

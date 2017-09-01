@@ -1,0 +1,362 @@
+﻿/**
+ * 数据分析
+ */
+
+var  ZI_BIAOQIAN="";
+//var  REP_ATTRIBUTE_INFO="";
+    $(document).ready(function(){
+    	
+   //--------------------------------------------------------------------------------------------- 	
+    	var id = $("#id").val();
+    	$("#id").val("");
+    	if(id!=""){
+    		if(id=="sc_id"){
+    			CollectPage();
+    		}else{
+    			querylabel(id);
+    		}
+    	}else{
+	    	//用户报表展示首页
+	    	$.ajax({
+	    		url:"dataAnalysis/getHomepage.do",
+	  			type:"POST",
+	  			async:false,
+				datatype:"JSON",
+	  			success:function(data){
+	  		
+			    	if(data.success){
+//			    	if(false){
+			    		addInfo(1,data.reportid);
+			    	}else{
+			    		CollectPage();
+			    	}
+	  			}
+	    	})
+    	}
+   });
+    
+    
+	//判断浏览器是否是ie
+	function isIE() { //ie?
+		if (!!window.ActiveXObject || "ActiveXObject" in window)
+		 return true;
+		 else
+		 return false;
+	}
+    
+   //收藏页
+    function CollectPage(){
+
+    	var url="dataAnalysis/queryTableauDataAnalysis.do";
+    	$.ajax({
+  			url:url,
+  			type:"POST",
+			datatype:"JSON",
+  			success:function(data){
+//  				var labelInfoList=data.labelInfoList;//子标签 
+//  				var label=data.label;//父标签
+//  				var len=label.length-1;
+//  				ZI_BIAOQIAN=labelInfoList;
+  				var id = data.id;
+  				var listCollects = data.listCollects;//收藏
+  				
+  				//报表菜单
+//  				var tableHTML = "";
+//  				for (var i = 0; i < label.length; i++) {
+//  					if (i==len) {
+//  						tableHTML+="<li class='tiaojian_li' style='border-bottom:none;'>";
+//					} else{
+//						tableHTML+="<li class='tiaojian_li' >";
+//					}
+//  					tableHTML+="<span>"+label[i].menuname+":</span>";
+//  					tableHTML+="<ol>";
+//  					for (var j = 0; j < labelInfoList.length; j++) {
+//  						if (labelInfoList[j].menuparent==label[i].menuId) {
+//	  		  				tableHTML+="<li id="+labelInfoList[j].menuId+" onclick=\"querylabel("+labelInfoList[j].menuId+")\">"+labelInfoList[j].menuname+"</li>";
+//  						}
+//					}
+//	  				tableHTML+="</ol>";	
+//  	  				tableHTML+="</li>";
+//				} 
+//  				$("#hide_div").html(tableHTML);
+  				
+
+  			    // listCollects 收藏列表
+  				var tableHTML1="";
+  				
+  				for (var i = 0; i < listCollects.length; i++) {
+  					tableHTML1+="<li class=\"dianzan_list_li\">";
+  					var reportId=listCollects[i].REPORTID;
+ 					var reportname=listCollects[i].REPORTNAME;
+ 					var EMPLOYEEID = listCollects[i].EMPLOYEEID;
+ 					
+ 					tableHTML1+="<ol class=\"dianzan_list_ol\">";
+  					
+  					//查看
+  					tableHTML1+="<li class=\"list_oli\">";
+  					tableHTML1+="<a href=\"javascript:void(0)\" onclick=\"addInfo("+1+","+reportId+")\"><i class=\"fa fa-bar-chart-o\"></i>"+reportname+"</a>";
+  					tableHTML1+="</li>";
+  					
+
+  					
+  					//收藏
+  					tableHTML1+="<li class=\"list_oli\">";
+  					tableHTML1+="<a class='current2' id=\""+reportId+"_\" href=\"javascript:void(0)\" title=\"取消收藏\" onclick=\"addInfo("+2+","+reportId+")\"><i class=\"fa fa-bookmark\"></i></a>";
+  					tableHTML1+="</li>";
+  					
+  					
+  					//设为首页  PM_REPORT_HOMEPAGE
+//					tableHTML1+="<li class=\"list_oli\">";
+//  					tableHTML1+="<a  href=\"javascript:void(0)\" title=\"设为首页\" onclick=\"homepage("+reportId+")\"><i class=\"fa fa-thumbs-up\"></i></a>";
+//  					tableHTML1+="</li>";
+  					
+  					//设为首页  PM_REPORT_HOMEPAGE
+  					if(reportId==id){
+  						tableHTML1+="<li class=\"list_oli\">";
+  	  					tableHTML1+="<a class='current' id=\""+reportId+"_homepage\" href=\"javascript:void(0)\" title=\"取消首页\" onclick=\"homepage("+reportId+")\"><i class=\"fa fa-home\"></i></a>";
+  	  					tableHTML1+="</li>";
+  					}else{
+  						tableHTML1+="<li class=\"list_oli\">";
+  	  					tableHTML1+="<a  id=\""+reportId+"_homepage\" href=\"javascript:void(0)\" title=\"设为首页\" onclick=\"homepage("+reportId+")\"><i class=\"fa fa-home\"></i></a>";
+  	  					tableHTML1+="</li>";
+  					}
+  					
+  					tableHTML1+="</ol>";
+  					tableHTML1+="</li>";
+  				}
+  				
+  				$("#ULTable").html(tableHTML1);
+  			}
+    	
+		});
+	
+    }
+    
+    
+    
+    /**
+     * 对不同的类型添加数据
+     * @param TypeTop
+     */
+    function addInfo(TypeTop,reportId){
+    	var param={};
+    	param.topType=TypeTop;
+    	param.reportId=reportId;
+    	//访问 点赞【可以取消点赞】 收藏【取消收藏】
+    	
+    	//查看报表
+		if (TypeTop==1) {
+			//打开新的页面并且添加一条
+			var url_new="dataAnalysis/addReport.do";
+			$.ajax({
+	    		url:url_new,
+	  			type:"POST",
+	  			async:false,
+	  			data :param,
+				datatype:"JSON",
+	  			success:function(data){
+	  				if (data.result==1) {
+	  					if(isIE()){
+	  						location.href = "reportShow.html?reportid="+reportId;
+	  					}else{
+	  						location.href = "dataAnalysis/reportShow.html?reportid="+reportId;
+	  					}
+//	  					location.href = "dataAnalysis/reportShow.html?reportid="+reportId;
+//----------------------------------------------------------
+	  					//查看报表
+//	  					var url = "dataAnalysis/reportShow.html?reportid="+reportId;
+//	  					$('#reportifr').attr('src',url);
+//						document.getElementById("divVV").style.display="none";
+//	  					$.post("dataAnalysis/queryTableReport.do",{reportid:reportId},function(result){
+//	  						if (result.success==1){
+//	  							if(result.width){
+//	  								$('.repert-box').css('overflow','auto');
+//	  								$('#reportifr').width(result.width);
+//	  							} else {
+//	  								$('#reportifr').width($('body').width());
+//	  							}
+//	  							if(result.height){
+//	  								$('.repert-box').css('overflow','auto');
+//	  								$('#reportifr').height(result.height);
+//	  							} else {
+//	  								$('#reportifr').height(700);
+//	  							}
+//	  							$('#reportifr').attr('src',result.url);
+//	  							document.getElementById("divVV").style.display="none";
+//								var tableauUser = result.tableauUser;
+//								
+//	  						}else if (result.error==4){
+//	  							layer.alert('提示当前service服务ip配置不正确，请管理员查看tableau权限配置中service服务ip配置是否正确');
+//	  						}else if (result.error==3){
+//	  							layer.alert('提示当前用户还未分配所属机构，他无权限访问报表！请联系管理员分配对应机构');
+//	  						}else if (result.error==2){
+//	  							layer.alert('提示获取tableau用户票证失败！请管理员查看tableau权限配置用户和密码是否正确,tableau服务器是否授权！');
+//	  						}else if (result.error==1){
+//	  							layer.alert('提示查看报表内容出错，tableau服务器未授权！请联系管理员！');
+//	  						}
+//	  						parent.$('#path').html('<span><b class="local_icon"></b><a id="theme" href="#">'+result.theme+'</a><i style="color: black;">/</i><a id="title" href="#">'+result.title+'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a></span>');
+//	  					},'json');
+	  
+	  					
+//---------------------------------------------------------
+					} 
+	  			}
+			
+			});	
+		//收藏或取消收藏
+		} else if(TypeTop==2){
+			var a_class = $("#"+reportId+"_").attr("class");
+			if("current2"==a_class){
+				//取消收藏
+				$.post( 'dataAnalysis/collectDelete.do',{reportid:reportId},function(data){
+					if(data.result==1){
+						$("#"+reportId+"_").attr("class","");
+						$("#"+reportId+"_").attr("title","收藏");
+					}
+				},'json');
+				
+			}else{
+				//收藏								
+				$.post( 'dataAnalysis/addReport.do',{reportId:reportId,topType:TypeTop},function(data){
+					if(data.result==1){
+						$("#"+reportId+"_").attr("class","current2");
+						$("#"+reportId+"_").attr("title","取消收藏");
+					}
+				},'json');
+			}
+		}
+
+    }
+    
+    
+    
+    
+    
+    
+    
+    /***
+     * 根据标签查询数据
+     * @param labelId
+     */
+    function querylabel(menuId){
+    	
+    		//选中的标签变颜色
+        	for (var j = 0; j < ZI_BIAOQIAN.length; j++) {
+        		if(ZI_BIAOQIAN[j].menuId==menuId){
+        			if($("#"+menuId).hasClass('active')){
+        				$("#"+menuId).removeClass('active');
+        				$("#repLab").val("");
+        	    	}else{
+        	    		$("#repLab").val(ZI_BIAOQIAN[j].menuId);
+            			$("#"+menuId).addClass('active');
+        	    	}
+        		}else{
+        			$("#"+ZI_BIAOQIAN[j].menuId).removeClass('active');
+        		}
+    		}
+
+    	
+    	var repLab=$("#repLab").val();
+//    	var repAtt=$("#repAtt").val();
+    	
+    	var url="dataAnalysis/querylabelDataAnalysis.do";
+//    	var param={};
+//    	param.repLab=repLab;
+//    	param.repAtt=repAtt;
+    	
+    	$.ajax({
+  			url:url,
+  			type:"POST",
+  			data :{repLab:menuId},
+			datatype:"JSON",
+  			success:function(data){
+  				var tableHTML1="";
+  				var labelAnalysis=data.labelAnalysis;
+  				var id = data.id;
+  				for (var i = 0; i < labelAnalysis.length; i++) {
+  					tableHTML1+="<li class=\"dianzan_list_li\">";
+  					var reportId=labelAnalysis[i].reportId;
+  					
+  					tableHTML1+="<ol class=\"dianzan_list_ol\">";
+  					tableHTML1+="<li class=\"list_oli \">";
+  					tableHTML1+="<a href=\"javascript:void(0)\" onclick=\"addInfo("+1+","+reportId+")\"><i class=\"fa fa-bar-chart-o\"></i>"+labelAnalysis[i].reportName+"</a>";
+  					tableHTML1+="</li>";
+  					
+  				
+  					//收藏
+  					if(labelAnalysis[i].sc==reportId){
+  						tableHTML1+="<li class=\"list_oli\">";
+  	  					tableHTML1+="<a class='current2' id=\""+reportId+"_\" href=\"javascript:void(0)\" title=\"取消收藏\" onclick=\"addInfo("+2+","+reportId+")\"><i class=\"fa fa-bookmark\"></i></a>";
+  	  					tableHTML1+="</li>";
+  					}else{
+  						tableHTML1+="<li class=\"list_oli\">";
+  	  					tableHTML1+="<a  id=\""+reportId+"_\"  href=\"javascript:void(0)\" title=\"收藏\" onclick=\"addInfo("+2+","+reportId+")\"><i class=\"fa fa-bookmark\"></i></a>";
+  	  					tableHTML1+="</li>";
+  					}
+  					
+  					//设为首页  PM_REPORT_HOMEPAGE
+  					if(reportId==id){
+  						tableHTML1+="<li class=\"list_oli\">";
+  	  					tableHTML1+="<a class='current' id=\""+reportId+"_homepage\" href=\"javascript:void(0)\" title=\"取消首页\" onclick=\"homepage("+reportId+")\"><i class=\"fa fa-home\"></i></a>";
+  	  					tableHTML1+="</li>";
+  					}else{
+  						tableHTML1+="<li class=\"list_oli\">";
+  	  					tableHTML1+="<a  id=\""+reportId+"_homepage\" href=\"javascript:void(0)\" title=\"设为首页\" onclick=\"homepage("+reportId+")\"><i class=\"fa fa-home\"></i></a>";
+  	  					tableHTML1+="</li>";
+  					}
+					
+  					
+  					
+  					tableHTML1+="</ol>";
+  					tableHTML1+="</li>";
+				}
+  				$("#ULTable").html(tableHTML1);	
+  			}
+    	});
+    }
+    
+    
+  //设置首页  homepage
+    function homepage(reportId){
+    	
+    	var homepage_class = $("#"+reportId+"_homepage").attr("class");
+		if("current"==homepage_class){
+			//取消首页
+			var url="dataAnalysis/deleteHomepage.do";
+	    	
+			$.ajax({
+				url:url,
+				type:"POST",
+				datatype:"JSON",
+				success:function(data){
+					if(data.success){
+						$("#"+reportId+"_homepage").attr("class","");
+						$("#"+reportId+"_homepage").attr("title","设为首页");
+					}
+				}
+			});
+			
+		}else{
+			//添加首页
+			var url="dataAnalysis/addHomepage.do";
+	    	
+			$.ajax({
+				url:url,
+				type:"POST",
+				data :{reportid:reportId},
+				datatype:"JSON",
+				success:function(data){
+					if(data.success){
+						$(".current").attr("title","设为首页");
+						$(".current").attr("class","");
+						$("#"+reportId+"_homepage").attr("class","current");
+						$("#"+reportId+"_homepage").attr("title","取消首页");
+					}
+				}
+			});
+		}
+    	
+    }
+    
+    
+

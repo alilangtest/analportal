@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.aladdin.workBook.dao.XmlTablesMainDao">
+	<resultMap type="byit.aladdin.workBook.entity.XmlTablesMain" id="XmlTablesMain">
+		<id column="ID" property="id" />
+		<result column="workbook_id" property="workbookId" />
+		<result column="times" property="times" />
+		<result column="exec_time" property="execTime" />
+		<result column="created_time" property="createdTime" />
+		<result column="updated_time" property="updatedTime" />
+		<result column="dispatch_state" property="dispatchState" />
+		<result column="task_state" property="taskState" />
+		<result column="refresh_state" property="refreshState" />
+		<result column="creator" property="creator" />
+		<result column="updator" property="updator" />
+		<result column="task_ref_time" property="taskRefTime" />
+		<result column="api_exec_time" property="apiExecTime" />
+		<result column="workbook_ref_time" property="workbookRefTime" />
+		<result column="refresh_time" property="refreshTime" />
+		<result column="refresh_freq" property="refreshFreq" />
+	</resultMap>
+	<resultMap type="byit.aladdin.workBook.entity.XmlTables" id="XmlTables">
+		<id column="ID" property="id" />
+		<result column="db_name" property="dbName" />
+		<result column="table_name" property="tableName" />
+		<result column="workbook_id" property="workbookId" />
+	</resultMap>
+	<sql id="workBookColumns">
+		id,
+		workbook_id,
+		times,
+		exec_time,
+		created_time,
+		updated_time,
+		dispatch_state,
+		task_state,
+		refresh_state,
+		creator,
+		updator,
+		task_ref_time,
+		workbook_ref_time,
+		refresh_time,
+		refresh_freq,
+		api_exec_time
+	</sql>
+	<select id="queryXmlTablesMainByWorkBookId" parameterType="java.lang.String" resultMap="XmlTablesMain">
+		SELECT <include refid="workBookColumns"></include> FROM XML_TABLES_MAIN WHERE WORKBOOK_ID=#{workBookId,jdbcType=VARCHAR}
+	</select>
+	<update id="updXmlTablesMain" parameterType="byit.aladdin.workBook.entity.WorkbookPlanTaskVo">
+		UPDATE XML_TABLES_MAIN SET DISPATCH_STATE=#{dispatchState,jdbcType=VARCHAR},REFRESH_FREQ=#{refreshFreq,jdbcType=VARCHAR},REFRESH_TIME=#{refreshTime,jdbcType=VARCHAR},UPDATOR=#{updator,jdbcType=VARCHAR},UPDATED_TIME=#{updatedTime,jdbcType=VARCHAR} where WORKBOOK_ID=#{id,jdbcType=VARCHAR} 
+	</update>
+	<delete id="delXmlTables" parameterType="java.lang.String">
+		DELETE FROM XML_TABLES WHERE WORKBOOK_ID=#{id,jdbcType=VARCHAR}
+	</delete>
+	<insert id="addTables" parameterType="java.util.List">
+		INSERT INTO XML_TABLES (ID,DB_NAME,TABLE_NAME,WORKBOOK_ID) VALUES
+		<foreach collection="list" item="item" index="index" separator="," >
+        	(xml_tables_sequence.nextval,#{item.dbName},#{item.tableName},#{item.workbookId})  
+   		</foreach>  
+	</insert>
+	<select id="queryXmlTablesByWorkBookId" parameterType="java.lang.String" resultMap="XmlTables">
+		select * from XML_TABLES where WORKBOOK_ID=#{id,jdbcType=VARCHAR}
+	</select>
+	<delete id="deleteTablesByFileName" parameterType="java.lang.String">
+		DELETE from xml_tables where workbook_id = #{workBookId,jdbcType=VARCHAR}
+	</delete>
+</mapper>

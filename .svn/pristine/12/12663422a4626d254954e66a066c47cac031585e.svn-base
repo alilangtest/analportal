@@ -1,0 +1,211 @@
+package byit.osdp.portal.controller.login;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.authc.AuthenticationToken;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.subject.Subject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import byit.aladdin.dataAnalysis.utils.Constant;
+import byit.core.plug.expection.PromptException;
+import byit.osdp.base.security.UserHolder;
+import byit.osdp.base.security.exception.UserDisabledAuthcException;
+import byit.osdp.base.security.exception.UserNoRoleAuthcException;
+import byit.osdp.base.security.exception.UserValidAuthcException;
+import byit.osdp.base.security.password.PasswordEncoder;
+import byit.osdp.base.security.realm.ShiroUserPrincipal;
+import byit.osdp.portal.sso.Contants;
+import byit.osdp.portal.sso.cookies.CookiesUtil;
+import byit.utils.Tools;
+
+/**
+ * 用户登录/注销 视图类
+ */
+@Controller
+@RequestMapping(value = "/")
+public class LoginController {
+
+	// ==============================Fields===========================================
+	protected final Logger logger = LoggerFactory.getLogger(getClass());
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
+	// ==============================Methods==========================================
+	
+	/** 登录页面 
+	 * @throws IOException 
+	 * @throws ServletException */
+	// ~ /login.html
+	@RequestMapping(value = "/index.html")
+	private String index() {
+		return "login/index";
+	}
+	//TODO
+	//以下注释是sso客户端。不能删除。切换到生产应该使用如下代码
+	/*private ModelAndView index(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		ModelAndView mv=new ModelAndView();
+		String ip=Tools.getIpAddr(request);
+		AuthUserEntity user =new AuthUserEntity();
+		user.setClientIp(ip);
+		Map<String,String> map=LoginHtttpsHelper.verifyLogin(user,"");
+		String userStr=null;
+		String returnPage=null;
+		for (String key : map.keySet()) {
+			if("user".equals(key)){
+				userStr=map.get(key);
+				ObjectMapper mapper = new ObjectMapper();
+		        map=mapper.readValue(userStr, Map.class);
+		        user=Tools.convertMapToUser(map);
+		        mv.addObject("username", user.getUsername());
+		        mv.addObject("password", user.getPassword());
+		        mv.setViewName("login/verifylogin");
+			}else{
+				mv.setViewName("login/index");
+			}
+		}
+		
+		return mv;
+	}*/
+
+	
+	/** 登录页面 */
+	// ~ /login.html
+	@RequestMapping(value = "/login.html")
+	private String login() {
+//		return "login/login";
+		String loginid=UserHolder.getId();
+		if(loginid != null && !loginid.equals("")){
+			return "admin/index_upAdown2";
+		}
+		return "login/index";
+		
+	}
+
+	/** 用户登出 */
+	// ~ /logout.html
+	@RequestMapping(value = "/logout.html")
+	private String logout(HttpServletResponse response) {
+		//置空首页cookie
+		Cookie cookie = new Cookie(Constant.HOMEPAGECOOKIE, "");
+		cookie.setPath("/");
+		response.addCookie(cookie);
+		
+		SecurityUtils.getSubject().logout();
+		return "login/logout";
+	}
+	//TODO
+	//以下代码是sso客户端，不能删除，切换到生产应该使用如下代码
+	/*private Object Logoutdo(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		
+		String sessionid = UserHolder.getsessionId();
+		//调用sso服务端，判断服务端session是否清空，如果服务端session清空，则清空本系统session。
+		Map<String,String> map =LoginHtttpsHelper.destorySession(sessionid);
+		
+		String destoryResult=null;
+		for (String key : map.keySet()) {
+			if("removeSession".equals(key)){
+				destoryResult=map.get(key);
+			}
+		}
+		
+        //销毁客户端session
+		if("true".equals(destoryResult)){
+			 SecurityUtils.getSubject().logout();
+		}
+       
+		return "login/logout";
+	}*/
+
+	/**
+	 * 用户登录
+	 * @param username 用户名
+	 * @param password 密码
+	 */
+	// ~ /login.do
+	@RequestMapping(value = "/login.do")
+	@ResponseBody
+	private Object doLogin(@RequestParam(value = "username", defaultValue = StringUtils.EMPTY) String username,
+			@RequestParam(value = "password", defaultValue = StringUtils.EMPTY) String password, //
+			@RequestParam(value = "sessionId", defaultValue = StringUtils.EMPTY) String sessionId,
+			@RequestParam(value = "ticket", defaultValue = StringUtils.EMPTY) String ticket,
+			@RequestParam(value = "encryt", defaultValue = "true") String encryt, //
+			HttpServletRequest request, HttpServletResponse response) {
+		Map<String ,Object> map = new HashMap<String ,Object>();
+		try {
+			
+			String host=null;
+			if((!Tools.isNotEmpty(ticket))&&(!Tools.isNotEmpty(sessionId))){
+				if ("true".equals(encryt)) {
+					password = passwordEncoder.encode(password);//MD5
+				}
+				if (StringUtils.isEmpty(username)) {
+					return new PromptException("用户名不能为空！");
+				}
+				if (StringUtils.isEmpty(password)) {
+					return new PromptException("密码不能为空！");
+				}
+			}else{
+				host=ticket+Contants.DELIMITER+sessionId;
+			}
+			
+			
+			//AuthenticationToken token = new UsernamePasswordToken(username, password, false);
+			AuthenticationToken token = new UsernamePasswordToken(username, password, false,host);
+			Subject currentUser = SecurityUtils.getSubject();
+			currentUser.login(token);
+
+			
+			
+			if (!currentUser.isAuthenticated()) {
+				map.put("success", false);
+				map.put("msg", "用户名或密码错误");
+			}
+			map.put("success", true);
+			CookiesUtil.setCookies(request, response, Contants.TICKET_KEY,UserHolder.getTicket());
+			CookiesUtil.setCookies(request, response, Contants.SESSIONID,UserHolder.getsessionId());
+		} catch(UserValidAuthcException e){
+			map.put("success", false);
+			map.put("msg", "该用户不在有效期内");
+		} catch(UserNoRoleAuthcException e){
+			map.put("success", false);
+			map.put("msg", "该用户还未分配角色");
+		} catch (UserDisabledAuthcException e) {
+			map.put("success", false);
+			map.put("msg", "该用户已经被禁用");
+		} catch (AuthenticationException e) {
+			map.put("success", false);
+			map.put("msg", "用户名或密码错误");
+		}
+		
+		return map;
+	}
+
+	/**
+	 * 用户登出
+	 * @throws Exception 
+	 */
+	@RequestMapping(value = "/logout.do")
+	@ResponseBody
+	private Object doLogout(HttpServletRequest request, HttpServletResponse response) {
+		SecurityUtils.getSubject().logout();
+		return Boolean.TRUE;
+	}
+
+}

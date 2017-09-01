@@ -1,0 +1,16 @@
+package byit.osdp.portal.https;
+
+public class HttpsUrl {
+	/**sso服务端url地址*/
+	//验证session是否存在
+	public static String SESSION_VERIFY_URL="https://192.168.1.3:8444/sso/sessionVerify.do";
+	
+	//登出
+	public static String LOGINOUT_URL="https://192.168.1.3:8444/sso/loginOut.do";
+	
+	//登录校验用户名密码是否正确
+	public static String LOGIN_VERIFY_URL="https://192.168.1.3:8444/sso/loginVerify.do";
+	
+	public static final String status ="status";
+
+}

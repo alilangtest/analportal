@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">                       
+<mapper namespace="byit.aladdin.dataAnalysis.dao.LogDao">                                                                 
+	
+	<!--列表查询日志管理列表system_log  -->
+	<select id="queryLogListforPage" parameterType="java.util.Map" resultType="java.util.Map">
+		select a.*,b.username from system_log  a
+			left join auth_user b
+			on a.userid = b.id
+			
+		where 1=1 
+		<if test="authOrg != null and authOrg != ''">
+			and b.username in (select u.username from auth_user u left join auth_org o on u.org_id=o.code where o.name=#{authOrg,jdbcType=VARCHAR})
+		</if>
+		<if test="username != null and username != ''">
+			and username = #{username,jdbcType=VARCHAR}   
+		</if>
+		<if test="menu != null and menu != '' ">
+			and opercontent = #{menu,jdbcType=VARCHAR}  
+		</if>
+		<if test="beginlogdate!=null and beginlogdate!=''">
+			 and to_char(logdate,'yyyy-MM-dd hh24:mm:ss') <![CDATA[ >= ]]> #{beginlogdate} 
+		</if>
+		<if test="endlogdate!=null and endlogdate!=''">
+		<!-- and reg_time <![CDATA[ <= ]]> #{params.endTime} -->
+			and to_char(logdate,'yyyy-MM-dd hh24:mm:ss') <![CDATA[ <= ]]> #{endlogdate} 
+		</if>
+		order by logdate desc ,menu desc
+	</select>
+	<select id="queryAuthOrg" resultType="java.lang.String">
+		select distinct name from auth_org
+	</select>
+	<select id="queryAuthUser" resultType="java.lang.String" parameterType="java.lang.String">
+		select u.username from auth_user u
+			left join auth_org o on u.org_id=o.code
+			where 1=1
+			<if test="authOrg != null and authOrg!= '' ">
+				 and o.name=#{authOrg,jdbcType=VARCHAR}
+			</if>
+	</select>
+	<select id="queryOpercontent" resultType="java.lang.String">
+		select distinct opercontent from system_log where opercontent is not null order by opercontent asc
+	</select>
+</mapper>

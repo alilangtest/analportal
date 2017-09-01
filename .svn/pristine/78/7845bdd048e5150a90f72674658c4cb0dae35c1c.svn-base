@@ -1,0 +1,146 @@
+var EL = EL || {}, FN = FN || {}, GV = GV || {}, URLS = URLS || {}, TS = TS || {};
+URLS.reportPage=_ctx + '/report/reportPage.do';
+URLS.reportSetMenuid=_ctx + '/report/reportSetMenuid.do';
+
+
+//=================================================
+
+/*var menuid='';*/
+$(function(){
+   /* menuid=$("#menuid1").text();*/
+	$('#reportDiv').height(document.documentElement.clientHeight-$('#staffPanel').height()-40);
+	$("#reportTable_").datagrid({
+		nowrap : true,
+		striped : true,
+		border:false,
+		fit:true,
+		queryParams : {
+			filters : __.encode({
+				'menuid' :menuid,
+				'reportname':'',
+				'flag' : 'set'
+			})
+		},
+		pagination:true,
+		rownumbers:false,
+		pageSize:20,
+		pageList: [20,50,100],
+		autoRowHeight: false,
+		fitColumns:true,
+		idField : 'reportId',
+		columns:[[{field:'ck',checkbox:true},
+				{field:'REPORTID',title:'报表编号',width:80},
+				{field:'PROJECTNAME',title:'项目名称',width:100},
+				{field:'REPORTCATEG',title:'工作簿名称',width:100},
+				{field:'REPORTNAME',title:'报表名称',width:100},
+				{field:'REPORTTYPE',hidden:true},
+				{field:'PUBLISPER',hidden:true},
+				{field:'REPORTDESCRIPTION',hidden:true},
+				{field:'DESP',hidden:true},
+				{field:'PUBLISHDATE',title:'发布日期',width:100},
+				{field:'URL',title:'URL',width:250}
+			]],
+	 	url:URLS.reportPage,
+		onLoadSuccess:function(data){
+	    	$('#reportTable_').datagrid('clearSelections'); //clear selected options
+	    	$('#buttondiv').css('position', 'relative');
+	    	$('#buttondiv').css('z-index', 999);
+	    	$('#buttondiv').css('top', 0);
+	    }
+	});
+});
+
+//为菜单挂载报表
+function reportSetMenuid(){
+	var rows = $('#reportTable_').datagrid('getChecked');
+	if (rows.length > 0){
+		var reportids="";
+		var reportpic="";
+		for(var i=0;i<rows.length;i++){
+			reportids += ","+rows[i].REPORTID;
+			reportpic = rows[i].REPORTPIC;
+			/*if(reportpic=='' || reportpic==null){
+				$.messager.alert("添加报表","尚未上传报表图片，请先编辑报表！",'info');
+				return;
+			}*/
+		}
+		if(reportids.length > 0){
+			reportids = reportids.substring(1);	
+		}
+		var postUrl = URLS.reportSetMenuid;
+		$.post(postUrl,{"menuid":menuid,"reportids":reportids,"rd":Math.random()},function(result){
+			if (result.result){
+				/*$.messager.alert("添加报表",result.msg,'ok',function(){
+					reloadData('queryReport.html','reportTable');
+					closePanel();
+				});*/	
+				layer.msg(result.msg,{icon:1},function(){
+	                parent.location.reload(); // 父页面刷新
+	                var index = parent.layer.getFrameIndex(window.name); //获取窗口索引
+	                parent.layer.close(index);
+	            });
+				
+			} else {
+				layer.msg(result.msg, {
+					msg : [ '#BB0000' ],
+					time : 2000
+				});
+			}
+		},'json');
+	 }else{
+		layer.msg("请选择报表", {
+			msg : [ '#BB0000' ],
+			time : 2000
+		});
+	}
+}
+
+//查询
+function queryReport(){
+	$("#reportTable_").datagrid('clearSelections'); // clear
+	var reportname = $('#reportname').val();
+	
+	$("#reportTable_").datagrid('reload', {
+		filters : __.encode({
+			'menuid' : menuid,
+			'reportname' : reportname,
+			'flag':'set'
+		})
+	});
+}
+
+
+//回车查询           
+function queryReportForEnter1(e){
+ 	var keyCode = null;
+    if(e.which){
+        keyCode = e.which;
+    }else if(e.keyCode){
+        keyCode = e.keyCode;
+    } 
+    if(keyCode == 13) 
+    {
+		$("#reportTable_").datagrid('clearSelections'); // clear
+		var reportname =$('#reportname').val();
+		$("#reportTable").datagrid('reload', {
+			filters : __.encode({
+				'menuid' : menuid,
+				'reportname' : reportname,
+				'falg':'set'
+			})
+		});
+       return false;
+    }
+    return true;
+}
+
+function closePanel(){
+	 var index = parent.layer.getFrameIndex(window.name); //获取窗口索引  
+        parent.layer.close(index);
+}
+
+function clearQuery(){
+	$('#reportname').val("");
+	$("#reportTable_").datagrid('load');
+}
+

@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.aladdin.report.dao.IdaPmReportDao">
+
+
+<!-- 查询列表 -->
+	<select id="queryReprotPage" parameterType="java.util.Map" resultType="byit.aladdin.report.entity.IdaPmReport">
+		select r.reportid,r.projectname,r.workbookname,r.reportname,r.reporttype,
+		r.publisper,r.reportdescription,r.desp,r.dateScreen,r.publishdate,r.mountstate from PM_REPORT r where 1=1
+		<!-- select r.*,nvl2(a.eventid,'已挂载','未挂载') MOUNTSTATE from PM_REPORT r left join rep_menu_rela a on r.reportid=a.reportid where 1=1 -->
+		<if test="reportname!=null and reportname!=''">
+		         and r.reportname LIKE CONCAT(CONCAT('%',#{reportname,jdbcType=VARCHAR}),'%')
+		</if>
+		<if test="menuid!=null and menuid!='' and flag==''">
+			and r.reportid in(select reportid from REP_MENU_RELA rm where rm.Menuid=#{menuid}) 
+		</if>
+		<if test="menuid!=null and menuid!='' and flag!='' and flag!=null ">
+			and r.reportid not in(select reportid from REP_MENU_RELA rm) 
+		</if>
+		<if test="mountstate !=null and mountstate !=''">
+			and r.mountstate = #{mountstate,jdbcType=VARCHAR}
+		</if>
+		<!-- order by a.eventid desc ,r.updatedate desc -->
+		order by r.gettime desc, r.mountstate asc, r.updatedate desc
+	</select>
+	
+	
+<!-- 查询 -->
+	<select id="getReportById" resultType="byit.aladdin.report.bo.IdaPmReportBo" parameterType="byit.aladdin.report.bo.IdaPmReportBo">
+	   select  * from PM_REPORT where REPORTID=#{reportid}
+	</select>
+
+<!-- 挂载报表 -->
+  <insert id="reportSetMenuid"   parameterType="byit.aladdin.report.bo.ReportMenuReportBo" >
+    INSERT INTO REP_MENU_RELA
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test= "eventid != null  and eventid != '' ">
+         EVENTID,
+      </if>
+      <if test= "menuid != null and menuid != '' ">
+         MENUID,
+      </if>
+      <if test= "reportid != null and reportid != '' ">
+         REPORTID,
+      </if>
+    </trim>
+    
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test= "eventid != null ">
+         #{eventid,jdbcType=VARCHAR},
+      </if>
+      <if test= "menuid != null and menuid != '' ">
+         #{menuid,jdbcType=VARCHAR},
+      </if>
+      <if test= "reportid != null and reportid != '' ">
+         #{reportid,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+
+<!--  查询报表权限 -->
+	<select id="getRoleReportByReportid" resultType="byit.aladdin.report.bo.RoleReportBo" parameterType="java.lang.String">
+	   select * from ROLE_REPORT_RELA where reportid=#{reportid}
+	</select>
+
+<!-- 查询角色树   模糊查询角色 -->
+	<select id="queryLikeRoleTreeList" resultType="byit.aladdin.report.bo.IdaPmRoleBo" parameterType="java.util.Map">
+		select distinct r.id, r.name from auth_role r left join rep_menu_role_rela rr  on rr.roleid = r.id  where r.STATE = '1'
+		
+		      <if test= "id != null and id != '' ">
+		        and id = #{id,jdbcType=VARCHAR}     
+		      </if>
+		      <if test= "name != null and name != '' ">
+		       <!--  and name like CONCAT('%',#{name,jdbcType=VARCHAR},'%')   -->
+		       and name like  CONCAT(CONCAT('%',#{name,jdbcType=VARCHAR}),'%')   
+		      </if>
+		      <if test= "menuparentId != null and menuparentId != '' ">
+		        and menuid = #{menuparentId,jdbcType=VARCHAR}      
+		      </if>
+	     
+	      order by r.id
+	</select>
+	
+<!-- 卸载报表 -->
+  <delete id="deleteMenuReportByReportId" parameterType="byit.aladdin.report.bo.ReportMenuReportBo" >
+    DELETE FROM REP_MENU_RELA WHERE menuid = #{menuid} AND reportid = #{reportid}
+  </delete>
+	
+<!-- 删除报表 -->
+  <delete id="deleteReport"   parameterType="java.lang.String">
+    DELETE FROM PM_REPORT WHERE reportid = #{reportid}
+  </delete>
+  
+<!-- 删除报表角色关系 -->
+ <delete id="deleteRoleReportByReportid"   parameterType="java.lang.String">
+    DELETE FROM ROLE_REPORT_RELA WHERE  reportid = #{reportid}
+  </delete>
+  
+<!--  判断该报表是否挂载 -->
+  <select id="findIsReportMenu"  parameterType="java.lang.String" resultType="java.lang.Integer">
+	  select count(*) from REP_MENU_RELA where reportid=#{reportid}
+  </select>
+  
+  
+  <!-- 报表菜单id获取报表 -->
+   <select id="queryReportList"  parameterType="byit.aladdin.report.bo.IdaPmReportMenuBo"  resultType="byit.aladdin.report.bo.ReportMenuReportBo">
+	  select m.* from REP_MENU_RELA m where 1=1 and m.MENUID=#{menuid}
+  </select>
+  
+ 
+  <!-- 获取菜单下的报表 -->
+   <select id="queryReportListTree"  parameterType="java.lang.String"  resultType="byit.aladdin.report.bo.IdaPmReportBo">
+	  select m.reportid,m.reportname from REP_MENU_RELA s inner join PM_REPORT m on m.reportid=s.reportid where s.MENUID=#{menuid}
+  </select>
+  
+ 
+  <!-- 删除报表角色关系 -->
+ <delete id="deleteByReportid"   parameterType="java.lang.String">
+     delete from ROLE_REPORT_RELA where reportid = #{reportid}
+  </delete>
+  
+  <!-- 删除报表角色关系 -->
+ <delete id="deleteRoleReport"   parameterType="byit.aladdin.report.bo.RoleReportBo">
+    DELETE FROM ROLE_REPORT_RELA WHERE  reportid = #{reportid} 
+    <if test="roleid!=null and roleid!='' ">
+	      and roleid = #{roleid}
+	</if>
+	<if test=" optype!=null  and optype!=null">
+	        and optype = #{optype}
+	</if>
+  </delete>
+  
+  
+  <!-- 查询列表 -->
+	<select id="queryReportRoleLists" parameterType="java.util.Map" resultType="java.util.Map">
+		select t.* from ROLE_REPORT_RELA t where 1=1
+		<if test="reportid!=null and reportid!='' and roleid!=null  and roleid!=null">
+		      and t.reportid =#{reportid} and t.ROLEID=#{roleid}
+		</if>
+		<if test="reportid==null or reportid!='' or roleid!=null  or roleid!=null">
+		      and t.reportid is null and t.optype is null
+		</if>
+	</select>
+	
+	  
+	<select id="queryRoleReportOptype" parameterType="byit.aladdin.report.bo.RoleReportBo" resultType="byit.aladdin.report.bo.RoleReportBo">
+		select t.* from ROLE_REPORT_RELA t where 1=1  
+		
+		<if test="roleid!=null and roleid!=''">
+		     and   t.roleid=#{roleid}
+		</if>
+		<if test="reportid!=null and reportid!=''">
+			and t.reportid=#{reportid}
+		</if>
+		<if test="optype!=null and optype!='' ">
+			and t.optype=#{optype}
+		</if>
+	</select>
+	
+	<!-- 挂载报表 -->
+  <insert id="saveOrUpdate"   parameterType="byit.aladdin.report.bo.RoleReportBo" >
+    INSERT INTO ROLE_REPORT_RELA
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test= "eventid != null  and eventid != '' ">
+         EVENTID,
+      </if>
+      <if test= "roleid != null and roleid != '' ">
+         ROLEID,
+      </if>
+      <if test= "reportid != null and reportid != '' ">
+         REPORTID,
+      </if>
+        <if test= "reporttype != null  and reporttype != '' ">
+         REPORTTYPE,
+      </if>
+      <if test= "optype != null and optype != '' ">
+         OPTYPE,
+      </if>
+      <if test= "audtate != null and audtate != '' ">
+         AUDTATE,
+      </if>
+      <if test= "limitday != null and limitday != '' ">
+         LIMITDAY,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test= "eventid != null ">
+         #{eventid,jdbcType=VARCHAR},
+      </if>
+      <if test= "roleid != null and roleid != '' ">
+         #{roleid,jdbcType=VARCHAR},
+      </if>
+      <if test= "reportid != null and reportid != '' ">
+         #{reportid,jdbcType=VARCHAR},
+      </if>
+       <if test= "reporttype != null  and reporttype != '' ">
+         #{reporttype},
+      </if>
+      <if test= "optype != null and optype != '' ">
+         #{optype},
+      </if>
+      <if test= "audtate != null and audtate != '' ">
+         #{audtate},
+      </if>
+      <if test= "limitday != null and limitday != '' ">
+         #{limitday},
+      </if>
+    </trim>
+  </insert>
+  
+ <!-- 获取Tableau连接数据 -->
+   <select id="queryTableauList"  resultType="byit.aladdin.TableauConfigure.entity.PmTableauserverEntity">
+	  select t.* from PM_TABLEAUSERVER t
+  </select>
+  <!-- 获取本地报表 -->
+  <select id="getAllReports"  resultType="byit.aladdin.report.entity.IdaPmReport">
+	  select t.* from PM_REPORT t
+  </select>
+  
+ <!--更新报表  -->	
+ <update id="updateReportFromTableau" parameterType="byit.aladdin.report.entity.IdaPmReport" >
+    update PM_REPORT
+    <set>
+	    <trim  suffixOverrides=",">
+	      <if test= "reportname != null and reportname != '' ">
+	      reportname = #{reportname,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "projectname != null and projectname != '' ">
+	      projectname = #{projectname,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "reportzhname != null and reportzhname != '' ">
+	      reportzhname = #{reportzhname,jdbcType=VARCHAR},
+	      </if>
+	     <if test= "reporttype != null and reporttype != '' ">
+	      reporttype = #{reporttype,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "desp != null and desp != '' ">
+	      desp = #{desp,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "url != null and url != '' ">
+	      url = #{url,jdbcType=TIMESTAMP},
+	      </if>
+	       <if test= "publisper != null and publisper != '' ">
+	      publisper = #{publisper,jdbcType=TIMESTAMP},
+	      </if>
+	      <if test= "publishdate != null and publishdate != '' ">
+	      publishdate = #{publishdate,jdbcType=TIMESTAMP},
+	      </if>
+	       <if test= "updatedate != null and updatedate != '' ">
+	      updatedate = #{updatedate,jdbcType=TIMESTAMP},
+	      </if>
+	       <if test= "siteid != null and siteid != '' ">
+	      siteid = #{siteid,jdbcType=TIMESTAMP},
+	      </if>
+	      <!-- 增加获取时间列 -->
+	      <if test= "getTime != null">
+	      	getTime = #{getTime,jdbcType=TIMESTAMP},
+	      </if>
+	       <!-- 增加挂载状态列 -->
+	      <if test= "mountstate != null and mountstate != ''">
+	      	MOUNTSTATE = #{mountstate,jdbcType=VARCHAR},
+	      </if>
+	    </trim>
+    </set>
+    where reportid = #{reportid,jdbcType=BIGINT}
+  </update>
+  
+		
+<!--添加报表  -->						
+  <insert id="saveReport"   parameterType="byit.aladdin.report.entity.IdaPmReport" >
+    INSERT INTO PM_REPORT
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+	    <if test= "reportid != null ">
+		    REPORTID  ,
+		  </if>
+	     <if test= "reportname != null and reportname != '' ">
+	      REPORTNAME ,
+	      </if>
+	      <if test= "projectname != null and projectname != '' ">
+	      PROJECTNAME,
+	      </if>
+	      <if test= "reportzhname != null and reportzhname != '' ">
+	      REPORTZHNAME ,
+	      </if>
+	     <if test= "reporttype != null and reporttype != '' ">
+	      REPORTTYPE,
+	      </if>
+	      <if test= "desp != null and desp != '' ">
+	      DESP,
+	      </if>
+	      <if test= "url != null and url != '' ">
+	      URL,
+	      </if>
+	       <if test= "publisper != null and publisper != '' ">
+	      PUBLISPER,
+	      </if>
+	       <if test= "publishdate != null and publishdate != '' ">
+	      publishdate,
+	      </if>
+	      <if test= "workbookid != null and workbookid != '' ">
+	      WORKBOOKID,
+	      </if>
+	       <if test= "workbookname != null and workbookname != '' ">
+	      WORKBOOKNAME,
+	      </if>
+	      <if test= "siteid != null and siteid != '' ">
+	      SITEID,
+	      </if>
+	       <!-- 增加获取时间列 -->
+	      <if test= "getTime != null">
+	      	GETTIME,
+	      </if>
+	       <!-- 增加挂载状态列 -->
+	      <if test= "mountstate != null and mountstate != ''">
+	      	MOUNTSTATE,
+	      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+	      <if test= "reportid != null ">
+	        #{reportid,jdbcType=BIGINT},
+	      </if>
+      	 <if test= "reportname != null and reportname != '' ">
+	        #{reportname,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "projectname != null and projectname != '' ">
+	       #{projectname,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "reportzhname != null and reportzhname != '' ">
+	        #{reportzhname,jdbcType=VARCHAR},
+	      </if>
+	     <if test= "reporttype != null and reporttype != '' ">
+	       #{reporttype,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "desp != null and desp != '' ">
+	       #{desp,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "url != null and url != '' ">
+	        #{url,jdbcType=TIMESTAMP},
+	      </if>
+	       <if test= "publisper != null and publisper != '' ">
+	      #{publisper,jdbcType=TIMESTAMP},
+	      </if>
+	       <if test= "publishdate != null and publishdate != '' ">
+	      #{publishdate,jdbcType=TIMESTAMP},
+	      </if>
+	      <if test= "workbookid != null and workbookid != '' ">
+	      #{workbookid,jdbcType=TIMESTAMP},
+	      </if>
+	       <if test= "workbookname != null and workbookname != '' ">
+	       #{workbookname,jdbcType=TIMESTAMP},
+	      </if>
+	       <if test= "siteid != null and siteid != '' ">
+	       #{siteid,jdbcType=TIMESTAMP},
+	      </if>
+	       <if test= "getTime != null">
+	      	#{getTime,jdbcType=TIMESTAMP},
+	      </if>
+	      <!-- 增加挂载状态列 -->
+	      <if test= "mountstate != null and mountstate != ''">
+	      	 #{mountstate,jdbcType=VARCHAR},
+	      </if>
+    </trim>
+  </insert>
+  
+<!-- 回显角色与报表的关系-->  
+  <select id="queryMenuRoleList" parameterType="byit.aladdin.report.bo.RoleReportBo" resultType="byit.aladdin.report.bo.RoleReportBo">
+		select t.* from ROLE_REPORT_RELA t where 1=1
+	
+		<!-- <if test="reportid!=null and optype!=null">
+		     and t.reportid = #{reportid} and t.optype = #{optype}
+		</if>
+		<if test="reportid==null or optype==null">
+			and t.reportid is null and t.optype is null
+		</if> -->
+		<if test="reportid!=null and reportid!=''">
+		     and t.reportid = #{reportid} 
+		</if>
+		<if test=" optype!=null and optype!='' ">
+			and t.optype = #{optype}
+		</if>
+	</select>
+	
+<!-- 编辑报表 -->
+	<update id="updateReport" parameterType="byit.aladdin.report.bo.IdaPmReportBo" >
+    update PM_REPORT
+    <set>
+	    <trim  suffixOverrides=",">
+	      <if test= "reportdescription != null and reportdescription != '' ">
+	      reportdescription = #{reportdescription,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "datescreen != null and datescreen != '' ">
+	      datescreen = #{datescreen,jdbcType=VARCHAR},
+	      </if>
+	       <if test= "publisper != null and publisper != '' ">
+	      publisper = #{publisper,jdbcType=VARCHAR},
+	      </if>
+	    </trim>
+    </set>
+    where reportid = #{reportid,jdbcType=VARCHAR}
+  </update>
+  
+	
+<!-- 查询列表 -->
+	<select id="queryAttribute" resultType="byit.aladdin.report.bo.RepAttributeBo">
+		select t.* from REP_ATTRIBUTE_INFO t 
+	</select>
+	
+	
+<!-- 查询报表已有属性 -->
+	<select id="queryAttributecheckedlist" resultType="byit.aladdin.report.bo.RepAttributeBo"  parameterType="java.lang.String">
+		select t.id,t.name from REP_ATTRIBUTE_RELA  t where t.report_id = #{reportid}
+	</select>
+	
+<!-- 添加属性验证 -->	
+	<select id="queryAttributeByName" parameterType="java.lang.String" resultType="byit.aladdin.report.bo.RepAttributeBo">
+		select t.* from REP_ATTRIBUTE_INFO t where name=#{name}
+	</select>
+	
+	
+<!--添加属性  -->						
+  <insert id="saveAttribute"   parameterType="byit.aladdin.report.bo.RepAttributeBo" >
+    INSERT INTO REP_ATTRIBUTE_INFO
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+	    <if test= "id != null ">
+		    ID  ,
+		</if>
+	    <if test= "name != null and name != '' ">
+	      NAME ,
+	    </if>
+	    <if test= "creator != null and creator != '' ">
+	      CREATOR,
+	    </if>
+	    <if test= "create_date != null and create_date != '' ">
+	      CREATE_DATE ,
+	    </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+	      <if test= "id != null ">
+	        #{id,jdbcType=VARCHAR},
+	      </if>
+      	 <if test= "name != null and name != '' ">
+	        #{name,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "creator != null and creator != '' ">
+	       #{creator,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "create_date != null and create_date != '' ">
+	        #{create_date},
+	      </if>
+    </trim>
+  </insert>
+  
+  <!--添加报表属性关系  -->						
+  <insert id="saveAttributeRela"   parameterType="byit.aladdin.report.bo.RepAttributeRelaBo" >
+    INSERT INTO REP_ATTRIBUTE_RELA
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+	    <if test= "id != null ">
+		    ID  ,
+		</if>
+	    <if test= "name != null and name != '' ">
+	      NAME ,
+	    </if>
+	    <if test= "creator != null and creator != '' ">
+	      CREATOR,
+	    </if>
+	    <if test= "createdate != null and createdate != '' ">
+	      CREATE_DATE ,
+	    </if>
+	    <if test= " reportid != null and reportid != '' ">
+	      REPORT_ID ,
+	    </if>
+	    
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+	      <if test= "id != null ">
+	        #{id,jdbcType=VARCHAR},
+	      </if>
+      	 <if test= "name != null and name != '' ">
+	        #{name,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "creator != null and creator != '' ">
+	       #{creator,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "createdate != null and createdate != '' ">
+	        #{createdate},
+	      </if>
+	      <if test= " reportid != null and reportid != '' ">
+	      #{reportid,jdbcType=VARCHAR},
+	    </if>
+    </trim>
+  </insert>
+  
+
+<!-- 删除报表属性关系 -->
+ <delete id="deleteAttributeRelaByReportid"   parameterType="java.lang.String">
+     delete from  REP_ATTRIBUTE_RELA where REPORT_ID = #{reportid}
+  </delete>
+  
+  	<!-- 删除首页 -->
+	<delete id="deleteHomepage" parameterType="string">
+		delete from PM_REPORT_HOMEPAGE where  REPORT_ID=#{reportid}
+	</delete>
+	
+	<!--删除收藏报表  -->
+	<delete id="deletecollect" parameterType="java.lang.String">
+		delete from PM_REPORTCOLLECT where reportid=#{reportid}
+	</delete>
+  
+</mapper>

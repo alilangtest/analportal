@@ -1,0 +1,35 @@
+tr th{
+	text-align: center;
+	cursor:pointer;
+}
+tr td{
+	text-align: center;
+	cursor:pointer;
+}
+.btn-info:hover, .btn-info:focus, .btn-info:active, .btn-info.active, .open .dropdown-toggle.btn-info{
+	background-color:#78CD51;
+	border:1px solid #78CD51;
+}
+.dropdown-menu{
+	padding:5px 10px;
+}
+.btn-info{
+	background-color:#78CD51;
+	border:1px solid #78CD51;
+}
+.btn-info:hover{
+	background-color:#78CD51;
+	border:1px solid #78CD51;
+}
+textarea.form-control{
+	display:inline-block;
+	width:354px;
+	margin-left: 6px;
+}
+textarea.form-control:focus{
+	border:1px solid #78CD51;
+}
+.add_box_in_uli em{
+	float: left;
+	margin-left: -35px;
+}

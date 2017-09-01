@@ -1,0 +1,7 @@
+# \u7968\u636e
+tableau.trusted.host=25.0.89.91
+tableau.jdbc.driver=org.postgresql.Driver
+tableau.postgresql.ip=25.0.89.91:8060
+tableau.postgresql.url=jdbc:postgresql://25.0.89.91:8060/workgroup
+tableau.postgresql.username=readonly
+tableau.postgresql.password=p@ssword

@@ -1,0 +1,27 @@
+package byit.osdp.base.service;
+
+import java.util.HashMap;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import byit.osdp.base.dao.UseSSODao;
+
+
+
+@Transactional(rollbackFor = Exception.class)
+@Service
+public class UseSSOService {
+
+	@Autowired
+	private UseSSODao useSSODao;
+	
+	//根据type查询字典表   是否启用单点登录
+	public String findSystemDomain(String type,String code){
+		HashMap<String, String> map = new HashMap<String,String>();
+		String codename = useSSODao.findSystemDomain(map);
+		return codename;
+	}
+	
+}

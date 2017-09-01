@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.osdp.base.dao.AuthRoleDao">
+	<!--分页查询角色  -->
+	<select id="pagedQuery" parameterType="java.util.Map" resultType="byit.osdp.base.model.AuthRoleVo">
+		SELECT ID,NAME,REMARK FROM AUTH_ROLE WHERE 1=1
+		 <if test= "name != null ">
+		 	AND NAME LIKE CONCAT(CONCAT('%',#{name,jdbcType=VARCHAR}),'%')   
+		 	OR REMARK LIKE CONCAT(CONCAT('%',#{name,jdbcType=VARCHAR}),'%') 
+		 </if>
+	</select>
+	
+	<!--根据id查询  -->
+	<select id="getById" parameterType="java.lang.String" resultType="byit.osdp.base.entity.AuthRoleEntity">
+		SELECT id,name,remark,STATE,CREATOR_ID as creatorId,CREATE_TIME as createTime,UPDATER_ID as updaterId,UPDATE_TIME as updateTime FROM AUTH_ROLE WHERE id=#{id}
+	</select>
+	
+	<!--根据name查询  -->
+	<select id="getByName" parameterType="java.lang.String" resultType="byit.osdp.base.entity.AuthRoleEntity">
+		SELECT * FROM AUTH_ROLE WHERE name=#{name}
+	</select>
+	
+	<!--新增角色 -->
+	<insert id="save" parameterType="byit.osdp.base.entity.AuthRoleEntity">
+		INSERT INTO AUTH_ROLE(ID,NAME,REMARK,STATE,CREATOR_ID,CREATE_TIME) VALUES(
+			#{id,jdbcType=VARCHAR},
+			#{name,jdbcType=VARCHAR},
+			#{remark,jdbcType=VARCHAR},
+			#{state,jdbcType=VARCHAR},
+			#{creatorId,jdbcType=VARCHAR},
+			#{createTime,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<!--修改角色  -->
+	<update id="update"  parameterType="byit.osdp.base.entity.AuthRoleEntity">
+		UPDATE AUTH_ROLE 
+		<set>
+			NAME=#{name},
+			CREATOR_ID=#{creatorId},
+			CREATE_TIME=#{createTime},
+			UPDATER_ID=#{updaterId},
+			UPDATE_TIME=SYSDATE,
+			STATE=#{state},
+			REMARK=#{remark}
+		</set>
+		WHERE id=#{id}
+	</update>
+	
+	<!-- 根据id删除数据  -->
+	<delete id="removeById" parameterType="java.lang.String">
+		DELETE FROM AUTH_ROLE WHERE id=#{id}
+	</delete>
+	
+	<!-- 查询角色关联功能  -->
+	<!-- <select id="getByName" parameterType="java.lang.String" resultType="byit.osdp.base.entity.AuthRoleEntity">
+		SELECT ID,NAME,REMARK FROM AUTH_ROLE ORDER BY NAME ASC
+	</select> -->
+	
+	<!-- 查询所有角色   -->
+	<select id="findVoAll" resultType="byit.osdp.base.model.AuthRoleVo">
+		select id,name,remark from auth_role order by name asc
+	</select>
+	
+	<!-- <select id="findByUserId" parameterType="java.lang.String" resultType="byit.osdp.base.entity.AuthRoleEntity">
+		select id,name,remark from auth_role order by name asc
+	</select> -->
+	
+	<select id="findPermissionIdByRoleId" parameterType="java.lang.String" resultType="java.lang.String">
+		select permission_id as permissionId from auth_role_permission where role_Id=#{roleId}
+	</select>
+
+	<select id="findByRoleId" parameterType="java.lang.String" resultType="byit.osdp.base.entity.AuthRolePermissionEntity">
+		select id,role_id as roleId,permission_id as permissionId from auth_role_permission where role_Id=#{roleId}
+	</select>
+	
+	<!-- 根据id删除数据(表auth_role_permission)  -->
+	<delete id="removeAll" parameterType="java.lang.String">
+		DELETE FROM auth_role_permission WHERE id=#{id}
+	</delete>
+	
+	<!-- 更新角色功能权限关联表（auth_role_permission） -->
+	<update id="updateAuthRolePermissionEntity"  parameterType="byit.osdp.base.entity.AuthRolePermissionEntity">
+		UPDATE auth_role_permission 
+		<set>
+			role_id=#{roleId},
+			permission_id=#{permissionId},
+		</set>
+		WHERE id=#{id}
+	</update>
+	
+	<!--新增角色 -->
+	<insert id="saveAuthRolePermissionEntity" parameterType="byit.osdp.base.entity.AuthRolePermissionEntity">
+		INSERT INTO AUTH_ROLE_PERMISSION(ID,ROLE_ID,PERMISSION_ID)  VALUES(
+			#{id,jdbcType=VARCHAR},
+			#{roleId,jdbcType=VARCHAR},
+			#{permissionId,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<!-- 查询用户所属角色 -->
+	<!-- <select id="findRoleIdByUserId" parameterType="java.lang.String" resultType="java.lang.String">
+		select role_id as roleId from auth_user_role where user_id=#{userId}
+	</select> -->
+	
+	<!-- 根据角色ID查询用户角色关联 -->
+	<select id="findRoleIdByUserId" parameterType="java.lang.String" resultType="java.lang.String">
+		select role_id as roleId from auth_user_role where user_id=#{userId}
+	</select>
+	
+	<!-- 根据id删除数据 -->
+	<delete id="removeByRoleId" parameterType="java.lang.String">
+		DELETE FROM auth_user_role WHERE id=#{id}
+	</delete>
+	
+	<!-- 根据id删除数据 -->
+	<delete id="removeByRoleIds" parameterType="java.lang.String">
+		DELETE FROM auth_role_permission WHERE id=#{id}
+	</delete>
+	
+	<!-- 根据角色ID查询角色权限关系 -->
+	<select id="findByRoleIds" parameterType="java.lang.String" resultType="byit.osdp.base.entity.AuthUserRoleEntity">
+		select id from auth_user_role where role_id=#{id}
+	</select>
+	
+	<!-- 根据角色ID查询用户角色关联 -->
+	<select id="findByPermissionIds" parameterType="java.lang.String" resultType="byit.osdp.base.entity.AuthRolePermissionEntity">
+		select id from auth_role_permission where role_id=#{id}
+	</select>
+	
+	<!-- 查询次角色下有没有用户 -->
+	<select id="getUserRoleByRoleId" parameterType="java.lang.String" resultType="byit.osdp.base.entity.AuthUserRoleEntity">
+		select id,user_id as userId,role_id as roleId from auth_user_role where role_id=#{id}
+	</select>
+	
+	<!-- 查询报表菜单有没有授权此角色   -->
+	<select id="getRepMenuRoleByRoleId" parameterType="java.lang.String" resultType="byit.osdp.base.model.RepMenuRoleRelaVo">
+		select * from rep_menu_role_rela where roleid=#{id}
+	</select>
+	
+	<!-- 查询即时报表菜单有没有授权此角色   -->
+	<select id="getRepMenuRoleQueryByRoleId" parameterType="java.lang.String" resultType="byit.osdp.base.model.RepMenuRoleRelaVo">
+		select * from rep_menu_role_rela_query where roleid=#{id}
+	</select>
+</mapper>

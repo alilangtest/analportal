@@ -1,0 +1,688 @@
+package byit.tableausubscribe.tab.bean;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+
+import byit.tableausubscribe.common.util.Constants;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+/**
+ * 仪表板配置 <report> <workbookId>工作簿ID</workbookId>
+ * <reportId>仪表板ID[,仪表板ID2...]</reportId>
+ * <reportName>仪表板ID[,仪表板ID2...]</reportName> <mails> <mail>邮箱1</mail>
+ * <mail>邮箱2</mail> </mails>
+ * 
+ * <sendType>规则类型</sendType> <sendTime>发送时间</sendTime>
+ * <sendState>发送状态</sendState> <dataSources> <dataSource
+ * name="数据源_表1">N-可选</dataSource> <dataSource name="数据源_表2">Y-必填</dataSource>
+ * </dataSources> <condition>判断条件:time</condition> </report>
+ */
+public class ReportSubscribe {
+	private final Logger logger = Logger.getLogger(ReportSubscribe.class);
+	@Override
+	public String toString() {
+		return "ReportSubscribe [workbookId=" + workbookId + ", reportId="
+				+ reportId + ", reportName=" + reportName + ", mailList="
+				+ mailList + ", sendType=" + sendType + ", sendTime="
+				+ sendTime + ", condition=" + condition + ", dataSources="
+				+ dataSources + ", mailTitle=" + mailTitle + ", sendTypeName="
+				+ sendTypeName + ", sendTimeName=" + sendTimeName
+				+ ", sendState=" + sendState + ", jsonDataSources="
+				+ jsonDataSources + ", sendResultList=" + sendResultList
+				+ ", nextTime=" + nextTime + ", mails=" + mails
+				+ ", sendDetails=" + sendDetails + ", sendInfo=" + sendInfo
+				+ "]";
+	}
+	private String seqNum;//序号
+	private String workbookId;// 工作簿,页面显示的时候呈现名字
+	// 唯一字段！！！！
+	private String reportId;// 仪表板(多个逗号隔开)
+	private String reportName;// 仪表板名称(逗号隔开)
+	private List<String> mailList;// 订阅人
+	// 订阅规则和订阅时间顺序不能乱
+	private String sendType;// 订阅规则
+	private String sendTime;// 订阅发送时间
+	private String condition;// 判定条件
+	// Map<数据源名称，是否翻盘>
+	private Map<String, String> dataSources;
+	private String _dataSources;
+	private String mailTitle;
+
+	// -------------以上与配置文件匹配--------------------------//
+	private String sendTypeName;// 订阅规则
+	private String sendTimeName;// 订阅发送时间
+
+	private String sendState =Constants.SENDDNS ;//"未发送";// 发送状态
+	private String jsonDataSources;
+	// 邮件返回结果
+	private List<SendResult> sendResultList;
+	// 配置文件不需要配置，下次执行时间:为了减少遍历
+	private Date nextTime;
+	// 配置文件不需要配置
+	private String mails;
+
+	private String sendDetails;
+	private String sendInfo;
+	private String hourSend;
+	private List<String> hourSendList;// 按小时发送List
+	
+	/*
+	 * 按照用户的规则，邮件当天是否发送，如未发送，需要在 tempSendTime存储当天下次发送的时间，如已发送，tempSendTime可不存数据
+	 * true表示当天发送成功，false表示当天发送失败
+	 */
+	private String isTodaySend;
+	
+	/*
+	 * 临时发送时间
+	 * 有些报表在某天的指定时间内数据未就位，所以报表为通过邮件发送。但数据就位后应该发送出去，这个字段就表示这些数据下次发送的时间
+	 */
+	private Date tempSendTime;
+	private String ptempSendTime;
+	
+	private String isSendProp;//是否发送提示邮件
+	
+	private String userId;//操作员
+	
+	public String getSeqNum() {
+		return seqNum;
+	}
+
+	public void setSeqNum(String seqNum) {
+		this.seqNum = seqNum;
+	}
+
+	public String getSendDetails() {
+		return sendDetails;
+	}
+
+	public void setSendDetails(String sendDetails) {
+		this.sendDetails = sendDetails;
+	}
+
+	public String getSendInfo() {
+		return sendInfo;
+	}
+
+	public void setSendInfo(String sendInfo) {
+		this.sendInfo = (sendInfo==null?"":sendInfo);
+	}
+
+	public String getMails() {
+		mails = "";
+		if(mailList!=null){
+			for (String m : mailList) {
+				mails += "," + m;
+			}
+			if (!"".equals(mails)) {
+				mails = mails.substring(1);
+			}
+		}
+		return mails;
+	}
+
+	public void setMails(String mails) {
+		this.mails = mails;
+		mailList = new ArrayList<>();
+		for (String mail : mails.split(",")) {
+			mailList.add(mail);
+		}
+	}
+
+	public void setSendTypeName(String sendTypeName) {
+		this.sendTypeName = sendTypeName;
+	}
+
+	public String getSendTypeName() {
+		return sendTypeName;
+	}
+
+	public String getSendTimeName() {
+		return sendTimeName;
+	}
+
+	public Date getNextTime() {
+		return nextTime;
+	}
+
+	public void setNextTime(Date nextTime) {
+		this.nextTime = nextTime;
+	}
+
+	public String getWorkbookId() {
+		return workbookId;
+	}
+
+	public void setWorkbookId(String workbookId) {
+		this.workbookId = workbookId;
+	}
+
+	public List<SendResult> getSendResultList() {
+		return sendResultList;
+	}
+
+	public void setSendResultList(List<SendResult> sendResultList) {
+		this.sendResultList = sendResultList;
+	}
+
+	public String getReportId() {
+		return reportId;
+	}
+
+	public void setReportId(String reportId) {
+		this.reportId = reportId;
+	}
+
+	public String getReportName() {
+		return reportName;
+	}
+
+	public void setReportName(String reportName) {
+		this.reportName = reportName;
+	}
+
+	public List<String> getMailList() {
+		return mailList;
+	}
+
+	public void setMailList(List<String> mailList) {
+		this.mailList = mailList;
+	}
+
+	public String getSendType() {
+		return sendType;
+	}
+
+	public void setSendType(String sendType) {
+		this.sendType = sendType;
+	}
+
+	public String getSendTime() {
+		return sendTime;
+	}
+
+	public void setSendTime(String sendTime) {
+		this.sendTime = sendTime;
+		setNextTime();
+	}
+
+	public String getSendState() {
+		return sendState;
+	}
+
+	public void setSendState(String sendState) {
+		this.sendState = sendState;
+	}
+
+	public Map<String, String> getDataSources() {
+		return dataSources;
+	}
+
+	public void setDataSources(Map<String, String> dataSources) {
+		this.dataSources = dataSources;
+	}
+
+	public String getCondition() {
+		return condition;
+	}
+
+	public void setCondition(String condition) {
+		this.condition = condition;
+	}
+
+	public String getJsonDataSources() {
+		return jsonDataSources;
+	}
+
+	public void setJsonDataSources(String jsonDataSources) {
+		this.jsonDataSources = jsonDataSources;
+		dataSources = new HashMap<String, String>();
+		JSONArray jsonArray = JSONArray.fromObject(jsonDataSources);
+		for (Object object : jsonArray) {
+			JSONObject jsonObject = JSONObject.fromObject(object);
+			dataSources.put(String.valueOf(jsonObject.get("dataSourceId")),
+					String.valueOf(jsonObject.get("value")));
+		}
+	}
+
+	private SimpleDateFormat dateSdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+	private SimpleDateFormat daySdf = new SimpleDateFormat("HH:mm");
+
+	// 设置下次执行时间，当执行后会重新设置
+	public void setNextTime() {
+
+		Calendar current = Calendar.getInstance();
+		Calendar sendCl = Calendar.getInstance();
+		try {
+			sendTimeName = sendTime;
+			if (SubscribeType.once.getIndex().equals(sendType)) {
+				sendCl.setTime(dateSdf.parse(sendTime));
+				// 发送时间是否已过去
+				if (current.getTime().after(sendCl.getTime())) {
+					nextTime = null;
+				} else {// 发送时间在当前时间后面--才有机会发送
+					nextTime = sendCl.getTime();
+				}
+			} else if (SubscribeType.day.getIndex().equals(sendType)) {
+				// 发送时间在当前时间后面
+				sendCl.setTime(daySdf.parse(sendTime));
+				sendCl.set(Calendar.YEAR, current.get(Calendar.YEAR));
+				sendCl.set(Calendar.DAY_OF_YEAR,
+						current.get(Calendar.DAY_OF_YEAR));
+				// 发送时间在当前时间之前
+				if (current.getTime().after(sendCl.getTime())) {
+					// 加一天
+					sendCl.add(Calendar.DATE, 1);
+				}
+				nextTime = sendCl.getTime();
+			} else if (SubscribeType.week.getIndex().equals(sendType)) {
+				/*
+				 * //发送时间在当前时间后面 String[] str = sendTime.split("_");
+				 * sendCl.setTime(daySdf.parse(str[1]));
+				 * 
+				 * sendCl.set(Calendar.YEAR, current.get(Calendar.YEAR));
+				 * sendCl.set(Calendar.WEEK_OF_YEAR,
+				 * current.get(Calendar.WEEK_OF_YEAR));
+				 * 
+				 * sendCl.set(Calendar.DAY_OF_WEEK, Integer.parseInt(str[0]));
+				 * 
+				 * SimpleDateFormat sdf = new SimpleDateFormat("E HH:mm");
+				 * sendTimeName = sdf.format(sendCl.getTime()); //发送时间在当前时间之前
+				 * if(current.getTime().after(sendCl.getTime())){ //加7天
+				 * sendCl.add(Calendar.DATE,7); } nextTime= sendCl.getTime();
+				 */
+				// 发送时间在当前时间后面
+				logger.debug("我就看看结果1："+sendCl.getTime());//获取当前时间
+				String[] str = sendTime.split("_");
+				logger.debug("str[1]："+str[1]);//发送时间
+				sendCl.setTime(daySdf.parse(str[1]));
+				//重置为1970 年 1月 1号 （星期四） 修改 时间
+				logger.debug("我就看看结果时间  daySdf.parse(str[1])："+daySdf.parse(str[1])+"----------"+sendCl.getTime());
+				String[] dayx = str[0].split(",");
+                //修改年 重置为 当年的1月1号 
+				sendCl.set(Calendar.YEAR, current.get(Calendar.YEAR));
+				logger.debug("我就看看结果年："+current.get(Calendar.YEAR)+"----------"+sendCl.getTime());
+				//修改星期
+				sendCl.set(Calendar.WEEK_OF_YEAR,current.get(Calendar.WEEK_OF_YEAR));
+				logger.debug("星期有没有修改？"+sendCl.getTime()+"----------我就看看结果星期："+current.get(Calendar.WEEK_OF_YEAR)+"------------"+Calendar.WEEK_OF_YEAR);
+				
+				
+				
+				
+				// 获取今天是星期几
+				Date date = new Date();
+				SimpleDateFormat dateFm = new SimpleDateFormat("EEEE");
+				String da = dateFm.format(date);
+				logger.debug("今天星期几" + da);
+				if (da.equals("星期日")) {
+					da = "1";
+				} else if (da.equals("星期一")) {
+					da = "2";
+				} else if (da.equals("星期二")) {
+					da = "3";
+				} else if (da.equals("星期三")) {
+					da = "4";
+				} else if (da.equals("星期四")) {
+					da = "5";
+				} else if (da.equals("星期五")) {
+					da = "6";
+				} else if (da.equals("星期六")) {
+					da = "7";
+				}
+				
+                //logger.debug("----------------da会变成什么呢？："+da);
+				int countWeek = 0;
+				int countWeek0 = 0;
+				int countWeek1 = 0;
+				int countWeek2 = 0;
+				int countWeek3 = 0;
+				int countWeek4 = 0;
+				int countWeek5 = 0;
+				logger.debug("长度dayx.length："+dayx.length);
+				// 判断今天是否等于所选的发送星期
+				for (int y = 0; y < dayx.length; y++) {
+					logger.debug("这东西是啥呢？"+dayx[y]);
+					// 选定的星期等于今天
+					if (dayx[y].equals(da)) {
+					logger.debug("选定的星期等于今天---这东西是啥呢？"+dayx[y]);
+						sendCl.set(Calendar.DAY_OF_WEEK,
+								Integer.parseInt(dayx[y]));
+
+					}else if(dayx.length>1){
+						//选了多个
+						if(Integer.parseInt(da)>Integer.parseInt(dayx[y])){
+							int w =y+1;
+							
+							if(w<dayx.length){
+								//后面有东西,选下一个
+								int x = 0;
+								x=y+1;
+								sendCl.set(Calendar.DAY_OF_WEEK,Integer.parseInt(dayx[x]));
+								logger.debug("选了多个，后面有东西,选下一个-------dayx[x]："+dayx[x]);
+							}else if(w==dayx.length){
+								//后面没东西，选第一个
+								int x = 0;
+								sendCl.set(Calendar.DAY_OF_WEEK,Integer.parseInt(dayx[x]));
+								logger.debug("选了多个，后面没东西，选第一个-------dayx[x]："+dayx[x]);
+							}
+						
+						
+						}
+					}else if (dayx.length==1){
+						//选了一个
+						sendCl.set(Calendar.DAY_OF_WEEK,Integer.parseInt(dayx[y]));
+						logger.debug("选了一个dayx[y]："+dayx[y]);
+					}
+			}
+				logger.debug(" 选定的星期等于今天："+sendCl.getTime());
+				SimpleDateFormat sdf = new SimpleDateFormat("E HH:mm");
+				sendTimeName = sdf.format(sendCl.getTime());
+				logger.debug(" 时间sendTimeName："+sendTimeName);
+				// 发送时间在当前时间之前 当前时间大于发送时间 已经发送完了的意思
+				if (current.getTime().after(sendCl.getTime())) {
+					// 加7天
+					// sendCl.add(Calendar.DATE,7);
+					for (int y = 0; y < dayx.length; y++) {
+
+						// 选定的星期等于今天
+						if (dayx[y].equals(da)) {
+
+							switch (dayx.length) {
+							case 1:
+								// 选1天
+								sendCl.add(Calendar.DATE, 7);
+								logger.debug("选1天"+sendCl.getTime());
+								break;
+							case 2:
+								// 选2天
+								if (y == 0) {
+									// 下标为0
+									countWeek0 = Integer.parseInt(dayx[0]);
+									countWeek1 = Integer.parseInt(dayx[1]);
+									countWeek = countWeek1 - countWeek0;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 1) {
+									// 下标为1
+									countWeek0 = Integer.parseInt(dayx[0]);
+									countWeek1 = Integer.parseInt(dayx[1]);
+									countWeek = countWeek0 + 7 - countWeek1;
+									sendCl.add(Calendar.DATE, countWeek);
+								}
+								logger.debug("选2天"+sendCl.getTime());
+								break;
+							case 3:
+
+								// 选3天
+								if (y == 0) {
+									// 下标为0
+									countWeek0 = Integer.parseInt(dayx[0]);
+									countWeek1 = Integer.parseInt(dayx[1]);
+									countWeek = countWeek1 - countWeek0;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 1) {
+									// 下标为1
+									countWeek1 = Integer.parseInt(dayx[1]);
+									countWeek2 = Integer.parseInt(dayx[2]);
+									countWeek = countWeek2 - countWeek1;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 2) {
+									// 下标为2
+									countWeek0 = Integer.parseInt(dayx[0]);
+
+									countWeek2 = Integer.parseInt(dayx[2]);
+
+									countWeek = countWeek0 + 7 - countWeek2;
+
+								}
+								logger.debug("选3天"+sendCl.getTime());
+								break;
+							case 4:
+								// 选4天
+								if (y == 0) {
+									// 下标为0
+									countWeek0 = Integer.parseInt(dayx[0]);
+									countWeek1 = Integer.parseInt(dayx[1]);
+									countWeek = countWeek1 - countWeek0;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 1) {
+									// 下标为1
+									countWeek1 = Integer.parseInt(dayx[1]);
+									countWeek2 = Integer.parseInt(dayx[2]);
+									countWeek = countWeek2 - countWeek1;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 2) {
+									// 下标为2
+									countWeek2 = Integer.parseInt(dayx[2]);
+									countWeek3 = Integer.parseInt(dayx[3]);
+									countWeek = countWeek3 - countWeek2;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 3) {
+									// 下标为3
+									countWeek0 = Integer.parseInt(dayx[0]);
+									countWeek3 = Integer.parseInt(dayx[3]);
+									countWeek = countWeek0 + 7 - countWeek3;
+									sendCl.add(Calendar.DATE, countWeek);
+								}
+								logger.debug("选4天"+sendCl.getTime());
+								break;
+							case 5:
+								// 选5天
+								if (y == 0) {
+									// 下标为0
+									countWeek0 = Integer.parseInt(dayx[0]);
+									countWeek1 = Integer.parseInt(dayx[1]);
+									countWeek = countWeek1 - countWeek0;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 1) {
+									// 下标为1
+									countWeek1 = Integer.parseInt(dayx[1]);
+									countWeek2 = Integer.parseInt(dayx[2]);
+									countWeek = countWeek2 - countWeek1;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 2) {
+									// 下标为2
+									countWeek2 = Integer.parseInt(dayx[2]);
+									countWeek3 = Integer.parseInt(dayx[3]);
+									countWeek = countWeek3 - countWeek2;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 3) {
+									// 下标为3
+									countWeek3 = Integer.parseInt(dayx[3]);
+									countWeek4 = Integer.parseInt(dayx[4]);
+									countWeek = countWeek4 - countWeek3;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 4) {
+									// 下标为4
+									countWeek0 = Integer.parseInt(dayx[0]);
+									countWeek4 = Integer.parseInt(dayx[4]);
+									countWeek = countWeek0 + 7 - countWeek4;
+									sendCl.add(Calendar.DATE, countWeek);
+								}
+								logger.debug("选5天"+sendCl.getTime());
+								break;
+							case 6:
+								// 选6天
+								if (y == 0) {
+									// 下标为0
+									countWeek0 = Integer.parseInt(dayx[0]);
+									countWeek1 = Integer.parseInt(dayx[1]);
+									countWeek = countWeek1 - countWeek0;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 1) {
+									// 下标为1
+									countWeek1 = Integer.parseInt(dayx[1]);
+									countWeek2 = Integer.parseInt(dayx[2]);
+									countWeek = countWeek2 - countWeek1;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 2) {
+									// 下标为2
+									countWeek2 = Integer.parseInt(dayx[2]);
+									countWeek3 = Integer.parseInt(dayx[3]);
+									countWeek = countWeek3 - countWeek2;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 3) {
+									// 下标为3
+									countWeek3 = Integer.parseInt(dayx[3]);
+									countWeek4 = Integer.parseInt(dayx[4]);
+									countWeek = countWeek4 - countWeek3;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 4) {
+									// 下标为4
+									countWeek4 = Integer.parseInt(dayx[4]);
+									countWeek5 = Integer.parseInt(dayx[5]);
+									countWeek = countWeek5 - countWeek4;
+									sendCl.add(Calendar.DATE, countWeek);
+								} else if (y == 5) {
+									// 下标为5
+									countWeek0 = Integer.parseInt(dayx[0]);
+									countWeek5 = Integer.parseInt(dayx[5]);
+									countWeek = countWeek0 + 7 - countWeek5;
+									sendCl.add(Calendar.DATE, countWeek);
+								}
+								logger.debug("选6天"+sendCl.getTime());
+								break;
+							case 7:
+								// 选7天
+								sendCl.add(Calendar.DATE, 1);
+								logger.debug("选7天"+sendCl.getTime());
+								break;
+							}
+						}
+					}
+
+				}
+
+				nextTime = sendCl.getTime();
+				
+			   //logger.debug("---------------------下一次  时间  周 "+nextTime);
+
+			} else if (SubscribeType.month.getIndex().equals(sendType)) {
+				SimpleDateFormat monthSdf = new SimpleDateFormat("dd HH:mm");
+				// 发送时间在当前时间后面
+				sendCl.setTime(monthSdf.parse(sendTime));
+				sendCl.set(Calendar.YEAR, current.get(Calendar.YEAR));
+				sendCl.set(Calendar.MONTH, current.get(Calendar.MONTH));
+				// 发送时间在当前时间之前
+				if (current.getTime().after(sendCl.getTime())) {
+					// 加1月
+					sendCl.add(Calendar.MONTH, 1);
+				}
+				nextTime = sendCl.getTime();
+			} else if (SubscribeType.year.getIndex().equals(sendType)) {
+				SimpleDateFormat yearSdf = new SimpleDateFormat("MM-dd HH:mm");
+				// 发送时间在当前时间后面
+				sendCl.setTime(yearSdf.parse(sendTime));
+				sendCl.set(Calendar.YEAR, current.get(Calendar.YEAR));
+				// 发送时间在当前时间之前
+				if (current.getTime().after(sendCl.getTime())) {
+					// 加1年
+					sendCl.add(Calendar.YEAR, 1);
+				}
+				nextTime = sendCl.getTime();
+			}
+		} catch (ParseException e) {
+			e.printStackTrace();
+			nextTime = null;
+		} catch (Exception e) {
+			e.printStackTrace();
+			nextTime = null;
+		}
+	}
+
+	public String getMailTitle() {
+		if (mailTitle == null || "".equals(mailTitle)) {
+			mailTitle = "无主题";
+		}
+		return mailTitle;
+	}
+
+	public void setMailTitle(String mailTitle) {
+		this.mailTitle = mailTitle;
+	}
+
+	public String get_dataSources() {
+		return _dataSources;
+	}
+
+	public void set_dataSources(String _dataSources) {
+		this._dataSources = _dataSources;
+	}
+
+	public String getIsTodaySend() {
+		return isTodaySend;
+	}
+	public void setIsTodaySend(String isTodaySend) {
+		this.isTodaySend = isTodaySend;
+	}
+
+	public Date getTempSendTime() {
+		return tempSendTime;
+	}
+
+	public void setTempSendTime(Date tempSendTime) {
+		this.tempSendTime = tempSendTime;
+	}
+
+	public String getPtempSendTime() {
+		return ptempSendTime;
+	}
+
+	public void setPtempSendTime(String ptempSendTime) {
+		this.ptempSendTime = ptempSendTime;
+	}
+
+	public String getUserId() {
+		return userId;
+	}
+
+	public void setUserId(String userId) {
+		this.userId = userId;
+	}
+
+	public String getIsSendProp() {
+		return isSendProp;
+	}
+
+	public void setIsSendProp(String isSendProp) {
+		this.isSendProp = isSendProp;
+	}
+
+	public String getHourSend() {
+		hourSend = "";
+		if(hourSendList!=null){
+			for (String hs : hourSendList) {
+				hourSend += "," + hs;
+			}
+			if (!"".equals(hourSend)) {
+				hourSend = hourSend.substring(1);
+			}
+		}
+		return hourSend;
+		
+	}
+
+	public void setHourSend(String hourSend) {
+		this.hourSend = hourSend;
+		hourSendList = new ArrayList<>();
+		for (String hs : hourSend.split(",")) {
+			hourSendList.add(hs);
+		}
+	}
+
+	public List<String> getHourSendList() {
+		return hourSendList;
+	}
+
+	public void setHourSendList(List<String> hourSendList) {
+		this.hourSendList = hourSendList;
+	}
+	
+}

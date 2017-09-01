@@ -1,0 +1,347 @@
+package byit.aladdin.instantQuery.controller;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import byit.aladdin.dataAnalysis.entity.AuthRole;
+import byit.aladdin.dataAnalysis.entity.LabelInfo;
+import byit.aladdin.dataAnalysis.entity.Report;
+import byit.aladdin.dataAnalysis.entity.TypeTop;
+import byit.aladdin.instantQuery.entity.TableauUsersEntity;
+import byit.aladdin.instantQuery.service.InstantQueryService;
+import byit.osdp.base.dao.AuthUserDao;
+import byit.osdp.base.entity.AuthUserEntity;
+import byit.osdp.base.security.UserHolder;
+import byit.osdp.portal.interceptor.dao.InsertSystemLogDao;
+import byit.osdp.portal.interceptor.entity.SystemLogEntity;
+import byit.osdp.tableau.TableauConfig;
+import byit.osdp.tableau.TableauHelper;
+
+/**
+ * 报表统计分析
+ * 
+ * @author Administrator
+ *
+ */
+@Controller
+@RequestMapping(value = "/instantQuery")
+public class InstantQueryController {
+
+	@Autowired
+	private InstantQueryService instantQueryService;
+	
+	@Autowired
+	private AuthUserDao authUserDao;
+	
+	@Autowired
+	private InsertSystemLogDao insertSystemLogDao;
+
+	Map<String, Object> resultMap;
+
+	public InstantQueryController() {
+		resultMap = new HashMap<String, Object>();
+	}
+
+	/**************************************** Tableau数据分析页面 ***************************************/
+
+	/**
+	 * 跳转到Tableau数据分析页面
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/instantQuery.html")
+	public String TableauDataAnalysis() {
+		return "instantQuery/instantQuery";
+	}
+
+	/**
+	 * 查询左侧树
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@ResponseBody
+	@RequestMapping(value = "/queryTree.do")
+	public Object queryLeftData(HttpServletRequest request, HttpServletResponse response) {
+		String operationUser = UserHolder.getId();
+		List<LabelInfo> label = null;
+		List<LabelInfo> labelInfoList = null;
+		try {
+			// 获取当前登录人的所属角色
+			List<AuthRole> authRoles = instantQueryService.queryRoleById(operationUser);
+			if (authRoles.isEmpty()) {
+				
+			} else {
+				// 父标签
+				
+				label = instantQueryService.queryDataLabel(authRoles);
+				List list1 = new ArrayList();
+				for (int i = 0; i < label.size(); i++) {
+					TreeMap<String, Object> labelMap = new TreeMap<String, Object>();
+					//一级菜单
+					labelMap.put("id", label.get(i).getMenuId());
+					labelMap.put("name", label.get(i).getMenuname());
+					labelMap.put("parentId", "0");
+					labelMap.put("url", "");
+					labelMap.put("icon", "");
+					labelMap.put("order", "1");
+					labelMap.put("isHeader", "0");
+					//二级菜单
+					
+					String pmennuid = label.get(i).getMenuId();
+					labelInfoList = instantQueryService.querylabelInfoList(pmennuid,authRoles);
+					List list = new ArrayList();
+					for(int j = 0; j < labelInfoList.size(); j++){
+						TreeMap<String ,Object> childMenusMap = new TreeMap<String ,Object>();
+						childMenusMap.put("id", labelInfoList.get(j).getMenuId());
+						childMenusMap.put("name", labelInfoList.get(j).getMenuname());
+						childMenusMap.put("parentId", label.get(i).getMenuId());
+						childMenusMap.put("url", "");
+						childMenusMap.put("icon", "&#xe604;");
+						childMenusMap.put("order", "2");
+						childMenusMap.put("isHeader", "0");
+						childMenusMap.put("childMenus", "");
+						list.add(childMenusMap);
+					}
+					labelMap.put("childMenus", list);
+					list1.add(labelMap);
+				}
+				
+				resultMap.put("result", list1);
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return resultMap;
+	}
+	
+	/**
+	 * 刚进入即时查询页面时加载全部当前登录用户的所有即时报表
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/queryTableauInstantQuery.do")
+	@ResponseBody
+	public Map<String, Object> queryTableauDataAnalysis(HttpServletRequest request) {
+		String operationUser = UserHolder.getId();
+		// 获取当前登录人的所属角色
+		List<AuthRole> authRoles = instantQueryService.queryRoleById(operationUser);
+		List<TypeTop> labelAnalysis = null;
+
+		if (authRoles.isEmpty()) {
+			
+		} else {
+			//报表名称，报表ID
+			labelAnalysis = instantQueryService.queryAnalysis(operationUser);
+		}
+
+		resultMap.put("labelAnalysis", labelAnalysis);
+		return resultMap;
+	}
+
+	/**
+	 * 治黑根据标签查询数据
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/querylabelDataAnalysis.do")
+	@ResponseBody
+	public Map<String, Object> querylabelDataAnalysis(HttpServletRequest request) {
+		//获取菜单下的子菜单
+		String menuId = request.getParameter("menuId");
+		
+		List<TypeTop> labelAnalysis = null;
+		String operationUser = UserHolder.getId();
+		if (menuId.equals("")) {
+			// 条件查询报表
+			labelAnalysis = instantQueryService.queryAnalysis(operationUser);
+		} else {
+			//条件查询报表
+			labelAnalysis = instantQueryService.queryAnalysis3(menuId, operationUser);
+		}
+		resultMap.put("labelAnalysis", labelAnalysis);
+		return resultMap;
+	}
+	
+	
+	/**
+	 * 验证票据
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@SuppressWarnings("unused")
+	@RequestMapping(value = "/queryTableReport.do")
+	@ResponseBody
+	public Object queryTableReport(HttpServletRequest request, HttpServletResponse response) {
+
+		String reportid = request.getParameter("reportid");
+		String params = ":embed=y&:tabs=yes&:toolbar=top";
+		try {
+			//获取用户id
+			String userId = UserHolder.getId();
+			
+			//判断该用户是否有权限编辑报表
+			AuthUserEntity userEntity = new AuthUserEntity();
+			userEntity=authUserDao.getById(userId);
+			String username = userEntity.getUsername();
+			
+			//去tableau数据库查询数据
+			List<TableauUsersEntity> listEntity = instantQueryService.getTableauUser(username);
+			if(listEntity.size()<=0){
+				resultMap.put("error", 5);
+				return resultMap;
+			}
+			
+			//获取报表信息（表pm_report_query）
+			Report report = instantQueryService.getReportByIdAndType(reportid);
+            resultMap.put("reportName", report.getReportName());
+            resultMap.put("userid", userId);
+			//报表类型为1为tableau报表
+			if ("1".equals(report.getReportType().toString())) {
+				//获取所有机构
+				Map<String, Object> map = instantQueryService.getOrgInfo(userId);
+				String orgids = "";
+				String orglev = "";
+				//判断用户是否在机构中
+				if (map != null) {
+					orgids = (String) map.get("orgids");
+					orglev = (String) map.get("orglev");
+				} else {
+					resultMap.put("error", 3);
+					return resultMap;
+				}
+				
+				//报表与角色关联关系
+				Report rr = instantQueryService.getRoleReport(reportid, userId);
+				if ("2".equals(orglev)) {
+					params += "&ORG_LVL_2_ID=" + orgids;
+				} else if ("3".equals(orglev)) {
+					params += "&ORG_LVL_3_ID=" + orgids;
+				} else if ("4".equals(orglev)) {
+					params += "&ORG_LVL_4_ID=" + orgids;
+				}
+
+				//获取tableau的ip
+				String tableuaPostgresqlIp = TableauConfig.TABLEUA_POSTGRESQL_IP;
+				//获取站点url_namespace
+				String url_namespace = this.instantQueryService.getUrlNamespace(report.getSiteid());
+				String ticket = "";
+				try {
+					ticket = getTrustedTicket(tableuaPostgresqlIp, username, request.getRemoteAddr(),url_namespace);
+				} catch (Exception e) {
+					resultMap.put("error", 4);
+					return resultMap;
+				}
+				if (!ticket.equals("-1") && !ticket.equals("")) {
+					
+					String url = "";
+					if (url_namespace.equals("")) {
+					    url = "http://" + TableauConfig.TABLEAU_TRUSTED_HOST + "/trusted/" + ticket + "/authoring/" + report.getUrl() + "?" + params;
+					} else {
+						url = "http://" + TableauConfig.TABLEAU_TRUSTED_HOST + "/trusted/" + ticket + "/t/" + url_namespace + "/authoring/" + report.getUrl() + "?" + params;
+					}
+					
+					
+					// 系统访问记录表实体类
+					SystemLogEntity systemLogEntity = new SystemLogEntity();
+					// 当前系统时间
+					Date date = new Date();
+					// 主键
+					systemLogEntity.setEventid(UUID.randomUUID().toString());
+					// 操作时间
+					systemLogEntity.setLogdate(date);
+					// 菜单id
+//					systemLogEntity.setMenuid("");
+					// 菜单名称
+					systemLogEntity.setMenu("即席查询");
+					// 页面URL
+					systemLogEntity.setUrl(report.getUrl());
+					// 用户id
+					systemLogEntity.setUserid(userId);
+					// 菜单类别（1：一级菜单，2：2级菜单，3：报表）
+					systemLogEntity.setType("3");
+					// 访问菜单的日期
+					SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					String date1 = sdf.format(date);
+					String days = date1.substring(0, 10);
+					systemLogEntity.setDays(days);
+					// 访问菜单的小时
+					String hours = date1.substring(11, 13);
+					systemLogEntity.setHours(hours);
+					//用户ip地址
+					systemLogEntity.setIpaddress(request.getRemoteAddr());
+					//操作类型
+					systemLogEntity.setOpertype("编辑报表");
+					systemLogEntity.setOpercontent(report.getReportName());
+					insertSystemLogDao.insertSystemLog(systemLogEntity);
+					
+					resultMap.put("success", 1);
+					resultMap.put("width", report.getPanelWidth());
+					resultMap.put("height", report.getPanelHeight());
+					resultMap.put("url", url);
+					resultMap.put("tableauUser", username);
+					return resultMap;
+				} else {
+					resultMap.put("error", 2);
+					return resultMap;
+				}
+
+			} else {
+				String url = report.getUrl();
+				resultMap.put("success", 1);
+				resultMap.put("width", report.getPanelWidth());
+				resultMap.put("height", report.getPanelHeight());
+				resultMap.put("url", url + "?userId=" + userId);
+				return resultMap;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			resultMap.put("error", 3);
+			return resultMap;
+		}
+	}
+	
+	/**
+	 * 身份验证
+	 * 
+	 * @param wgserver
+	 * @param user
+	 * @param remoteAddr
+	 * @return
+	 * @throws ServletException
+	 */
+	@RequestMapping(value = "/getTrustedTicket")
+	@ResponseBody
+	public String getTrustedTicket(String wgserver, String user, String remoteAddr,String url_namespace) throws ServletException {
+
+		return TableauHelper.getTrustedTicket(wgserver, user, remoteAddr,url_namespace);
+	}
+
+	public Map<String, Object> getResultMap() {
+		return resultMap;
+	}
+
+	public void setResultMap(Map<String, Object> resultMap) {
+		this.resultMap = resultMap;
+	}
+
+}

@@ -1,0 +1,297 @@
+package byit.osdp.base.service;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
+import byit.core.plug.expection.PromptException;
+import byit.core.plug.mybatis.PageBounds;
+import byit.core.util.collect.Mapx;
+import byit.core.util.identifier.IdUtil;
+import byit.core.util.page.Page;
+import byit.core.util.page.Pagination;
+import byit.osdp.base.common.BaseConstants;
+import byit.osdp.base.dao.AuthRoleDao;
+//import byit.osdp.base.dao.AuthRolePermissionDao;
+//import byit.osdp.base.dao.AuthUserRoleDao;
+import byit.osdp.base.entity.AuthRoleEntity;
+import byit.osdp.base.entity.AuthRolePermissionEntity;
+import byit.osdp.base.entity.AuthUserRoleEntity;
+import byit.osdp.base.model.AuthRoleVo;
+import byit.osdp.base.model.RepMenuRoleRelaVo;
+import byit.osdp.base.security.UserHolder;
+
+/**
+ * 角色(服务类)
+ */
+@Transactional(rollbackFor = Exception.class)
+@Service
+public class AuthRoleService {
+
+	// ==============================Fields===========================================
+	protected final Logger logger = LoggerFactory.getLogger(getClass());
+
+	@Autowired
+	private AuthRoleDao authRoleDao;
+
+	/*@Autowired
+	private AuthUserRoleDao authUserRoleDao;*/
+
+	/*@Autowired
+	private AuthRolePermissionDao authRolePermissionDao;*/
+
+	// ==============================Methods==========================================
+	/**
+	 * 分页查询
+	 * @param pageQuery 查询条件
+	 * @return 查询结果
+	 */
+	public Page<AuthRoleVo> pagedQuery(Pagination pagination) {
+		Map<String, Object> params = Maps.newHashMap();
+		Mapx filters = pagination.getFilters();
+		String name = filters.getString("name");
+		if (StringUtils.isNotEmpty(name)) {
+			params.put("name", name);
+		}
+		PageBounds bounds = new PageBounds(pagination.getStart(),pagination.getLimit());
+		Page<AuthRoleVo> page = bounds.wrap(authRoleDao.pagedQuery(params, bounds));
+		return page;
+	}
+
+	/**
+	 * 得到所有角色
+	 * @return 角色列表
+	 */
+	public List<AuthRoleVo> findAll(String type) {
+		return authRoleDao.findVoAll(type);
+	}
+
+	/**
+	 * 新增角色
+	 * @param vo 角色数据
+	 */
+	public void save(AuthRoleVo vo) {
+		String uid = UserHolder.getId();
+		Date now = new Date();
+
+		validate(vo);
+
+		AuthRoleEntity entity = new AuthRoleEntity();
+		
+		entity.setId(vo.getId());
+		entity.setName(vo.getName());
+		entity.setRemark(vo.getRemark());
+		entity.setType(vo.getType());
+		entity.setState(1);
+		entity.setCreatorId(uid);
+		entity.setCreateTime(now);
+
+		authRoleDao.save(entity);
+	}
+
+	/**
+	 * 修改角色
+	 * @param vo 角色数据
+	 */
+	public void update(AuthRoleVo vo) {
+		
+		AuthRoleEntity entity = authRoleDao.getById(vo.getId());
+
+		validate(vo);
+
+		String uid = UserHolder.getId();
+		Date now = new Date();
+
+		entity.setName(vo.getName());
+		entity.setRemark(vo.getRemark());
+		entity.setType(vo.getType());
+		entity.setState(1);
+		entity.setUpdaterId(uid);
+		entity.setUpdateTime(now);
+
+		authRoleDao.update(entity);
+	}
+
+	/**
+	 * 查询角色
+	 * @param id 角色ID
+	 * @return 角色数据
+	 */
+	public AuthRoleVo getById(String id) {
+		AuthRoleEntity entity = authRoleDao.getById(id);
+
+		if (entity == null) {
+			throw new PromptException("角色不存在或者已经失效");
+		}
+
+		AuthRoleVo vo = new AuthRoleVo();
+		vo.setId(entity.getId());
+		vo.setName(entity.getName());
+		vo.setRemark(entity.getRemark());
+		vo.setType(entity.getType());
+		
+		return vo;
+	}
+
+	/**
+	 * 删除角色
+	 * @param id 角色ID
+	 */
+	public void removeById(String id) {
+		Map<String ,String> map = new HashMap<String ,String>();
+		map.put("begin","此角色下");
+		map.put("end", "不能删除！");
+		//查询此角色下有没有用户
+		List<AuthUserRoleEntity> userRoleList = authRoleDao.getUserRoleByRoleId(id);
+		
+		//查询报表菜单有没有授权此角色
+		List<RepMenuRoleRelaVo> repMenuRoleList = authRoleDao.getRepMenuRoleByRoleId(id);
+		
+		//查询即时报表菜单有没有授权此角色
+		List<RepMenuRoleRelaVo> repMenuRoleQueryList = authRoleDao.getRepMenuRoleQueryByRoleId(id);
+		
+		if (userRoleList.size()>0) {
+			map.put("userRole", "含有用户,");
+		} else {
+			map.put("userRole", "");
+		}
+		if(repMenuRoleList.size()>0) {
+			map.put("repMenuRole", "含有报表菜单,");
+		} else {
+			map.put("repMenuRole", "");
+		}
+		if(repMenuRoleQueryList.size()>0) {
+			map.put("repMenuRoleQuery", "含有即席报表菜单,");
+		} else {
+			map.put("repMenuRoleQuery", "");
+		}
+		//提示信息
+		String msg =  map.get("begin") + map.get("userRole") + map.get("repMenuRole") + 
+				map.get("repMenuRoleQuery") + map.get("end") ;
+		
+		if(userRoleList.size()>0 || repMenuRoleList.size()>0 || repMenuRoleQueryList.size()>0){
+			throw new PromptException(msg);
+		} else {
+			if (BaseConstants.ADMIN_ROLE_ID.equals(id)) {
+				throw new PromptException("系统管理员不能被删除！");
+			}
+			//删除关联表中的数据
+			authRoleDao.removeById(id);
+			
+			//根据角色ID，删除用户角色关联
+			List<AuthUserRoleEntity> list = authRoleDao.findByRoleIds(id);
+			for (AuthUserRoleEntity authUserRoleEntity : list) {
+				authRoleDao.removeByRoleId(authUserRoleEntity.getId());
+			}
+			//根据角色ID，删除角色权限关系
+			List<AuthRolePermissionEntity> list1 = authRoleDao.findByPermissionIds(id);
+			for (AuthRolePermissionEntity authRolePermissionEntity : list1) {
+				authRoleDao.removeByRoleIds(authRolePermissionEntity.getId());
+			}
+		}
+	}
+
+	/**
+	 * 删除角色(批量)
+	 * @param ids 角色ID列表
+	 */
+	public void removeById(String[] ids) {
+		for (String id : ids) {
+			removeById(id);
+		}
+	}
+
+	/**
+	 * 查询用户所属角色
+	 * @param userId 用户ID
+	 * @return 角色ID列表
+	 */
+	public List<String> findIdByUserId(String userId) {
+//		return authUserRoleDao.findRoleIdByUserId(userId);
+		return authRoleDao.findRoleIdByUserId(userId);
+	}
+
+	/**
+	 * 查询角色关联功能
+	 * @param roleId 角色ID
+	 * @return 功能ID列表
+	 */
+	public List<String> findPermissionIdByRoleId(String roleId) {
+		return authRoleDao.findPermissionIdByRoleId(roleId);
+	}
+
+	/**
+	 * 保存所选择的权限
+	 * @param roleId 角色ID
+	 * @param permissionIds 功能ID
+	 */
+	public void updateRolePermissions(String roleId, String[] permissionIds) {
+		if (authRoleDao.getById(roleId) == null) {
+			throw new PromptException("角色不存在");
+		}
+
+		Map<String, AuthRolePermissionEntity> permissionIdMap = Maps.newHashMap();
+		for (AuthRolePermissionEntity entity : authRoleDao.findByRoleId(roleId)) {
+			permissionIdMap.put(entity.getPermissionId(), entity);
+		}
+
+		List<AuthRolePermissionEntity> newEntities = Lists.newArrayList();
+		for (String permissionId : permissionIds) {
+			if (permissionIdMap.containsKey(permissionId)) {
+				permissionIdMap.remove(permissionId);
+			} else {
+				AuthRolePermissionEntity entity = new AuthRolePermissionEntity();
+				entity.setId(IdUtil.uuid32());
+				entity.setRoleId(roleId);
+				entity.setPermissionId(permissionId);
+				newEntities.add(entity);
+			}
+		}
+		for (AuthRolePermissionEntity authRolePermissionEntity : permissionIdMap.values()) {
+			authRoleDao.removeAll(authRolePermissionEntity.getId());
+		}
+		
+		for (AuthRolePermissionEntity authRolePermissionEntity : newEntities) {
+			if(authRolePermissionEntity.getId() != null && authRolePermissionEntity.getId().equals("")){
+				//更新角色功能权限关联表（auth_role_permission）
+				authRoleDao.updateAuthRolePermissionEntity(authRolePermissionEntity);
+			}else{
+				//保存角色功能权限关联表（auth_role_permission）
+				authRolePermissionEntity.setId(IdUtil.uuid32());
+				logger.debug("authRolePermissionEntity==="+authRolePermissionEntity.getPermissionId());
+				authRoleDao.saveAuthRolePermissionEntity(authRolePermissionEntity);
+			}
+		}
+		
+	}
+
+	/**
+	 * 验证数据
+	 * @param vo 角色数据
+	 */
+	private void validate(AuthRoleVo vo) throws PromptException {
+		String name = vo.getName();
+
+		if (StringUtils.isEmpty(name)) {
+			throw new PromptException("角色名称不能为空");
+		}
+
+		AuthRoleEntity entity = authRoleDao.getByName(name);
+
+		if (entity != null && !StringUtils.equals(entity.getId(), vo.getId())) {
+			throw new PromptException("已经存在相同名称的角色");
+		}
+	}
+
+}

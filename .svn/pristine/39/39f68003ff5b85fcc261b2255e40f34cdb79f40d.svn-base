@@ -1,0 +1,95 @@
+package byit.tableausubscribe.tab.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.mybatis.spring.SqlSessionTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import byit.tableausubscribe.tab.bean.IdaPmReport;
+import byit.tableausubscribe.tab.db.DB;
+
+@Component
+public class BankDao{
+	
+	/**
+	 * 查看数据是否翻盘
+	 */
+	 public int isNewTableTime(String tableIds){
+		 String[] idsString = tableIds.split(",");
+		 
+		 
+		 //String sql="select count(1) countNum from v_dm_f_mail_bi where 代理名字  in (?) and 结束日期 >= trunc(sysdate - 1)";
+		 //TODO，切换到生产使用上面的sql
+		 
+		 Connection conn=DB.getAdmConn();
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 Integer count=0;
+		 try {
+			 for(String id : idsString){
+				id=id.replace("'","");
+				String sql="select count(1) countNum from v_dm_f_mail_bi where 代理名字   in(?) and 结束日期 >= trunc(sysdate - 300)";
+				pstmt=conn.prepareStatement(sql);
+				pstmt.setString(1,tableIds);
+				rs=	pstmt.executeQuery();
+				while( rs.next()){
+					count = count+rs.getInt("countNum");
+				}
+			 }
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}finally{
+			DB.close(conn, pstmt, rs);
+		}
+		 return count;
+	 }
+	 
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 选择具体的自工作簿后，查询判定条件
+		 *@creatTime:2017年6月1日 上午11:13:02 
+		 *@return:@return List<IdaPmReport>
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public List<IdaPmReport> getDataSource(){
+		
+		
+		/*
+		 * TODO 
+		 * 生产上应该是trunc(sysdate - 7)，但是数据库中无此方面数据，所以开发过程中修改为trunc(sysdate - 300)。在上线时应该纠正
+		 */
+		String sql="select distinct 代理名字  datasourceName ,代理名字  datasourceId from v_dm_f_mail_bi where 结束日期>= trunc(sysdate - 500)";
+		//String sql="select distinct 代理名字  datasourceName ,代理名字  datasourceId from v_dm_f_mail_bi where 结束日期>= trunc(sysdate - 7)";
+		 Connection conn=DB.getAdmConn();
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 List<IdaPmReport> list=new ArrayList<IdaPmReport>();
+		 try {
+			pstmt=conn.prepareStatement(sql);
+			rs=	pstmt.executeQuery();
+			while( rs.next()){
+				IdaPmReport idaPmReport=new IdaPmReport();
+				idaPmReport.setDatasourceName(rs.getString("datasourceName"));
+				idaPmReport.setDatasourceId(rs.getString("datasourceId"));
+				list.add(idaPmReport);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally{
+			DB.close(conn, pstmt, rs);
+		}
+		 return list;
+	}
+}

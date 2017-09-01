@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+	
+	<!-- 启动触发器的配置开始 -->
+	<!-- 总管理类, 如果将lazy-init='false'那么容器启动就会执行调度程序  -->
+	<!-- 配置调度工厂 -->
+	<bean id="startQuertz" name="startQuertz" lazy-init="false" autowire="no"
+		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<!-- 定时任务列表 -->
+			<list>
+				<ref bean="sendEmailTaskTrigger" />
+			</list>
+		</property>
+	</bean>
+	
+	<!-- 每到指定时间则触发一次 -->
+	<bean id="sendEmailTaskTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail">
+			<ref bean="sendEmailTask" />
+		</property>
+		<!-- cron表达式 -->
+		<property name="cronExpression">
+			<value>0 */1 * * * ?</value>
+			<!-- 不管哪一周 -->
+			<!-- 任何月份 -->
+			<!-- 任何月份下的任何日期 -->
+			<!-- 任何月份下的任何日期的任何小时 -->
+			<!-- 不管第几分钟开始，没间隔1分钟触发一次 -->
+			<!-- 秒为0，表示第几分钟整的时候触发-->
+		</property>
+	</bean>
+	<!-- 调度的配置结束 -->
+
+	<!-- job的配置开始, 定义调用对象和调用对象的方法 -->
+	<bean id="sendEmailTask" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false"/>
+		<!-- 调用的类 -->
+		<property name="targetObject">
+			<ref bean="emailTask" />
+		</property>
+		<!-- 调用类中的方法 -->
+		<property name="targetMethod">
+			<value>execute</value>
+		</property>
+	</bean>
+	<!-- job的配置结束 -->
+	
+	<!-- <bean id="schedulerJob" class="byit.aladdin.workBook.job.SchedulerJob"></bean>
+	文件下载导入数据调度job
+    <bean id="schedulerJobTask" name="schedulerJobTask" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+        <property name="jobDataAsMap">  
+            <map>  
+                <entry key="targetObject" value="schedulerJob" />  
+                <entry key="targetMethod" value="execute" />  
+                <entry key="concurrent" value="false"/>
+            </map>  
+        </property>  
+    </bean>
+	<bean id="schedulerCronTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">  
+        <property name="jobDetail">  
+            <ref bean="schedulerJobTask" />  
+        </property>  
+        <property name="cronExpression">  
+            <value>0 0 1 * * ?</value>  
+        </property>  
+    </bean> -->
+</beans>

@@ -1,0 +1,129 @@
+package byit.tableausubscribe.common.util.mail;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Date;
+import java.util.Vector;
+
+import javax.mail.MessagingException;
+
+import byit.utils.Tools;
+
+/**
+ * 
+	 * 项目名称：hfportal
+	 * 类名称：MailSendPack   
+	 * 类描述：  将发送邮件的信息包装起来，准备发送
+	 * 创建人：lisw
+	 * 创建时间：2017年6月8日 上午10:40:35   
+	 * 修改人：
+	 * 修改时间：2017年6月8日 上午10:40:35   
+	 * 修改备注：   
+	 * @version
+ */
+public class MailSendPack {
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 发送工作簿封装的工具类，主要将固定值赋值，变量如目标邮箱、内容、附件等在调用该方法的地方
+		 *@creatTime:2017年6月8日 上午10:40:47 
+		 *@return:@param mailUtil邮件实体类,
+		 *@return:@return workBookType：发送类型，1-发送附件，2-发送内容
+		 *@return:@return filePath：附件的路径地址
+		 *@return:@return reportName：报表名称
+		 *@return:@return boolean，发送成功返回true，发送失败返回false。
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static boolean sendWorkBookEmailPack(MailUtils mailUtil,String workBookType,Vector<String> filePath,String reportName){
+		boolean isSendSucc =false;
+		
+		try {
+			mailUtil.setHost(MailConstants.MAILHOST);//设置邮箱服务器
+			mailUtil.setUserName(MailConstants.USERNAME);//设置发件箱用户名
+			mailUtil.setPassWord(MailConstants.PASSWORD);//设置发件箱密码
+			
+			//设置发件人的名称：移动金融部<yidongjinrongbu@hfbank.com.cn>
+			String nick = "";
+			try {
+				nick = javax.mail.internet.MimeUtility.encodeText("移动金融部");
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+			mailUtil.setFrom(nick + "<" + MailConstants.MAILADDRESS + ">");
+			mailUtil.setSubject(javax.mail.internet.MimeUtility.encodeText(mailUtil.subject));
+				//发送工作簿
+			mailUtil.sendMail(workBookType, filePath, reportName);
+			
+			
+			isSendSucc=true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return isSendSucc;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 发送excel封装的工具类,主要将固定值赋值，变量如目标邮箱、内容、附件等在调用该方法的地方
+		 *@creatTime:2017年6月8日 上午11:49:09 
+		 *@return:@param mailUtil邮件实体类,
+		 *@return:@return boolean
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static boolean sendExcelEmailPack(MailUtils mailUtil){
+		boolean isSendSucc =false;
+		
+		try {
+			mailUtil.setHost(MailConstants.MAILHOST);//设置邮箱服务器
+			mailUtil.setUserName(MailConstants.USERNAME);//设置发件箱用户名
+			mailUtil.setPassWord(MailConstants.PASSWORD);//设置发件箱密码
+			
+			//设置发件人的名称：移动金融部<yidongjinrongbu@hfbank.com.cn>
+			String nick = "";
+			try {
+				nick = javax.mail.internet.MimeUtility.encodeText("移动金融部");
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+			mailUtil.setFrom(nick + "<" + MailConstants.MAILADDRESS + ">");
+			mailUtil.setSubject(javax.mail.internet.MimeUtility.encodeText(mailUtil.subject));
+			
+			mailUtil.sendExcel();
+			
+			isSendSucc=true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return isSendSucc;
+	}
+	
+	
+	public static boolean sendContentEmailPack(MailSenderInfo mailSenderInfo){
+		boolean isSendSucc =false;
+		mailSenderInfo.setFromAddress(MailConstants.MAILADDRESS);
+		mailSenderInfo.setUserName(MailConstants.USERNAME);
+		mailSenderInfo.setPassword(MailConstants.PASSWORD);
+		;
+		try {
+			SimpleMailSender.sendHtmlMailImge(mailSenderInfo);
+			System.out.println("提示邮件发送成功");
+		} catch (MessagingException e) {
+			System.out.println("提示邮件发送失败");
+			e.printStackTrace();
+		}
+		return isSendSucc;
+	}
+	public static void main(String[] args) {
+		MailSenderInfo mailSenderInfo=new MailSenderInfo();
+		mailSenderInfo.setToAddress("showhei@sina.cn");
+		mailSenderInfo.setContent("测试"+new Date());
+		mailSenderInfo.setSubject("工作簿未发送说明");
+		sendContentEmailPack(mailSenderInfo);
+	}
+
+}

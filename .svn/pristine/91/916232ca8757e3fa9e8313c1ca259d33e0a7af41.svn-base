@@ -1,0 +1,294 @@
+package byit.aladdin.workBook.job;
+
+import java.io.File;
+import java.io.Reader;
+import java.io.StringReader;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.dom4j.Attribute;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
+import org.quartz.JobExecutionContext;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import byit.aladdin.workBook.entity.Workbooks;
+import byit.aladdin.workBook.service.WorkBookService;
+import byit.aladdin.workBook.util.CopyOfMyzipDecompressing;
+import byit.aladdin.workBook.util.HttpClientUtils;
+import byit.aladdin.workBook.util.TableauRestAPIUtils;
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.parser.CCJSqlParserManager;
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.util.TablesNamesFinder;
+
+
+public class SchedulerJob {
+	private final Logger logger = Logger.getLogger(SchedulerJob.class);
+	
+//	private int refreshTimes = Integer.valueOf(HttpClientUtils.pro.getProperty("tableau.task.refreshtimes"));
+//	private int refreshInterval = Integer.valueOf(HttpClientUtils.pro.getProperty("tableau.task.refreshinterval"));
+	
+	@Autowired
+	private WorkBookService workBookService;
+  
+	private final SimpleDateFormat dateSdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	
+	public void execute(JobExecutionContext jobExecutionContext) {
+		//		Properties pro= ReadProperties.read("application.properties");
+		//		String rootPath = pro.getProperty("scheduler.rootPath");
+		//获取下载文件列表
+		List<Workbooks> workbookList = this.workBookService.queryWorkBookByExtracts("");
+		this.logger.info("1.共查询到" + workbookList.size() + "个要下载文件-----" + dateSdf.format(new Date()));
+		for (int i = 0; i < workbookList.size(); i++) {
+			try {
+				Workbooks workbook = workbookList.get(i);
+				String siteId = workbook.getSluid();
+				String workbookId = workbook.getWluid();
+				String url = HttpClientUtils.doGetUrl("/api/api-version/sites/" + siteId + "/workbooks/" + workbookId + "/content");
+				String token = TableauRestAPIUtils.doGetUserToken(workbook.getUrlNamespace()); //workbook.getUrlNamespace()
+				HttpClientUtils.doGet(url, null, "UTF-8", token, workbook.getId());
+				this.logger.info("2.第" + i + "个文件下载成功！----------" + dateSdf.format(new Date()));
+			} catch (Exception e) {
+				this.logger.error("===下载文件出错了===", e);
+			}
+		}
+		if (workbookList.size() > 0) {
+			//获取zip文件路径
+			String filepath = HttpClientUtils.getSaveFilePath();
+			File zipfile = new File(filepath);
+			//获取下载文件列表解压zip文件
+			List<String> filelist = CopyOfMyzipDecompressing.getFileList(zipfile, "zip");
+			String tofilepath = filepath + "temp\\";
+			for (int i = 0; i < filelist.size(); i++) {
+				String filename = filelist.get(i);
+				File pfilepath = new File(filename);
+				try {
+					//获取zip文件名
+					String workbookid = pfilepath.getName().substring(0, pfilepath.getName().lastIndexOf("."));
+					//解压文件
+					CopyOfMyzipDecompressing.unzip(filename, tofilepath);
+					File copyfile = new File(tofilepath);
+					List<String> copyFileList = CopyOfMyzipDecompressing.getFileList(copyfile, "twb");
+					for (int j = 0; j < copyFileList.size(); j++) {
+						//将文件复制到制定文件夹
+						CopyOfMyzipDecompressing.copyFile(copyFileList.get(j), filepath + "\\" + workbookid + ".twb");
+						File delfile = new File(tofilepath);
+						//删除temp文件夹
+						CopyOfMyzipDecompressing.deleteDir(delfile);
+					}
+				} catch (Exception e) {
+					this.logger.error("===未找到复制文件===");
+				}
+				this.logger.info("3.解压第" + i + "个文件！----------" + dateSdf.format(new Date()));
+			}
+
+			try {
+				//删除目录下zip文件
+				CopyOfMyzipDecompressing.deleteZip(filepath, "zip");
+			} catch (Exception e) {
+				this.logger.info("===删除zip文件失败===");
+			}
+
+			//解析文件入库
+			List<File> listFiles = new ArrayList<>();
+			try {
+				this.getAllFiles(new File(filepath), listFiles);
+			} catch (Exception e) {
+				this.logger.error("===未获取到下载文件列表===", e);
+			}
+
+			for (File file : listFiles) {
+				try {
+					List<Map<String, String>> tablesInfoList = this.getTableInfos(file);
+					String workbookId = file.getName().substring(0, file.getName().lastIndexOf("."));
+					this.workBookService.deleteTablesByWorkBookId(workbookId);
+					this.workBookService.addTables(tablesInfoList);
+					
+				} catch (Exception e) {
+					this.logger.error("===保存解析的参数出错了===", e);
+				}
+			}
+			this.logger.info("文件解析成功已入库！---------" + dateSdf.format(new Date()));
+		}
+
+		//TODO
+		try {
+			this.logger.info("xmlTables已完成！------" + dateSdf.format(new Date()));
+		} catch (Exception e) {
+			this.logger.error("===出错了===", e);
+		}
+
+	}
+	/**
+	 * 获取指定目录下的所有文件
+	 * @param dir
+	 * @param listFiles
+	 */
+	private void getAllFiles(File dir, List<File> listFiles) {
+		File[] childrenFiles = dir.listFiles();
+		for (File file : childrenFiles) {
+			if (file.isFile()) {
+				listFiles.add(file);
+			} else {
+				getAllFiles(file, listFiles);
+			}
+		}
+	}
+	/**
+	 * 获取文件中的所有表名称
+	 * @param file
+	 * @return
+	 * @throws JSQLParserException
+	 * @throws DocumentException
+	 */
+	private List<Map<String, String>> getTableInfos(File file) throws JSQLParserException, DocumentException {
+		SAXReader saxReader = new SAXReader();
+		Document document = saxReader.read(file);
+		Element root = document.getRootElement();
+		List<Element> elementList = new ArrayList<>();
+		elementList = this.getElmentsByName(root, "relation");
+		List<Map<String, String>> tableInfoList = new ArrayList<>();
+		for (Element element : elementList) {
+			String sql = element.getTextTrim();
+			//System.out.println("sql===" + sql);
+			if (StringUtils.isBlank(sql)) {
+				Map<String, String> tableInfo = new HashMap<>();
+				Attribute table = element.attribute("table");
+				if (table != null && StringUtils.isNotBlank(table.getValue())) {
+					String tableName = table.getValue();//获取表名称
+					if (tableName.indexOf(".") != -1) {
+						String[] names = tableName.split("\\.");
+						String dbname = names[0].substring(1, names[0].length() - 1);
+						tableName = names[1].substring(1, names[1].length() - 1);
+						tableInfo.put("dbName", dbname);
+						tableInfo.put("tableName", tableName);
+						String workbookId = file.getName().substring(0, file.getName().lastIndexOf("."));
+						tableInfo.put("workbookId", workbookId);
+						tableInfoList.add(tableInfo);
+						continue;
+					}
+					tableName = tableName.substring(1, tableName.length() - 1);
+					//System.out.println("table===" + tableName);
+					tableInfo.put("tableName", tableName);
+				}
+				Attribute connection = element.attribute("connection");
+				if (connection != null && StringUtils.isNotBlank(connection.getValue())) {
+					String connectionName = connection.getValue();
+					String dbName = this.getDBName(root, connectionName);
+					tableInfo.put("dbName", dbName);
+				}
+				String workbookId = file.getName().substring(0, file.getName().lastIndexOf("."));
+				tableInfo.put("workbookId", workbookId);
+				tableInfoList.add(tableInfo);
+			} else {
+				Reader statementReader = new StringReader(sql);
+				Statement statement = new CCJSqlParserManager().parse(statementReader);
+				List<String> tablesList = new TablesNamesFinder().getTableList(statement);
+				for (String tableName : tablesList) {
+					Map<String, String> tableInfo = new HashMap<>();
+					//判断表名是否带点
+					if (tableName.indexOf(".") != -1) {
+						String[] names = tableName.split("\\.");
+						tableName = names[1];
+						String dbname = names[0];
+						tableInfo.put("dbName", dbname);
+						tableInfo.put("tableName", tableName);
+						String workbookId = file.getName().substring(0, file.getName().lastIndexOf("."));
+						tableInfo.put("workbookId", workbookId);
+						tableInfoList.add(tableInfo);
+						continue;
+					}
+					//System.out.println("tableName===" + tableName);
+					tableInfo.put("tableName", tableName);
+					Attribute connection = element.attribute("connection");
+					if (connection != null && StringUtils.isNotBlank(connection.getValue())) {
+						String connectionName = connection.getValue();
+						String dbName = this.getDBName(root, connectionName);
+						tableInfo.put("dbName", dbName);
+					}
+					String workbookId = file.getName().substring(0, file.getName().lastIndexOf("."));
+					tableInfo.put("workbookId", workbookId);
+					tableInfoList.add(tableInfo);
+				}
+			}
+		}
+		return tableInfoList;
+	}
+	private List<Element> getElmentsByName(Element element, String tagName) {
+		List<Element> elementList = new ArrayList<>();
+		List<Element> elementAllList = new ArrayList<>();
+		this.getElementsAll(element, elementAllList);
+		for (Element e : elementAllList) {
+			Attribute attr = e.attribute("connection");
+			if (attr == null || StringUtils.isBlank(attr.getValue()) || attr.getValue().startsWith("dataengine.")
+					|| attr.getValue().startsWith("excel-direct.") || attr.getValue().startsWith("textscan."))
+				continue;//只要包含connection属性的元素
+			if (tagName.equals(e.getName())) {
+				elementList.add(e);
+			}
+		}
+		return elementList;
+	}
+	/**
+	 * 获取所有元素
+	 * @param element
+	 * @param elementAllList
+	 */
+	@SuppressWarnings("unchecked")
+	private void getElementsAll(Element element, List<Element> elementAllList) {
+		Iterator<Element> iterator = element.elementIterator();
+		while (iterator.hasNext()) {
+			Element e = iterator.next();
+			elementAllList.add(e);
+			getElementsAll(e, elementAllList);
+		}
+	}
+	/**
+	 * @param element 文档根节点
+	 * @param connectionName <named-connection>节点的名称
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	private String getDBName(Element element, String connectionName) {
+		List<Element> namedConnection = this.getElementByAttr(element, "name", connectionName);
+		if (namedConnection != null && !namedConnection.isEmpty()) {
+			List<Element> connections = namedConnection.get(0).elements();
+			if (connections != null && !connections.isEmpty()) {
+				//System.out.println(connections.get(0));
+				//System.out.println(connections.get(0).attribute("dbname"));
+				return connections.get(0).attribute("dbname").getValue();
+			}
+		}
+		return null;
+	}
+	/**
+	 * @param root 文档根节点
+	 * @param attr 属性节点
+	 * @param value 属性值
+	 * @return
+	 */
+	private List<Element> getElementByAttr(Element root, String attrName, String value) {
+		List<Element> elementList = new ArrayList<>();
+		List<Element> elementAllList = new ArrayList<>();
+		this.getElementsAll(root, elementAllList);
+		for (Element e : elementAllList) {
+			Attribute attr = e.attribute(attrName);
+			if (attr == null || StringUtils.isBlank(attr.getValue()))
+				continue;
+			if (value.equals(attr.getValue())) {
+				elementList.add(e);
+			}
+		}
+		return elementList;
+	}
+}

@@ -1,0 +1,117 @@
+package byit.osdp.portal.sso.controller;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import byit.osdp.portal.sso.Contants;
+import byit.osdp.portal.sso.cookies.CookiesUtil;
+
+/**
+ * 调用此servlet时，读取当前全部cookie并将结果拼接成js赋值语句返回，返回类型为application/javascript
+ */
+@Controller
+@RequestMapping(value = "/cookies")
+public class CookiesController extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+	protected final Logger logger = LoggerFactory.getLogger(getClass());
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 读取浏览器的cookies
+		 *@creatTime:2017年5月30日 下午6:57:23 
+		 *@return:@param request
+		 *@return:@param response
+		 *@return:@return
+		 *@return:@throws IOException Map<String,String>
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	@RequestMapping(value="read")
+	public void readCookies(HttpServletRequest request,
+			HttpServletResponse response) throws IOException{
+		Map<String,String> map=new HashMap<String, String>();
+		Cookie[] cookies = request.getCookies();
+		StringBuilder builder = new StringBuilder();
+		String  noCookiesStr="var ticket='';sessionId='';";
+		// 一定要正确设置响应类型，否则可能导致IE不解析js而直接进行下载操作
+		response.setContentType("application/javascript");
+		PrintWriter writer = response.getWriter();
+		if (cookies != null) {			
+			//PrintWriter writer = response.getWriter();
+			for (Cookie cookie : cookies) {
+				if(Contants.TICKET_KEY.equals(cookie.getName()) || Contants.SESSIONID_KEY.equals(cookie.getName())){
+					logger.info("cookiesName="+cookie.getName()+",cookiesValue="+cookie.getValue());
+					builder.append("var ")
+								.append(cookie.getName())
+								.append("=")
+						   		.append("'")
+						   		.append(cookie.getValue())
+								.append("'")
+								.append(";");
+				}
+				
+			}
+			//writer.write(builder.toString());
+		}else{
+			builder.append(noCookiesStr);
+		}
+		writer.write(builder.toString());
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 给cookies赋值，返回到页面的时候带过去
+		 *@creatTime:2017年5月30日 下午6:57:43 
+		 *@return:@param request
+		 *@return:@param response
+		 *@return:@return
+		 *@return:@throws IOException Map<String,String>
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	/*public Map<String,String> setCookies(HttpServletRequest request,HttpServletResponse response) throws IOException{
+		Map<String,String> map=new HashMap<String, String>();
+		String tokenKey="";
+		String tokenValue="";
+		CookiesUtil.setCookies(request, response, tokenKey, tokenValue);
+		return map;
+	}*/
+	
+	@RequestMapping(value="/setCookies.html")
+	public void setCookies(HttpServletRequest request,
+			HttpServletResponse response) throws ServletException, IOException {
+		//将要写入的cookie项，调用者通过参数传递
+		String sessionId = request.getParameter("sessionId");
+		System.out.println("sessionId="+sessionId);
+		String ticket = request.getParameter("ticket");
+		System.out.println("ticket="+ticket);
+		// 生成cookie 
+		Cookie sessionCookie = new Cookie("sessionId", sessionId);
+		Cookie ticketCookie = new Cookie("ticket", ticket);
+		sessionCookie.setPath("/"); //www.a.com
+		ticketCookie.setPath("/"); //www.a.com
+		// 一般可以将domain设置到顶级域
+		// cookie.setDomain("sub.a.com"); 
+		response.addCookie(sessionCookie);
+		response.addCookie(ticketCookie);
+	}
+
+
+}

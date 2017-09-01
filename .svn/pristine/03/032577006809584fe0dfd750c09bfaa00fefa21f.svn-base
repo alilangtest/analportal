@@ -1,0 +1,67 @@
+package byit.osdp.portal.interceptor;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.shiro.SecurityUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+
+import byit.core.util.web.WebUtil;
+import byit.osdp.base.security.UserHolder;
+import byit.osdp.portal.interceptor.service.InsertSystemLogService;
+import byit.osdp.portal.sso.https.LoginHtttpsHelper;
+import byit.utils.JsonUtil;
+
+/**
+ * 请求拦截器
+ */
+@Component("logHandlerInterceptor")
+public class LogHandlerInterceptor extends HandlerInterceptorAdapter {
+	// ==============================Fields===========================================
+	@Autowired
+	private InsertSystemLogService insertSystemLogService;
+	// ==============================Method===========================================
+	
+	@Override
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+		String url = WebUtil.getPathWithinApplication(request);
+		String uid = UserHolder.getId();
+		UserHolder.getsessionId();
+		UserHolder.getTicket();
+		//TODO 下面注释的代码是用于sso客户端使用，切换到生产需要使用
+		/*String sessionid = UserHolder.getsessionId();
+		//清理session
+		Map<String,String> map=null;
+		try {
+			
+			map=LoginHtttpsHelper.verifySessionAlive(sessionid);
+			
+			for(String key : map.keySet()){
+				//如果服务端没有session，需要清理本地session
+				if(("is_session_exist".equals(key))&&("false".equals(map.get(key)))){
+					  SecurityUtils.getSubject().logout();
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}*/
+		
+		log(url, uid,request);
+	}
+
+	private void log(String url, String uid,HttpServletRequest request) {
+		System.out.println("用户(" + uid + ")，访问了[" + url + "]页面");
+		insertSystemLog(url,uid,request);
+	}
+	
+	//向system_log表插入数据
+	private void insertSystemLog(String url,String uid,HttpServletRequest request){
+		
+		this.insertSystemLogService.insertSystemLog(url,uid,request);
+	}
+}

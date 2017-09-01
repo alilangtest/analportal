@@ -1,0 +1,51 @@
+package byit.osdp.portal.sso.http;
+
+import java.io.IOException;
+
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.RequestEntity;
+import org.apache.commons.httpclient.methods.StringRequestEntity;
+
+//import com.sun.istack.internal.logging.Logger;
+import org.apache.log4j.Logger;
+
+  
+/**
+ * 
+	 * 项目名称：hfportal  
+	 * 类名称：HttpPostUrl   
+	 * 类描述：  使用http协议与服务端通信
+	 * 创建人：lisw
+	 * 创建时间：2017年6月9日 上午11:26:45   
+	 * 修改人：
+	 * 修改时间：2017年6月9日 上午11:26:45   
+	 * 修改备注：   
+	 * @version
+ */
+public class HttpPostConn {  
+  
+	    /**
+	     * 向指定URL发送POST请求 
+	     */
+    	private static Logger log = Logger.getLogger(HttpPostConn.class);  
+        public static String send(String url,String params)
+    			throws HttpException, IOException {
+    		// 构造HttpClient的实例
+    		HttpClient httpClient = new HttpClient();
+    		PostMethod getMethod = new PostMethod(url);
+    		RequestEntity se = new StringRequestEntity(params, "application/json", "UTF-8");
+    		getMethod.setRequestEntity(se); 
+    		
+    		httpClient.executeMethod(getMethod);
+    		String responseMsg = getMethod.getResponseBodyAsString();
+    		if (getMethod.getStatusCode() != HttpStatus.SC_OK) {
+    			log.info("Method failed: " + getMethod.getStatusLine());
+    		} else {
+    			log.info("success");
+    		}
+    		return responseMsg;
+    	}
+}

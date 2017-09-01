@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.aladdin.instantQuery.dao.InstantQueryDao">
+
+	<resultMap type="byit.aladdin.dataAnalysis.entity.TypeTop"
+		id="TypeTopMap">
+		<id column="ID" property="id" />
+		<result column="REPORT_ID" property="reportId" />
+		<result column="REPORT_NAME" property="reportName" />
+		<result column="TOP_TYPE" property="topType" />
+		<result column="OPERATION_TIME" property="operationTime" />
+		<result column="OPERATION_USER" property="operationUser" />
+	</resultMap>
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.Dic"
+		id="DicMap">
+		<id column="EVENTID" property="eventId" />
+		<result column="DOMAINID" property="domainId" />
+		<result column="DOMAINNAME" property="domainName" />
+		<result column="CODEID" property="codeId" />
+		<result column="CODENAME" property="codeName" />
+	</resultMap>
+
+	<resultMap type="byit.aladdin.dataAnalysis.entity.LabelInfo"
+			id="LabelInfoMap">
+		<result column="MENUID" property="menuId"/>
+		<result column="MENUPARENT" property="menuparent"/>
+		<result column="MENUNAME" property="menuname"/>
+	</resultMap>
+	
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.Report"
+			id="ReportMap">
+		<id column="REPORTID" property="reportId"/>
+		<result column="REPORTNAME" property="reportName"/>
+		<result column="REPORTTYPE" property="reportType"/>
+		<result column="URL" property="url"/>
+		<result column="PANELHEIGHT" property="panelHeight"/>
+		<result column="PANELWIDTH" property="panelWidth"/>
+		<result column="PUBLISPER" property="publisper"/>
+		<result column="SITEID" property="siteid"/>
+	</resultMap>
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.Org"
+			id="OrgMap">
+		<id column="ID" property="id"/>
+		<result column="NAME" property="name"/>
+		<result column="CODE" property="code"/>
+		<result column="PANELHEIGHT" property="managerId"/>
+		<result column="STATE" property="state"/>
+		<result column="LEV" property="lev"/>
+	</resultMap>
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.Employee"
+			id="EmpMap">
+		<result column="ID" property="employeeId"/>
+		<result column="ORG_ID" property="orgId"/>
+		<result column="USERNAME" property="employeeName"/>
+	</resultMap>
+	
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.PmTableauUser"
+			id="PmTableauUserMap">
+		<result column="USERID" property="userId"/>
+		<result column="OPTYPE" property="optype"/>
+		<result column="USERNAME" property="username"/>
+		<result column="PASSWORD" property="password"/>
+		<result column="PROJECTNAME" property="projectname"/>
+		<result column="TABLEAUIP" property="tableauip"/>
+	</resultMap>
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.PmReportCollect"
+			id="PmReportCollectMap">
+		<result column="COLLECTID" property="collectId"/>
+		<result column="REPORTID" property="reportId"/>
+		<result column="EMPLOYEEID" property="employeeId"/>
+		<result column="SEQDATE" property="seqDate"/>
+		<result column="REPORTNAME" property="reportName"/>
+		<result column="ORDERDATE" property="ordeDate"/>
+	</resultMap>
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.AuthRole"
+			id="AuthRoleMap">
+		<result column="ID" property="id"/>
+		<result column="NAME" property="name"/>
+	</resultMap>
+		
+		
+	<resultMap type="byit.aladdin.dataAnalysis.entity.RepShare"
+			id="RepShareMap">
+		<result column="USERID" property="userId"/>
+		<result column="REPORTID" property="reportId"/>
+		<result column="STARTTIME" property="startTime"/>
+		<result column="SHARID" property="sharId"/>
+		<result column="VALIDTIME" property="valldTime"/>
+		<result column="CREATE_TIME" property="createTime"/>
+		<result column="CREATOR_ID" property="creatorId"/>
+	</resultMap>
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.RepAttributeInfo"
+			id="RepAttributeMap">
+		<result column="ID" property="id"/>
+		<result column="NAME" property="name"/>
+		<result column="CREATOR" property="creator"/>
+	</resultMap>
+	
+	<!-- //////////////////////////////////// 以下是数据分析 sql ////////////////////////////////////////////////////////////-->
+	<!--获取当前员工所属角色 -->
+	<select id="queryRoleById" parameterType="String"  resultMap="AuthRoleMap">
+		SELECT
+			EMP."ID" EMPLOYEEID,rol.id
+		FROM
+			AUTH_USER emp
+		LEFT JOIN AUTH_USER_ROLE aur ON EMP."ID" = AUR.USER_ID
+		LEFT JOIN AUTH_ROLE rol ON rol.id=aur.ROLE_ID
+		WHERE EMP."ID"=#{operationUser}
+	</select>
+	
+	<!--数据分析筛选父标签 -->
+	<select id="queryDataLabel"  resultMap="LabelInfoMap" parameterType="java.util.List">
+		SELECT distinct REP.MENUID,REP.MENUPARENT,REP.MENUNAME,rep.ORDINAL
+		FROM PM_REPORTMENU_QUERY rep
+	    LEFT JOIN REP_MENU_ROLE_RELA_QUERY rol ON ROL.MENUID=REP.MENUID
+	    WHERE MENUPARENT IS  NULL  AND ROL.ROLEID IN 
+	    <foreach collection="list" item="item" index="index"  open="("
+            separator="," close=")">
+            #{item.id}  
+        </foreach>
+        ORDER BY rep.ORDINAL ASC
+	</select>
+	
+	<!--根据标签分析数据 -->
+	<select id="queryAnalysis"  resultMap="TypeTopMap" parameterType="java.util.List">
+		select distinct(rep.reportid),rep.reportname from PM_REPORT_QUERY rep 
+		where rep.reportid in(
+		      select reportid from rep_menu_rela_query where MENUID in(
+		             select MENUID from REP_MENU_ROLE_RELA_QUERY where roleid in(
+		                    select role_id from auth_user_role where user_id = #{operationUser,jdbcType=VARCHAR}
+		             )
+		      )
+		)
+		AND (rep.datescreen >= TO_CHAR(sysdate,'yyyy-MM-dd') or rep.datescreen is null or rep.datescreen='')
+	</select>
+	
+	<!--根据id查询报表  -->
+	<select id="getReportByIdAndType"  resultMap="ReportMap" parameterType="byit.aladdin.dataAnalysis.entity.Report">
+		SELECT REPORTID,REPORTNAME,URL,REPORTTYPE,PANELHEIGHT,PANELWIDTH ,SITEID FROM PM_REPORT_QUERY WHERE REPORTID =#{reportId}
+	</select>
+	
+	<!--根据id查询员工信息  -->
+	<select id="queryEmpById"  resultMap="EmpMap" parameterType="String">
+		SELECT "ID",ORG_ID,USERNAME FROM AUTH_USER 
+		WHERE "ID"=#{employeeId}
+	</select>
+	
+	<!--根据id查询机构信息  -->
+	<select id="queryOrgById"  resultMap="OrgMap" parameterType="String">
+		SELECT "ID","NAME",CODE,LEV FROM AUTH_ORG WHERE code=#{id}
+	</select>
+	
+	<!--角色和报表的关系  -->
+	<select id="getRoleReport"  resultMap="ReportMap" parameterType="String">
+		SELECT distinct(t.REPORTID),t.OPTYPE,t.ROLEID from ROLE_REPORT_RELA_QUERY t 
+		WHERE t.OPTYPE in (select max(r.OPTYPE) from ROLE_REPORT_RELA_QUERY r where r.REPORTID =#{reportid} 
+			 and r.ROLEID in
+			 (select t."ID" from AUTH_ROLE t where t."ID" in(select rs.ROLE_ID from AUTH_USER_ROLE rs where rs.USER_ID =#{userId}
+				) and t.STATE=1)) 
+			AND t.ROLEID in(select t."ID" from AUTH_ROLE t where t."ID" in(select rs.ROLE_ID from AUTH_USER_ROLE rs where rs.USER_ID =#{userId}) and t.STATE=1) 
+			AND t.REPORTID =#{reportid}
+	</select>
+	
+	<!--数据分析筛选子标签 -->
+	<select id="querylabelInfoList"  resultType="byit.aladdin.dataAnalysis.entity.LabelInfo">
+		select distinct(REP.MENUID),REP.MENUPARENT,REP.MENUNAME,rep.ORDINAL  from PM_REPORTMENU_QUERY rep
+	        LEFT JOIN REP_MENU_ROLE_RELA_QUERY rol ON ROL.MENUID=REP.MENUID
+		      WHERE MENUPARENT IS  NOT NULL  AND ROL.ROLEID IN 
+	         <foreach item="item" index="index" collection="list" open="("
+	            separator="," close=")">
+	            #{item.id}   
+	        </foreach>
+	        and rep.MENUPARENT = #{pmennuid}
+	        ORDER BY rep.ORDINAL ASC
+	</select>
+	
+	<select id="queryAnalysis3"  resultMap="TypeTopMap">
+		select rep.reportid,rep.reportname from PM_REPORT_QUERY rep 
+			where rep.reportid in(
+			      select reportid from rep_menu_rela_query where MENUID in(
+			             select MENUID from REP_MENU_ROLE_RELA_QUERY where roleid in(
+			                    select role_id from auth_user_role where user_id = #{operationUser}
+			             )
+			      ) AND menuid=#{menuId}
+			)
+	</select>
+</mapper>

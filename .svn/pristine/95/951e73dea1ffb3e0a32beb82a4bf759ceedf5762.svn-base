@@ -1,0 +1,38 @@
+#### \u529b\u5bfc\u56fe\u6570\u636e\u6e90 ####
+doc_url=E:/doc
+
+
+open_office_home_url=C:\\Program Files (x86)\\OpenOffice 4
+
+#ftp.host = 10.0.10.52
+ftp.host = localhost
+ftp.port = 21
+ftp.username = wangyongchao
+ftp.password = wangyongchao
+
+
+
+###email###########
+
+application.tmpdir=C:/_tableau_temp
+
+email.username =wangliang@byitgroup.com
+#password 
+email.password=qijixiaozied123
+
+#mailaddress
+email.mailaddress=wangliang@byitgroup.com
+#mailhost 10.94.66.186 can't ping mail.didichuxing.com so use 172.20.1.40
+#email.mailhost=172.20.1.40 mail.byitgroup.com
+email.mailhost=mail.byitgroup.com
+
+#mailport
+email.mailport=25
+#because didi use  tls encryption so it must be true.  others not tls use false. _by wl
+#tls   qq didi can use  must be true   byit can't use must be false
+email.starttls =false
+#validate
+email.validate =true
+#
+file.upload.path =/files/dataIndex/
+file.error.path =/files/dataIndex/error/

@@ -1,0 +1,338 @@
+package byit.aladdin.workBook.service.impl;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import byit.aladdin.workBook.dao.SitesDaoImpl;
+import byit.aladdin.workBook.dao.WorkBookJDBCDao;
+import byit.aladdin.workBook.dao.XmlTablesMainDao;
+import byit.aladdin.workBook.entity.Projects;
+import byit.aladdin.workBook.entity.Sites;
+import byit.aladdin.workBook.entity.WorkbookPlanTaskVo;
+import byit.aladdin.workBook.entity.Workbooks;
+import byit.aladdin.workBook.entity.XmlTables;
+import byit.aladdin.workBook.entity.XmlTablesMain;
+import byit.aladdin.workBook.entity.XmlTablesVo;
+import byit.aladdin.workBook.service.WorkBookService;
+import byit.aladdin.workBook.util.Page;
+import byit.aladdin.workBook.util.Pagination;
+import byit.osdp.base.security.UserHolder;
+
+
+@Service("workBookService")
+public class WorkBookServiceImpl implements WorkBookService {
+	@Autowired
+	private WorkBookJDBCDao workbooksDao;
+	@Autowired
+	private XmlTablesMainDao xmlTablesMainDao;
+	@Autowired
+	private	SitesDaoImpl sitesDao;
+	@Override
+	public List<WorkbookPlanTaskVo> pagedQuery(Pagination pagination) {
+
+		/*Integer is_admin = systemUsersDao.checkAdmin();// 管理员
+
+		if (is_admin > 0) {
+			pagination.getFilters().put("userRole", "1");
+		} else {
+			List<Sites> sitesList = sitesDao.findByLoginUser();
+
+			if (sitesList != null && sitesList.size() > 0) {
+				pagination.getFilters().put("userRole", "2");
+				String siteIds = "";
+				for (int i = 0; i < sitesList.size(); i++) {
+					if (i == 0) {
+						siteIds += sitesList.get(i).getId();
+					} else {
+						siteIds += "," + sitesList.get(i).getId();
+					}
+
+				}
+				pagination.getFilters().put("hasSites", siteIds);
+			} else {
+				pagination.getFilters().put("userRole", "3");
+			}
+		}*/
+		//查询所有站点(jdbc条件已被去除)
+		List<Sites> sitesList = sitesDao.findByLoginUser();
+		if (sitesList != null && sitesList.size() > 0) {
+			pagination.getFilters().put("userRole", "2");
+			String siteIds = "";
+			for (int i = 0; i < sitesList.size(); i++) {
+				if (i == 0) {
+					siteIds += sitesList.get(i).getId();
+				} else {
+					siteIds += "," + sitesList.get(i).getId();
+				}
+
+			}
+			pagination.getFilters().put("hasSites", siteIds);
+		} else {
+			pagination.getFilters().put("userRole", "3");
+		}
+		// 调用postgrejdbc查询工作簿信息
+		Page<Workbooks> page = workbooksDao.pagedQueryTask(pagination);
+
+		List<WorkbookPlanTaskVo> records = new ArrayList<>();
+
+		List<Workbooks> wkRecords = page.getRecords();
+		for (int i = 0; i < wkRecords.size(); i++) {
+			Workbooks workbooks = wkRecords.get(i);
+			WorkbookPlanTaskVo vo = new WorkbookPlanTaskVo();
+			Long workbooksId = workbooks.getId();
+			// 根据工作簿id查询工作簿与表映射详细信息
+			XmlTablesMain xmlTableMain = xmlTablesMainDao.queryXmlTablesMainByWorkBookId(String.valueOf(workbooksId));
+			vo.setId(String.valueOf(workbooksId));
+			vo.setName(workbooks.getName());
+			vo.setProjectName(workbooks.getProjectName());
+			vo.setOwnerName(workbooks.getOwnerName());
+			if (xmlTableMain != null) {
+				vo.setDispatchState(xmlTableMain.getDispatchState()); // 调度状态
+				vo.setTaskState(xmlTableMain.getTaskState());
+				vo.setRefreshState(xmlTableMain.getRefreshState());
+				vo.setTaskRefTime(xmlTableMain.getTaskRefTime());
+				vo.setRefreshTime(xmlTableMain.getRefreshTime());
+				vo.setRefreshFreq(Integer.valueOf(xmlTableMain.getRefreshFreq()));
+			} else {
+				vo.setDispatchState("0"); // 调度状态
+				vo.setTaskState("0"); // 任务状态
+				vo.setRefreshState("0"); // 刷新状态
+				vo.setRefreshTime("~");
+			}
+			vo.setSiteId(workbooks.getSiteId());
+			records.add(vo);
+		}
+		return records;
+	}
+	@Override
+	public List<Projects> findBySiteId(Long siteId) {
+		return sitesDao.findBySiteId(siteId);
+	}
+	@Override
+	public List<Sites> findAll() {
+		return sitesDao.find();
+	}
+	@Override
+	public int pagedQueryCount(Pagination pagination) {
+		//查询所有站点(jdbc条件已被去除)
+		List<Sites> sitesList = sitesDao.findByLoginUser();
+		if (sitesList != null && sitesList.size() > 0) {
+			pagination.getFilters().put("userRole", "2");
+			String siteIds = "";
+			for (int i = 0; i < sitesList.size(); i++) {
+				if (i == 0) {
+					siteIds += sitesList.get(i).getId();
+				} else {
+					siteIds += "," + sitesList.get(i).getId();
+				}
+
+			}
+			pagination.getFilters().put("hasSites", siteIds);
+		} else {
+			pagination.getFilters().put("userRole", "3");
+		}
+		//获取分页总条数
+		return workbooksDao.pagedQueryTaskCount(pagination);
+	}
+	@Override
+	public boolean Updateconfirm(WorkbookPlanTaskVo vo) {
+		//1.调度状态为 启动的时候，弹出提示框， 主表调度状态改为【1】 
+		//2.调度状态为 停止的时候，弹出提示框， 主表调度状态更新为 【0】
+		//3.更新子表 ，工作簿ID为主key，表关系的数据更新是先删除，后插入 （mysql 我们自己的表）																																																																																							
+		//4.插入调度任务（已经存在则先删后插，参考现有逻辑， 判断条件可能需要改） （调API，更新他系统）	
+		vo.setUpdatedTime(new Date().toString());
+		XmlTablesMain xmlTablesMain= xmlTablesMainDao.queryXmlTablesMainByWorkBookId(vo.getId());
+		
+		XmlTablesMain x = new XmlTablesMain();
+		x.setWorkbookId(vo.getId());
+		x.setUpdatedTime(new Date());
+		x.setCreator(UserHolder.getName());
+		x.setRefreshTime(vo.getRefreshTime());
+		x.setDispatchState(vo.getDispatchState());
+		x.setRefreshFreq(vo.getRefreshFreq().toString());
+		x.setTaskState("0");
+		x.setRefreshState("0");
+		int row = 0;
+		if(xmlTablesMain != null){
+			x.setId(xmlTablesMain.getId());
+			//更新xml_tables_main表
+			row = xmlTablesMainDao.updateXmlTablesMain(x);
+		}else{
+			x.setTimes(0);
+			row = xmlTablesMainDao.addXmlTablesMain(x);
+		}
+		//删除xml_tables
+		/*xmlTablesMainDao.delXmlTables(vo.getId());
+		
+		List<XmlTables> list = new ArrayList<XmlTables>();
+		String[] dbAndTables=vo.getDbAndTables().split(",");
+		for(String strDbAndTables :  dbAndTables){
+			String[] dbAndTab=strDbAndTables.split("\\.");
+			XmlTables x = new XmlTables();
+			x.setDbName(dbAndTab[0]);
+			x.setTableName(dbAndTab[1]);
+			x.setWorkbookId(vo.getId());
+			list.add(x);
+		}
+		xmlTablesMainDao.addTables(list);*/
+		if(row > 0){
+			return true;
+		}else{
+			return false;
+		}
+	}
+	@Override
+	public List<XmlTablesVo> queryXmlTablesByWorkBookId(String id) {
+		List<XmlTables> xmlTableList= xmlTablesMainDao.queryXmlTablesByWorkBookId(id);
+		XmlTablesVo vo;
+		List<XmlTablesVo> voList = new ArrayList<XmlTablesVo>();
+		for(int i=0; i<xmlTableList.size();i++){
+			vo = new XmlTablesVo();
+			String dbTableName = xmlTableList.get(i).getDbName()+"."+xmlTableList.get(i).getTableName();
+			BeanUtils.copyProperties(xmlTableList.get(i), vo);
+			vo.setDbAndTableName(dbTableName);
+			voList.add(vo);
+		}
+		return voList;
+	}
+	@Override
+	public List<Workbooks> queryWorkBookByExtracts(String param) {
+		return workbooksDao.queryWorkBookByExtracts(param);
+	}
+	@Override
+	public int deleteTablesByWorkBookId(String workbookId) {
+		return xmlTablesMainDao.deleteTablesByWorkBookId(workbookId);
+	}
+	@SuppressWarnings("unused")
+	@Override
+	public void addTables(List<Map<String, String>> paramList) {
+		if(paramList != null && !paramList.isEmpty()){
+			Map<String, String> param = new HashMap<String, String>();
+			String workbookId = paramList.get(0).get("workbookId");
+			param.put("workbookId", workbookId);
+			Integer times = this.xmlTablesMainDao.queryTimesByWorkBookId(workbookId);
+			System.out.println(times+"times");
+			if(times == null){
+				Date currentTime = Calendar.getInstance().getTime();
+				XmlTablesMain main = new XmlTablesMain();
+				main.setWorkbookId(workbookId);
+				main.setTimes(0);
+				main.setCreatedTime(currentTime);
+				main.setUpdatedTime(currentTime);
+				main.setDispatchState("0");
+				main.setTaskState("0");
+				main.setRefreshState("0");
+				main.setCreator("system");
+				this.xmlTablesMainDao.addTablesMain(main);
+			}
+			List<XmlTables> lits = new ArrayList<XmlTables>();
+			for (Map<String, String> params : paramList) {
+				XmlTables tables = new XmlTables();
+				tables.setDbName(params.get("dbName"));
+				tables.setTableName(params.get("tableName"));
+				tables.setWorkbookId(params.get("workbookId"));
+				lits.add(tables);
+			}
+			this.xmlTablesMainDao.addTables(lits);
+		}
+	}
+	@Override
+	public List<XmlTablesMain> queryXmlTablesMainList() {
+		return xmlTablesMainDao.queryXmlTablesMainList();
+	}
+	@Override
+	public int getTimesByWorkbookId(String workBookId) {
+		XmlTablesMain entity = xmlTablesMainDao.queryXmlTablesMainByWorkBookId(workBookId);
+		if (entity == null) {
+			return -1;
+		}
+		DateFormat ymdFormat = new SimpleDateFormat("yyyyMMdd");
+		Date now = new Date();
+		String nowString = ymdFormat.format(now);
+		String execTime = ymdFormat.format(entity.getExecTime() == null ? new Date() : entity.getExecTime());
+		Integer times = entity.getTimes();
+		if (nowString.equals(execTime)) {
+			times = times + 1;
+		} else {
+			times = 1;
+		}
+		return times;
+	}
+	@Override
+	public Workbooks getWorkBooksById(Long workBookId) {
+		return workbooksDao.getWorkBooksById(workBookId);
+	}
+	@Override
+	public int getAndIncrementCountsByWorkbookId(String workbookId) {
+		XmlTablesMain entity = xmlTablesMainDao.queryXmlTablesMainByWorkBookId(workbookId);
+		if (entity == null) {
+			return -1;
+		}
+		DateFormat ymdFormat = new SimpleDateFormat("yyyyMMdd");
+		Date now = new Date();
+		String nowString = ymdFormat.format(now);
+		String execTime = ymdFormat.format(entity.getExecTime());
+		Integer times = entity.getTimes();
+		if (nowString.equals(execTime)) {
+			times = times + 1;
+		} else {
+			times = 1;
+		}
+		entity.setTimes(times);
+		entity.setExecTime(now);
+		xmlTablesMainDao.updateXmlTablesMainById(entity);
+		return times;
+	}
+	@Override
+	public int updateXmlTablesMainRefreshStateById(XmlTablesMain xmlTablesMain) {
+		return xmlTablesMainDao.updateXmlTablesMainRefreshStateById(xmlTablesMain);
+	}
+	@Override
+	public int updateXmlTablesMainDispatchStateById(XmlTablesMain xmlTablesMain) {
+		return xmlTablesMainDao.updateXmlTablesMainDispatchStateById(xmlTablesMain);
+	}
+	@Override
+	public List<XmlTablesMain> queryXmlTablesMainRefreshingList() {
+		return xmlTablesMainDao.queryXmlTablesMainRefreshingList();
+	}
+	@Override
+	public List<Workbooks> findRefreshTime(String ids) {
+		return workbooksDao.findRefreshTime(ids);
+	}
+	@Override
+	public void updateXmlTablesRefreshTime(List<Workbooks> workbooks) {
+		for (Workbooks workbooks2 : workbooks) {
+			xmlTablesMainDao.updateXmlTablesRefreshTime(workbooks2);
+		}
+	}
+	@Override
+	public void updateOneTask(List<Workbooks> workbooks) {
+		StringBuffer ids = new StringBuffer();
+		for (Workbooks wk:workbooks) {
+			ids.append(wk.getId().toString()).append(",");
+		}
+		//根据id字符串查询调度任务信息
+		List<XmlTablesMain> mainList = xmlTablesMainDao.queryXmlTablesMainByWorkBookIds(ids.length() > 0 ? ids.substring(0,ids.length() - 1) : ids.toString());
+		for (XmlTablesMain main:mainList) {
+			//如果刷新频率为一次是修改调度任务状态为停止
+			if("1".equals(main.getRefreshFreq())){
+				main.setDispatchState("0");
+				xmlTablesMainDao.updateXmlTablesMainDispatchStateById(main);
+			}
+		}
+	}
+	@Override
+	public int updateXmlTablesMainTaskStateById(XmlTablesMain xmlTablesMain) {
+		return xmlTablesMainDao.updateXmlTablesMainTaskStateById(xmlTablesMain);
+	}
+}

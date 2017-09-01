@@ -1,0 +1,26 @@
+package byit.osdp.portal.sso;
+
+/**
+ * 
+	 * 项目名称：hfportal_05   
+	 * 类名称：Contants   
+	 * 类描述： SSO使用常量
+	 * 创建人：lisw
+	 * 创建时间：2017年5月30日 下午7:36:35   
+	 * 修改人：
+	 * 修改时间：2017年5月30日 下午7:36:35   
+	 * 修改备注：   
+	 * @version
+ */
+public class Contants {
+	
+	//返回到页面的cookie的ticket的key
+	public static final String TICKET_KEY="ticket";
+	//返回到页面的cookie的sessionId的key
+	public static final String SESSIONID="sessionId";
+	
+	public static final String DELIMITER="|||";
+	
+	//sso服务端返回的用户的key
+	public static final String USER="user";
+}

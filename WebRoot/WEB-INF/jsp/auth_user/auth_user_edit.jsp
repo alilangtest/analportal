@@ -1,0 +1,89 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@include file="../_include/_taglib.jsp"%>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<%@include file="../_include/_meta.jsp"%>
+<%@include file="../_include/_s0.jsp"%>
+<script type="text/javascript" src="${ctx}/assets/_osdp/auth_user/auth_user_edit.js"></script>
+<style type="text/css">
+#redSpan{
+	color:red;
+	width: 0px;
+	min-width: 0px;
+}
+</style>
+</head>
+<body>
+	<form id="form">
+		<input id="id" name="id" type="hidden">
+		<div class='add_box'>
+			<div class="add_box_in pt-page-scaleUpCenter">
+				<ul class='add_box_in_ul'>
+					<li class="add_box_in_uli">
+						<span>账号: <span id="redSpan">*</span></span>
+						<input name="username" type="text" maxlength="20">
+					</li>
+					<li class="add_box_in_uli">
+						<span>姓名: <span id="redSpan">*</span></span>
+						<input name="name" type="text" maxlength="50">
+					</li>
+					<li class="add_box_in_uli">
+						<!-- <span>编码: </span>
+						<input name="code" type="text" maxlength="50"> -->
+						<span>性别: </span>
+						<input name="sex" type="radio" value="男" checked="checked"><i>男</i>
+						<input name="sex" type="radio" value="女"><i>女</i>
+					</li>
+					<li class="add_box_in_uli">
+						<span>所属机构:<span id="redSpan">*</span></span>
+						<input id="orgNamePath" name="orgNamePath" type="text" class="x-icon-house" readonly="readonly">
+						<input id="orgId" name="orgId" type="hidden">
+					</li>
+					<li class="add_box_in_uli">
+						<span>身份证号: </span>
+						<input id="idCard" name="idCard" type="text" maxlength="20">
+					</li>
+					<li class="add_box_in_uli">
+						<span>出生日期: </span>
+						<input id="birthday" name="birthday" type="text" class="laydate-icon" readonly="readonly">
+					</li>
+					<li class="add_box_in_uli">
+						<span>手机: </span>
+						<input id="mobile" name="mobile" type="text" maxlength="20">
+					</li>
+					<li class="add_box_in_uli">
+						<span>固定电话: </span>
+						<input id="phone" name="phone" type="text" maxlength="20">
+					</li>
+					<li class="add_box_in_uli">
+						<span>是否可用: </span>
+						<input name="enabled" id="enabled" type="checkbox" value="1">
+					</li>
+					<li class="add_box_in_uli">
+						<span>邮箱: <span id="redSpan">*</span></span>
+						<input name="email" type="text" maxlength="50">
+					</li>
+					<li class="add_box_in_uli">
+						<span>用户区分: </span>
+						<input name="userDistinguish" id="hangnei" type="radio" value="1" checked="checked"><i>行内</i>
+						<input name="userDistinguish" id="hangwai" type="radio" value="2"><i>行外</i>
+					</li>
+					<li class="add_box_in_uli">
+						<span>有效期: <span id="validitySpan" style="color:red;width: 0px;min-width: 0px;visibility:hidden;">*</span></span>
+						<input id="validity" name="validity" type="text" class="laydate-icon" readonly="readonly">
+					</li>
+					<li class="add_box_in_uli add_box_in_textarea">
+						<em>备注: </em> 
+						<textarea name="remark" class="form-control" id="remark" style=';height:80px;' maxlength="400"></textarea>
+					</li>
+				</ul>
+				<div class="button_succ">
+					<button id="confirm" type="button" class="btn btn-shadow btn-info">确定</button>
+					<button id="cancel" type="button" class="btn btn-shadow btn-default">取消</button>
+				</div>
+			</div>
+		</div>
+	</form> 
+</body>
+</html>

@@ -1,0 +1,151 @@
+package byit.aladdin.workBook.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+
+import byit.aladdin.workBook.entity.Projects;
+import byit.aladdin.workBook.entity.Sites;
+import byit.aladdin.workBook.support.TableauJdbcDaoSupport;
+import byit.osdp.tableau.TableauConfig;
+import cn.byitgroup.utils.tableau.TableauUtil;
+
+/**
+ * 站点
+ */
+@Repository
+public class SitesDaoImpl extends TableauJdbcDaoSupport {
+	//===================================Fields==============================================
+	private static final RowMapper<Sites> DEFAULT_MAPPER = new BeanPropertyRowMapper<>(Sites.class);
+
+	//===================================Methods=============================================
+	//查询多有站点信息
+	public List<Sites> find() {
+		String sql = getDefaultSql();
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		List<Sites> records = new ArrayList<Sites>();
+		try {
+			conn = TableauUtil.getTableauConn(TableauConfig.TABLEUA_POSTGRESQL_IP,TableauConfig.TABLEUA_POSTGRESQL_USERNAME, TableauConfig.TABLEUA_POSTGRESQL_PASSWORD);
+			pstmt = conn.prepareStatement(sql);
+			rs = pstmt.executeQuery();
+			
+			while (rs.next()) {
+				Sites s = new Sites();
+				s.setId(rs.getLong("id"));
+				s.setName(rs.getString("NAME"));
+				records.add(s);
+			}
+		TableauUtil.closeTableauConn(conn, rs);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return records;
+	}
+
+	public List<Sites> findByLoginUser() {
+		String sql = getSiteByLoginUser();
+		//Object[] args = {UserHolder.getUsername()};
+
+		//List<Sites> records = super.jdbcTemplate.query(sql, DEFAULT_MAPPER);
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		List<Sites> records = new ArrayList<Sites>();
+		try {
+			conn = TableauUtil.getTableauConn(TableauConfig.TABLEUA_POSTGRESQL_IP,TableauConfig.TABLEUA_POSTGRESQL_USERNAME, TableauConfig.TABLEUA_POSTGRESQL_PASSWORD);
+			pstmt = conn.prepareStatement(sql);
+			rs = pstmt.executeQuery();
+			
+			while (rs.next()) {
+				Sites s = new Sites();
+				s.setId(rs.getLong("id"));
+				s.setName(rs.getString("NAME"));
+				records.add(s);
+			}
+		TableauUtil.closeTableauConn(conn, rs);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return records;
+	}
+	public List<Projects> findBySiteId(Long siteId) {
+		String sql = getSiteByIdSql() + " and sites.id = ?";
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		List<Projects> records = new ArrayList<Projects>();
+		try {
+			conn = TableauUtil.getTableauConn(TableauConfig.TABLEUA_POSTGRESQL_IP,TableauConfig.TABLEUA_POSTGRESQL_USERNAME, TableauConfig.TABLEUA_POSTGRESQL_PASSWORD);
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setLong(1, siteId);
+			rs = pstmt.executeQuery();
+			
+			while (rs.next()) {
+				Projects s = new Projects();
+				s.setId(rs.getLong("id"));
+				s.setSiteId(rs.getLong("site_id"));
+				s.setName(rs.getString("name"));
+				s.setLuid(rs.getString("luid"));
+				s.setSiteName(rs.getString("site_name"));
+				records.add(s);
+			}
+		TableauUtil.closeTableauConn(conn, rs);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return records;
+	}
+	public Sites findById(String siteId) {
+		try{
+			String sql = getDefaultSql() + "where id = ?";
+			Object[] args = {Integer.valueOf(siteId)};
+			return jdbcTemplate.queryForObject(sql, args, DEFAULT_MAPPER);
+		}catch(Exception e){
+			return null;
+		}
+	}
+	
+	private String getDefaultSql() {
+		return " select id,name,url_namespace,status,luid from sites ";
+	}
+	
+	private String getSiteByLoginUser() {
+		return "select id,name from sites";
+		/*return " select hist_users.user_id, "
+				+ " users.site_id as id, "
+				+ " sites.name "
+				+ " FROM hist_users,system_users,users,sites "
+				+ " where hist_users.site_admin_level = '5' "
+				+ " and hist_users.publisher_tristate = '1' "
+				+ " and hist_users.system_user_id = system_users.id "
+				+ " and users.id = hist_users.user_id "
+				+ " AND users.site_id = sites.id order by id";
+				//+ " AND system_users.name = ? order by id";
+*/	}
+	private String getSiteByIdSql() {
+		return " SELECT "//
+				+ "   projects.id "//
+				+ "  ,projects.name "//
+				+ "  ,projects.site_id "//
+				+ "  ,projects.luid "//
+				+ "  ,sites.name as site_name "//
+				+ "  ,projects "//				
+				+ " FROM  "//
+				+ "   projects "//
+				+ "  ,sites "//
+				+ " WHERE "//
+				+ "  (projects.site_id = sites.id) "//
+				+ "";
+	}
+}

@@ -1,0 +1,201 @@
+package byit.aladdin.TableauConfigure.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import byit.aladdin.TableauConfigure.bo.CollectBo;
+import byit.aladdin.TableauConfigure.entity.PmTableauserverEntity;
+import byit.aladdin.TableauConfigure.service.PmTableauserverService;
+import byit.core.util.page.Page;
+import byit.core.util.page.Pagination;
+import byit.osdp.base.common.easyui.DataGridAdapter;
+import byit.osdp.base.security.UserHolder;
+
+
+
+/**
+ * Tableau服务器配置>table数据库配置controller层
+ * @author tanghuabo
+ */
+@Controller
+@RequestMapping(value = "/tableauserver")
+public class PmTableauserverController {
+	private final Logger logger = Logger.getLogger(PmTableauserverController.class);
+	// ==============================Fields===========================================
+	@Autowired
+	private PmTableauserverService tableauserverservice;
+	
+	@Autowired
+	private DataGridAdapter dataGridAdapter;
+	// ==============================Method===========================================
+
+	/**
+	 * 跳到列表页面
+	 */
+	@RequestMapping(value = "/tableauServer.html")
+	private String main(HttpServletRequest request, ModelMap mode) {
+		return "tableau/tableauServer";
+	}
+	@RequestMapping(value = "/tableauServerAdd.html")
+	private String add(HttpServletRequest request, ModelMap mode) {
+		return "tableau/tableauServerAdd";
+	}
+	@RequestMapping(value = "/tableauServerUpdate.html")
+	private String update(HttpServletRequest request, ModelMap mode) {
+		return "tableau/tableauServerUpdate";
+	}
+	@RequestMapping(value = "/tableauServerView.html")
+	private String view(HttpServletRequest request, ModelMap mode) {
+		return "tableau/tableauServerView";
+	}
+	//弹出收藏狂
+	@RequestMapping(value = "/collections.html")
+	private String collections(HttpServletRequest request, ModelMap mode) {
+		return "tableau/collections";
+	}
+	/**
+	 * Tableau服务器配置列表及模糊查询
+	 * @return
+	 */
+	@RequestMapping(value = "/pageQuery.do")
+	@ResponseBody
+	private Object getUserList() {
+		Pagination pagination = dataGridAdapter.getPagination();
+		Map<String, Object> result = new HashMap<String, Object>();
+		try {
+			Page<Map<String, Object>> page = (Page<Map<String, Object>>) this.tableauserverservice.getPagedQuery(pagination);
+		    result.put("rows", page.getRecords());
+    		result.put("total", page.getTotal());
+    		result.put("success",1);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return  result;
+	}
+	
+	/**
+	 * 新增或修改table数据库配置
+	 * @param map 前台传入的要保存数据
+	 * @return
+	 */
+	@RequestMapping(value = "/saveOrUpdate.do")
+	@ResponseBody
+	private Object saveUserList(HttpServletRequest request,PmTableauserverEntity tableauServer) {
+		Map<String, Object> result = new HashMap<String, Object>();
+		try {
+			tableauserverservice.saveOrUpdate(tableauServer);
+    		result.put("flag",true);
+		} catch (Exception e) {
+			result.put("flag",false);
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+	/**
+	 * 删除操作
+	 * @param idArray 前台传入id数组 接口信息表id
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/tableauServerRemove")
+	private Object removeOpenApiInfo(String ids) {
+		logger.debug("idArray===="+ids);
+		Map<String, Object> result = new HashMap<String, Object>();
+		if(ids !=null && !ids.equals("")){
+			try {
+				tableauserverservice.removeAll(ids);
+	    		result.put("flag",true);
+			} catch (Exception e) {
+				result.put("flag",false);
+				e.printStackTrace();
+			}
+		}else{
+			result.put("flag",false);
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * 查看操作
+	 * @param id 主键
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/view", method = RequestMethod.POST)
+	private Object loadApiInfoList(@RequestParam("id") String serverid) {
+		PmTableauserverEntity entity  = tableauserverservice.getTableauserverserviceById(serverid);
+		return entity;
+	}
+
+
+
+	
+	
+	//收藏的报表列表
+	@ResponseBody
+	@RequestMapping(value="/countCollections.do")
+	public 	Object countCollections(HttpServletRequest request){
+		Map<String, Object> result = new HashMap<String, Object>();
+		//获取当前登录用户
+		String loginid=UserHolder.getId();
+		try {
+			List<CollectBo> listCollects = this.tableauserverservice.countCollections(loginid);
+			result.put("rows", listCollects);
+			result.put("changdu", listCollects.size());
+		} catch (Exception e) {
+			result.put("error", -1);
+			result.put("msg", "加载数据失败");
+			e.printStackTrace();
+		}
+		return result;
+	}
+	//取消收藏
+	@RequestMapping(value="/collectDelete.do")
+	@ResponseBody
+	public Map<String, Object> collectDelete(HttpServletRequest request,CollectBo collectBo){
+		//把登陆用户信息推送到service
+		Map<String, Object> map = new HashMap<String, Object>();
+//		String reportid=request.getParameter("reportid");
+//		String employeeid = request.getParameter("employeeid");
+//		collectBo.setReportid(reportid);
+//		collectBo.setEmployeeid(employeeid);
+		boolean result = false;
+		result=this.tableauserverservice.collectDelete(collectBo);
+		String msg = "取消收藏该报表失败！";
+		if(result){
+			msg="取消收藏该报表成功！";
+		}
+		map.put("success", result);
+		map.put("msg", msg);
+		return map;
+	}
+	//收藏置顶操作
+	@ResponseBody
+	@RequestMapping(value="/collectToTop.do")
+	public Map<String, Object> collectToTop(HttpServletRequest request,CollectBo collectBo){
+		Map<String, Object> result = new HashMap<String, Object>();
+		boolean flag = false;
+		flag=this.tableauserverservice.collectToTop(collectBo);
+		String msg="置顶显示该报表失败！";
+		if(flag){
+			msg="置顶显示该报表成功！";
+		}
+		result.put("success", flag);
+		result.put("msg", msg);
+		return result;
+	}
+}

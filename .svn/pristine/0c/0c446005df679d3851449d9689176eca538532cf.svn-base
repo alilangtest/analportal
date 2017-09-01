@@ -1,0 +1,166 @@
+package byit.utils;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+/**
+ * 
+	 * 项目名称：scicome   
+	 * 类名称：JsonUtil   
+	 * 类描述：  json操作的工具类
+	 * 创建人：lisw
+	 * 创建时间：2016年9月9日 上午10:56:25   
+	 * 修改人：
+	 * 修改时间：2016年9月9日 上午10:56:25   
+	 * 修改备注：   
+	 * @version
+ */
+public class JsonUtil {
+
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 格式化map，最终形成标准的json字符串，如{"name":"张三","age":"30"}
+		 *@creatTime:2016年9月10日 下午3:58:33 
+		 *@param mapParam
+		 *@return
+		 *@throws Exception String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static String formatMap(Map<String, String> mapParam) throws Exception {
+		
+		String param="";
+		// 循环map，分别获取key与value
+		for (Map.Entry<String, String> entry : mapParam.entrySet()) {
+			String key = entry.getKey();
+			String value = entry.getValue();
+			if(value==null)
+				value="";
+			if(Tools.isNotEmpty(param)){
+				//param=param+",\""+key + "\":\"" + Transcoding.transEncode(value)+"\"";
+				if(Constants.status.equals(key)){
+					param=param+",\""+key + "\":" + value;
+				}else if(value.indexOf("{")!=-1){
+					param=param+",\""+key + "\":" + value;
+				}else{
+					param=param+",\""+key + "\":\"" + value+"\"";
+				}
+			}else{
+				//param="\""+key + "\":\"" + Transcoding.transEncode(value)+"\"";
+				param="\""+key + "\":\"" + value+"\"";
+			}
+		}
+		param="{"+param+"}";
+		return param;
+	}
+	
+	/**
+	 * @throws IOException 
+	 * @throws JsonMappingException 
+	 * @throws JsonParseException 
+	 * 
+		 *@author lisw
+		 *@Description: json字符串转化为list集合。这个集合中的元素是json的value，没有key。
+		 *第一个元素的key是cmd表示是哪个请求。第二个元素是ret，表示成功与否。第三个元素是txt(失败返回)或info(成功返回)
+		 *如json字符串为{"name":"张三","age":"30"}。返回的list中元素为"张三"和"30"，而没有"name"和"age"
+		 *如果list场地是2，说明ret是-1.如果list长度是4说明无论票据还是登陆均校验成功
+		 *@creatTime:2016年9月12日 下午10:58:33 
+		 *@param mapParam
+		 *@return
+		 *@throws Exception String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static List<String> loginVerifySucc(String jsonStr) throws JsonParseException, JsonMappingException, IOException{
+		
+		
+		List<String> list=new ArrayList<String>();
+		
+		//讲json字符串转化为json对象
+		JSONObject jsonObject = JSONObject.fromObject(jsonStr);
+		
+		String ret = jsonObject.getString("ret");
+		list.add(0,ret);
+		
+		if(ret.equals("0")){
+			
+			//校验类型
+			String verify_type = jsonObject.getString("verify_type");
+			list.add(1,verify_type);
+			
+			//校验是否成功
+			String is_verify_succ = jsonObject.getString("is_verify_succ");
+			list.add(2,is_verify_succ);
+			
+			//如果校验成功肯定会返回user对象和ticket
+			if(is_verify_succ.equals("true")){
+				String ticket = jsonObject.getString("ticket");
+				list.add(3,ticket);
+				
+				String user = jsonObject.getString("user");
+				list.add(4,user);
+				
+				//String ip = jsonObject.getString("ip");
+				//list.add(5,ip);
+			}
+			
+		}else{
+			String txt = jsonObject.getString("txt");
+			list.add(1,txt);
+		}
+		
+		
+		return list;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 将json（{"tableName":"...","isChecked":"..."},{"tableName":"...","isChecked":"..."}）字符串转为list
+		 *@creatTime:2017年8月2日 下午7:24:08 
+		 *@return:@param jsonStr
+		 *@return:@return List<Map<String,String>>
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	@SuppressWarnings("unchecked")
+	public static List<Map<String, String>> formatJsonToList(String jsonStr) {
+		JSONArray jsonArray = JSONArray.fromObject(jsonStr);
+		List<Map<String, String>> mapListJson = (List<Map<String, String>>) jsonArray;
+		List<Map<String, String>> retList=new ArrayList<Map<String,String>>();
+		for (int i = 0; i < mapListJson.size(); i++) {
+			Map<String, String> obj = mapListJson.get(i);
+			Map<String, String> tMap=new HashMap<String, String>();
+			for (Entry<String, String> entry : obj.entrySet()) {
+				String strkey1 = entry.getKey();
+				String strval1 = entry.getValue();
+				tMap.put(strkey1, strval1);
+			}
+			retList.add(tMap);
+		}
+		return retList;
+	}
+
+	
+	public static void main(String[] args) {
+		//String s="[{\"tableName\":\"DM_FUND_YC_CHK_ACCOUNT-测试1\",\"isChecked\":\"DATA_DATE,MERCH_ID\"},{\"tableName\":\"DM_FUND_YC_CHK_ACCOUNT-测试2\",\"isChecked\":\"MERCH_NAME,YC_ACCOUNT_NO\"}]";
+		//System.out.println(formatJsonToList(s));
+		String s="DM_FUND_YC_CHK_ACCOUNT-测试1";
+		String[] ss=s.split("-");
+		
+		System.out.println(ss[0]+"===="+ss[1]);
+	}
+}

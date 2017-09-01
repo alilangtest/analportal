@@ -1,0 +1,78 @@
+package byit.osdp.portal.interceptor;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.log4j.Logger;
+import org.apache.shiro.SecurityUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+
+import byit.core.util.web.WebUtil;
+import byit.osdp.base.security.UserHolder;
+import byit.osdp.base.service.UseSSOService;
+import byit.osdp.portal.interceptor.service.InsertSystemLogService;
+import byit.osdp.portal.sso.Contants;
+import byit.osdp.portal.sso.http.HtttpConnHelper;
+import byit.utils.Tools;
+
+/**
+ * 请求拦截器
+ */
+@Component("logHandlerInterceptor")
+public class LogHandlerInterceptor extends HandlerInterceptorAdapter {
+	// ==============================Fields===========================================
+	@Autowired
+	private InsertSystemLogService insertSystemLogService;
+	@Autowired
+	private UseSSOService useSSOService;
+	// ==============================Method===========================================
+	private final Logger logger = Logger.getLogger(LogHandlerInterceptor.class);
+	@Override
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+		String url = WebUtil.getPathWithinApplication(request);
+		String uid = UserHolder.getId();
+		//查询数据库是否启用单点登录
+		String isEnable=useSSOService.findSystemDomain(Contants.DOMAINID, Contants.CODEID);
+		logger.debug(Tools.getCurrFormatTimeGen()+":进入LogHandlerInterceptor");
+		if(Contants.ISENABLE.equals(isEnable)){
+			logger.debug(Tools.getCurrFormatTimeGen()+":启用单点登录");
+			//如果启用单点登录
+			String sessionid = UserHolder.getsessionId();
+			logger.debug(Tools.getCurrFormatTimeGen()+":sessionid="+sessionid);
+			//清理session
+			Map<String,String> map=null;
+			try {
+				
+				map =HtttpConnHelper.verifySessionAlive(sessionid);
+				
+				for(String key : map.keySet()){
+					//如果服务端没有session，需要清理本地session
+					if(("is_session_exist".equals(key))&&("false".equals(map.get(key)))){
+						logger.debug(Tools.getCurrFormatTimeGen()+":服务端无session，清理本地session");
+						SecurityUtils.getSubject().logout();
+						return ;
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		logger.debug(Tools.getCurrFormatTimeGen()+":LogHandlerInterceptor代码执行完成，退出");
+		log(url, uid,request);
+	}
+
+	private void log(String url, String uid,HttpServletRequest request) {
+		logger.debug("用户(" + uid + ")，访问了[" + url + "]页面");
+		insertSystemLog(url,uid,request);
+	}
+	
+	//向system_log表插入数据
+	private void insertSystemLog(String url,String uid,HttpServletRequest request){
+		
+		this.insertSystemLogService.insertSystemLog(url,uid,request);
+	}
+}

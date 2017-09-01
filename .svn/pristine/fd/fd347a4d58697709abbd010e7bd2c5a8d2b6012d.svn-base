@@ -1,0 +1,45 @@
+##JDBC##
+jdbc.driver=oracle.jdbc.OracleDriver
+
+#\u6d4b\u8bd5\u73af\u5883 
+#jdbc.url=jdbc:oracle:thin:@localhost:1521:orcl
+#jdbc.username=hfportal
+#jdbc.password=hfportal
+
+#\u751f\u4ea7\u73af\u5883       
+jdbc.url=jdbc:oracle:thin:@(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = rac07.yiguanjinrong.yg)(PORT = 1521))(ADDRESS = (PROTOCOL = TCP)(HOST = rac17.yiguanjinrong.yg)(PORT = 1521))(LOAD_BALANCE = ON)(FAILOVER=ON)(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = datacent)(FAILOVER_MODE=(TYPE = SELECT)(METHOD = BASIC)(RETIRES = 20)(DELAY = 15))))
+jdbc.username=analportal
+jdbc.password=ana_2o!70^1%22
+
+jdbc.dialect=byit.core.plug.jdbc.dialect.impl.OracleDialect
+
+security.loginUrl=/index.html
+security.successUrl=/index.html
+security.default.password=111111
+
+#\u4e0b\u9762\u7684oracle\u6570\u636e\u5e93\u4e2ddm\u548cadm\u4e3b\u8981\u7528\u4e8e\u62a5\u8868\u8ba2\u9605\uff0c\u62a5\u8868\u8ba2\u9605\u4e00\u5171\u4f7f\u75284\u4e2a\u6570\u636e\u5e93\uff0c\u5176\u4e2d3\u4e2a\u662foracle\uff0c1\u4e2a\u662fpostgrpsql
+#\u8fde\u63a5oracle\u7684dm\u6570\u636e\u5e93
+
+adm.driver=oracle.jdbc.driver.OracleDriver
+#\u4e0b\u9762\u914d\u7f6e\u662f\u6d4b\u8bd5\u73af\u5883
+#adm.url=jdbc\:oracle\:thin\:@localhost\:1521\:orcl
+#adm.username=adm
+#adm.password=oracle
+
+
+#\u4e0b\u9762\u914d\u7f6e\u662f\u751f\u4ea7\u73af\u5883
+adm.url=jdbc:oracle:thin:@(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = rac07.yiguanjinrong.yg)(PORT = 1521))(ADDRESS = (PROTOCOL = TCP)(HOST = rac17.yiguanjinrong.yg)(PORT = 1521))(LOAD_BALANCE = ON)(FAILOVER=ON)(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = datacent)(FAILOVER_MODE=(TYPE = SELECT)(METHOD = BASIC)(RETIRES = 20)(DELAY = 15))))
+adm.username=adm
+adm.password=bZ5zs30XtWOR9
+
+
+dm.driver=oracle.jdbc.driver.OracleDriver
+#\u8fde\u63a5oracle\u7684adm\u6570\u636e\u5e93
+#dm.url=jdbc\:oracle\:thin\:@localhost\:1521\:orcl
+#dm.username=dm
+#dm.password=oracle
+
+#\u4e0b\u9762\u914d\u7f6e\u662f\u751f\u4ea7\u73af\u5883
+dm.url=jdbc:oracle:thin:@(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = rac07.yiguanjinrong.yg)(PORT = 1521))(ADDRESS = (PROTOCOL = TCP)(HOST = rac17.yiguanjinrong.yg)(PORT = 1521))(LOAD_BALANCE = ON)(FAILOVER=ON)(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = datacent)(FAILOVER_MODE=(TYPE = SELECT)(METHOD = BASIC)(RETIRES = 20)(DELAY = 15))))
+dm.username=dm
+dm.password=rcvzH0THK61ZG

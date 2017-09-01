@@ -1,0 +1,25 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%
+System.out.println("进入tosso.jsp");
+String ssoUrl=(String)request.getAttribute("ssoUrl");
+pageContext.setAttribute("ssoUrl", ssoUrl);
+%>
+<%@include file="../_include/_taglib.jsp"%>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<%@include file="../_include/_meta.jsp"%>
+<%@include file="../_include/_s0.jsp"%>
+<script type="text/javascript">
+	var ssoUrl="<%=ssoUrl%>";
+</script>
+<script type="text/javascript">
+	//alert("准备跳转页面");
+	$(function() {
+		window.location.href=ssoUrl;
+	});
+</script>
+</head>
+<body>
+</body>
+</html>

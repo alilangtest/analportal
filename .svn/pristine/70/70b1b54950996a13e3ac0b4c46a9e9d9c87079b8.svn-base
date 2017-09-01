@@ -1,0 +1,40 @@
+var EL = EL || {}, FN = FN || {}, GV = GV || {}, URLS = URLS || {};
+URLS.doLogin = _ctx + '/login.do';// 登录，能获取其他sso客户端url。
+URLS.login = _ctx + '/login.html';// 登录，返回到登录页面或者进入首页
+URLS.toIndex = _ctx + '/toIndex.html';// 跳转到登录页面
+URLS.index=_ctx + '/index.html';
+//
+$(function() {
+	//TODO
+	//用于单点登录，判断是否有票据和sessionid。如果有，进入登录方法
+	if((typeof(ticket) != 'undefined')&&(typeof(sessionId) != 'undefined')){
+		console.log("sessionId="+sessionId+",ticket="+ticket);
+		if((ticket!=null && ticket!="") && (sessionId!=null && sessionId!="")){
+			console.log("定义session和ticket，发送请求验证");
+			var params = {};
+			params.ticket = ticket;
+			params.sessionId = sessionId;
+			console.log("准备执行登录操作，进入login.do");
+			$.post(URLS.doLogin, params, function(map) {
+				if (map.success){
+					console.log("登录操作执行成功，进入login.html");
+					location.href = URLS.login;
+				}else if(map.errticket){
+					console.log("浏览器中的票据有误！无法登录");
+					location.href = URLS.index;
+				}else {
+					console.log("登录有误！");
+					location.href = URLS.login;
+				}
+			});
+		}else{
+			console.log("有session和ticket，但是两个均为空或者有一个为空，跳转到登录页面");
+			location.href=URLS.login;
+		}
+	}else{
+		console.log("未定义session和ticket，跳转到登录页面");
+		location.href=URLS.login;
+	}
+	
+	
+});

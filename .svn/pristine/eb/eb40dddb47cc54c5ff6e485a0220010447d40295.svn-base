@@ -1,0 +1,87 @@
+package byit.aladdin.dataAnalysis.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import byit.aladdin.dataAnalysis.service.LogService;
+import byit.core.util.page.Page;
+import byit.core.util.page.Pagination;
+import byit.osdp.base.common.easyui.DataGridAdapter;
+
+@Controller
+@RequestMapping("/logss")
+public class LogController  {
+//	private static final Logger log = LoggerFactory.getLogger(LogController.class);
+	
+	private LogService logService;
+
+	public LogService getLogService() {
+		return logService;
+	}
+
+	public void setLogService(LogService logService) {
+		this.logService = logService;
+	}
+
+	@RequestMapping("/logmain.html")
+	public String getLog(){
+//		log.info("转向页面");
+		return "/log/logmain";
+	}
+
+	@Autowired
+	private DataGridAdapter dataGridAdapter;
+	/**
+	 * 查询系统日志列表
+	 * 
+	 * @param request
+	 * @param logBo
+	 * @return
+	 */
+	@RequestMapping(value = "/logPageList.do")
+	@ResponseBody
+	private Object getUserList() {
+		//分页插件
+		Pagination pagination = dataGridAdapter.getPagination();
+		//返回的对象
+		Map<String, Object> result = new HashMap<String, Object>();
+		try {
+			Page<Map<String, Object>> page = (Page<Map<String, Object>>) this.logService.queryLogListforPage(pagination);
+		    result.put("rows", page.getRecords());
+    		result.put("total", page.getTotal());
+    		result.put("success",1);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return  result;
+	}
+	
+	/*@RequestMapping("/logPageList.do")
+	@ResponseBody
+	public Object logPageList() {
+  
+		Pagination pagination = dataGridAdapter.getPagination();
+		//正在分分页
+		log.info("日志列表查询开始");
+		HashMap<String, Object> map = new HashMap<>();
+		try {
+			//Page<LogAnalysisEntity> stationPage 5
+			Page<Map<String,Object>> pages = this.logService.queryLogListforPage(pagination);
+			map.put("rows", pages.getRecords());
+			map.put("total",pages.getTotal());
+			map.put("success", "1");
+			//map.put("rows", page)
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return map;
+	}*/
+	
+	
+}

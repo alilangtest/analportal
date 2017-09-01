@@ -1,0 +1,65 @@
+.data_bulu{
+	float: left;
+	width: 100%;
+}
+.data_bulu .data_bulu_in{
+	width: 1200px;
+	margin:0 auto;
+	margin-top:20px;
+}
+.data_bulu_in h4{
+	width:100%;
+	height:40px;
+	float: left;
+	line-height: 40px;
+	text-align: center;
+	font-size:19px;
+	color:#333;
+	text-align:center;
+	font-weight:bold;
+}
+.bulu_nr{
+	float: left;
+	width: 100%;
+	background-color: #fff;
+	border-radius:2px;
+}
+.span_ll{
+	display:inline-block;
+	padding: 6px 12px;
+	margin-right:15px;
+	font-size:15px;width: 100px;text-align:right;
+}
+.form-control:focus{
+  border:1px solid #78CD51;
+}
+.bulu_nr{
+	padding-top:15px;
+	padding-bottom: 15px;
+}
+.bulu_nr_iy{
+	padding: 5px;
+    float: left;
+    width: 100%;
+}
+.bulu_panel{
+	float: left;
+	width: 100%;
+}
+.fl{
+	float: left;
+}
+.fr{
+	float: right;
+}
+textarea.form-control{
+	width: 87%;
+	margin-left:4px;
+}
+.bulu_nr_iy2{
+	width: 96%;
+    margin-left: 2%;
+    margin-top: 10px;
+    padding-bottom: 17px;
+    border-bottom: 1px solid #eee;
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+<!-- 	<column>
+		<tableId>DM_D_YGNEW_CUST,DM_F_PUBLISH_APP</tableId>
+		<checkedColumnId id="DM_D_YGNEW_CUST">
+			<isChecked>DATA_DATE,REG_CUST_NUM</isChecked>
+		</checkedColumnId>
+		<checkedColumnId id="DM_D_YGNEW_CUST">
+			<isChecked>DATA_DT</isChecked>
+		</checkedColumnId>
+	</column> -->
+	
+</root>

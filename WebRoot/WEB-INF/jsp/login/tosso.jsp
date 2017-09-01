@@ -1,0 +1,34 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%
+response.setHeader("_SESSION_TIMEOUT", "Y");
+System.out.println("进入tosso.jsp，在该页面跳转到单点登录页面");
+String ssoUrl=(String)request.getAttribute("ssoUrl");
+pageContext.setAttribute("ssoUrl", ssoUrl);
+%>
+<%@include file="../_include/_taglib.jsp"%>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<%@include file="../_include/_meta.jsp"%>
+<%@include file="../_include/_s0.jsp"%>
+<script type="text/javascript">
+	var ssoUrl="<%=ssoUrl%>";
+</script>
+<script type="text/javascript">
+	var EL = EL || {}, FN = FN || {}, GV = GV || {}, URLS = URLS || {};
+	URLS.login = _ctx + '/login.html';// 登录
+	$(function() {
+		//如果父页面嵌套的子页面，需要将子页面替换为父页面，否则直接进入单点登录页面
+		if(window.parent != window){
+			window.parent.location = URLS.login;
+		}else{
+			window.location.href=ssoUrl;
+		}
+		
+		//window.location.href=ssoUrl+"?windowLocation="+window.location.href;
+	});
+</script>
+</head>
+<body>
+</body>
+</html>

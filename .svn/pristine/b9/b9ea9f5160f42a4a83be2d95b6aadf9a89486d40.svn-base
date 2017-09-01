@@ -1,0 +1,595 @@
+package byit.utils;
+
+import java.io.File;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
+import byit.osdp.base.entity.AuthUserEntity;
+import byit.tableausubscribe.common.util.Constants;
+
+/**
+ * 
+	 * 项目名称：hfportal   
+	 * 类名称：Tools   
+	 * 类描述：  常用工具类
+	 * 创建人：lisw
+	 * 创建时间：2017年5月19日 下午4:31:20   
+	 * 修改人：
+	 * 修改时间：2017年5月19日 下午4:31:20   
+	 * 修改备注：   
+	 * @version
+ */
+public class Tools {
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 检测字符串是否为空(null,"","null")
+		 *@creatTime:2015-12-14 下午2:10:06 
+		 *@param s:待检测的字符串
+		 *@return boolean。不为空则返回true，为空返回false
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static boolean isNotEmpty(String s) {
+		return s!=null && s.trim().length()>0;
+	}
+
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 将Map<String,String>转化为User对象
+		 *@creatTime:2017年5月21日 下午7:13:58 
+		 *@return:@param map
+		 *@return:@return AuthUserEntity
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static AuthUserEntity convertMapToUser(Map<String,String> map){
+		AuthUserEntity user=new AuthUserEntity();
+		Field[] field =user.getClass().getDeclaredFields();
+		try {
+            for (int j = 0; j < field.length; j++) { // 遍历所有属性
+                String name = field[j].getName(); // 获取属性的名字
+                name = name.substring(0, 1).toUpperCase() + name.substring(1); // 将属性的首字符大写，方便构造get，set方法
+                String type = field[j].getGenericType().toString(); // 获取属性的类型
+                if (type.equals("class java.lang.String")) { // 如果type是类类型，则前面包含"class "，后面跟类名
+                    Method m = user.getClass().getMethod("get" + name);
+                    String value = (String) m.invoke(user); // 调用getter方法获取属性值
+                    if (value == null) {
+                        m = user.getClass().getMethod("set"+name,String.class);
+                        String nameValue=(String)getMapValue(field[j].getName(),map);
+                        m.invoke(user, nameValue);
+                    }
+                }
+                if (type.equals("class java.lang.Integer")) {
+                    Method m = user.getClass().getMethod("get" + name);
+                    Integer value = (Integer) m.invoke(user);
+                    if (value == null) {
+                        m = user.getClass().getMethod("set"+name,Integer.class);
+                        Integer nameValue=(Integer)getMapValue(field[j].getName(),map);
+                        m.invoke(user, nameValue);
+                    }
+                }
+                if (type.equals("class java.lang.Boolean")) {
+                    Method m = user.getClass().getMethod("get" + name);
+                    Boolean value = (Boolean) m.invoke(user);
+                    if (value == null) {
+                        m = user.getClass().getMethod("set"+name,Boolean.class);
+                        Boolean nameValue=(Boolean)getMapValue(field[j].getName(),map);
+                        m.invoke(user, nameValue);
+                    }
+                }
+                if (type.equals("class java.util.Date")) {
+                    Method m = user.getClass().getMethod("get" + name);
+                    Date value = (Date) m.invoke(user);
+                    if (value == null) {
+                        m = user.getClass().getMethod("set"+name,Date.class);
+                        
+                        String nameValue=(String)getMapValue(field[j].getName(),map);
+                        
+                        m.invoke(user, str2Date(nameValue));
+                    }
+                }
+                // 如果有需要,可以仿照上面继续进行扩充,再增加对其它类型的判断
+            }
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+		/*for (int i = 0; i < field.length; i++) {
+			String userObjName= field[i].getName(); 
+			for (String key : map.keySet()) {
+				if(userObjName.equals(key)){
+					
+				}
+			}
+			
+		}*/
+		
+		
+		return user;
+		
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 获取map的value
+		 *@creatTime:2017年5月21日 下午8:28:39 
+		 *@return:@param name
+		 *@return:@param map
+		 *@return:@return Object
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static Object getMapValue(String name,Map<String,String> map){
+		Object obj=null;
+		for (String key : map.keySet()) {
+        	if(name.equals(key)){
+        		obj=map.get(key)==null?"":map.get(key);
+        	}
+        }
+		return obj;
+	}
+	
+	/**
+	 * 按照yyyy-MM-dd HH:mm:ss的格式，字符串转日期
+	 * 
+	 * @param date
+	 * @return
+	 */
+	public static Date str2Date(String date) {
+		if (isNotEmpty(date)) {
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			try {
+				return sdf.parse(date);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+			return new Date();
+		} else {
+			return null;
+		}
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 获取访问者（客户端的ip地址）
+		 *@creatTime:2017年5月22日 下午6:42:37 
+		 *@return:@param request
+		 *@return:@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static String getIpAddr(HttpServletRequest request) {
+      //获取真实的ip地址，就算是通过代理也能获取ip地址。
+		//如果浏览器数据localhost，返回的ip地址是0:0:0:0:0:..:1这类地址
+		String ip = request.getHeader("x-forwarded-for");
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getHeader("Proxy-Client-IP");
+		}
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getHeader("WL-Proxy-Client-IP");
+		}
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getHeader("HTTP_CLIENT_IP");
+		}
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+		}
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getRemoteAddr();
+		}
+		return ip;
+    }
+	
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 格式化当前时间，格式化后的时间为20150807105556
+		 *@creatTime:2016-7-27 下午2:09:26 
+		 *@parameter：@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static String getCurrFormatTime() {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+		return sdf.format(new Date());
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 格式化当前时间，格式化后的时间为2015-08-07 10:55:56
+		 *@creatTime:2017年6月1日 下午4:59:11 
+		 *@return:@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static String getCurrFormatTimeGen() {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		return sdf.format(new Date());
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 格式化当前时间，格式化后的时间为2015-08-07 10:55
+		 *@creatTime:2017年6月2日 下午4:42:11 
+		 *@return:@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static String getCurrFormatTimeMin() {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+		return sdf.format(new Date());
+	}
+	
+	public static String getCurrFormatTime(Date date) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+		return sdf.format(new Date());
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 格式化当前时间，格式化后的时间为201508071055
+		 *@creatTime:2017年6月2日 下午4:43:29 
+		 *@return:@param date
+		 *@return:@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static String getCurrFormatTimeMin(Date date) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm");
+		return sdf.format(date);
+	}
+	
+	public static String getCurrFormatTimeday(Date date) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		return sdf.format(date);
+	}
+	
+	public static String getCurrFormatTimeDay(Date date) {
+		if(date!=null){
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+			return sdf.format(date);
+		}else{
+			return "";
+		}
+	}
+	public static String getCurrFormatTimeMinSec(Date date) {
+		if(date!=null){
+			SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+			return sdf.format(date);
+		}else{
+			return "";
+		}
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 去掉字符串的单引号，如'3'->3
+		 *@creatTime:2017年6月3日 下午3:04:57 
+		 *@return: String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static String removeStrQuotes(String str){
+		String regexp = "\'";
+		str = str.replaceAll(regexp, "");
+		return str;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 将List转为String,并且list的每个元素转为String后都带有双引号，如："123","123edew","d3d4","d3d4xwed","d3d4dewdwe"
+		 *@creatTime:2017年6月3日 下午9:50:39 
+		 *@return:@param strList
+		 *@return:@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static String turnListToStrWithQuotes(List<String> strList){
+		String str="";
+		for (int i = 0; i < strList.size(); i++) {
+			if(i==0){
+				str="\""+strList.get(0)+"\"";
+			}else{
+				str+=","+"\""+strList.get(i)+"\"";
+			}
+		}
+		return str;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 创建filepath路径
+		 *@creatTime:2017年6月6日 下午3:33:12 
+		 *@return:@param filePath void
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public  static void mkdir(String filePath){
+		File file=new File(filePath);
+		if (!file.exists()) {
+			file.mkdirs();
+		}
+
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: String类型的时间转为Date类型
+		 *@creatTime:2017年6月7日 下午8:37:17 
+		 *@return:@param dateStr
+		 *@return:@return Date
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static Date formatDateStr(String dateStr){
+		 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");  
+		 Date date=null;
+		try {
+			date = sdf.parse(dateStr);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		 return date;
+	}
+	
+	public static Date formatDateStrDay(String dateStr){
+		 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");  
+		 Date date=null;
+		try {
+			date = sdf.parse(dateStr);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		 return date;
+	}
+	
+	public static Date formatDateStrMin(String dateStr){
+		 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");  
+		 Date date=null;
+		try {
+			date = sdf.parse(dateStr);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		 return date;
+	}
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 计算两个时间的时间差。大于0说明srcDate时间大于tarDate时间
+		 *@creatTime:2017年6月7日 下午8:41:12 
+		 *@return:@param srcDate
+		 *@return:@param tarDate
+		 *@return:@return long
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static long timeDiff(Date srcDate,Date tarDate){
+		long timeDiff=srcDate.getTime()-tarDate.getTime();
+		return timeDiff;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description:将两个String字符串转为date，并判断日期是否为同一天，等于0表示同一天，不等于0不为同一天
+		 *@creatTime:2017年6月7日 下午8:56:10 
+		 *@return:@return int
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static int compareDate(String date1,String date2){
+		return formatDateStrDay(date1).compareTo(formatDateStrDay(date2));
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public static String formatMapToStr(Map tMap){
+		String str=null;
+		ObjectMapper mapper = new ObjectMapper();
+		//设置不写NULLmap值
+		mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
+		try {
+			str = mapper.writeValueAsString(tMap);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+		return str;
+		
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 依据cond条件将String转为list,如依据“,”将字符串--PURCHASE_CUST_TOTAL,-,-PURCHASE_CUST_TOTAL,CHARGE_CUST_TOTAL,CHANNEL_NO转化为list
+		 *@creatTime:2017年6月16日 下午3:07:29 
+		 *@return:@param str
+		 *@return:@return List<String>
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static List<String> formatStrToList(String str,String cond){
+		List<String> list=new ArrayList<String>();
+		if(isNotEmpty(str) && isNotEmpty(cond)){
+			String[] tStr=str.split(cond);
+			list=Arrays.asList(tStr);
+		}
+		return list;
+	}
+	
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 将list转为String
+		 *@creatTime:2017年6月16日 下午3:40:31 
+		 *@return:@param list
+		 *@return:@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static String formatListToStr(List<String> list){
+		String retStr="";
+		int size=list.size();
+		if(size>0){
+			for (int i = 0; i <size; i++) {
+				if(i==0){
+					retStr=list.get(i);
+				}else{
+					retStr=retStr+","+list.get(i);
+				}
+			}
+		}
+		
+		return retStr;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 格式化list集合，去掉集合中每个元素的“-”，去掉集合中空的元素。去掉集合中重复的元素
+		 *@creatTime:2017年6月16日 下午3:13:48 
+		 *@return:@return List<String>
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static List<String> formatList(List<String> list){
+		int size=list.size();
+		List<String> tList = new ArrayList<String> ();
+		if(size>0){
+			List<String> _list=new ArrayList<String>();
+			for (int i = 0; i < size; i++) {
+				String _s=list.get(i).replaceAll("-", "");
+				if(isNotEmpty(_s) && !_s.contains(",")){
+					_list.add(_s);
+				}
+			}
+			HashSet<String> set = new HashSet<String>(_list); 
+			tList.addAll(set);
+		}
+		return tList;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description:将中文的星期转为数字
+		 *@creatTime:2017年6月19日 上午11:57:28 
+		 *@return:@param str
+		 *@return:@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static String formatWeekToNo(String str){
+		String retStr=str;
+		if(isNotEmpty(str)){
+			if(str.contains("一")){
+				retStr="2";
+			}else if(str.contains("二")){
+				retStr="3";
+			}else if(str.contains("三")){
+				retStr="4";
+			}else if(str.contains("四")){
+				retStr="5";
+			}else if(str.contains("五")){
+				retStr="6";
+			}else if(str.contains("六")){
+				retStr="7";
+			}else if(str.contains("日")){
+				retStr="1";
+			}
+		}
+		return retStr;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 获取当前操作系统名称
+		 *@creatTime:2017年7月11日 下午12:00:50 
+		 *@return:@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static String getOSName(){
+		//获取当前操作系统名称
+		String OS_name=System.getProperties().getProperty("os.name");
+		return OS_name;
+	}
+	
+	public static void main(String[] args) {
+		/*System.out.println(formatDateStrDay("2017-06-07 20:54"));
+		System.out.println(formatDateStrDay(getCurrFormatTimeGen()));
+		System.out.println(formatDateStrDay("2017-06-07 20:54").compareTo(formatDateStrDay(getCurrFormatTimeGen())));
+		System.out.println(compareDate("2017-06-08 20:54",getCurrFormatTimeGen()));*/
+		/*formatDateStr(getCurrFormatTimeGen());
+		System.out.println(timeDiff(formatDateStr("2017-06-07 20:45"),formatDateStr(getCurrFormatTimeGen())));
+		System.out.println(formatDateStr("2017-03-17 02:55"));*/
+	
+	/*String s="--PURCHASE_CUST_TOTAL,PURCHASE_CUST_TOTAL,-,-PURCHASE_CUST_TOTAL,CHARGE_CUST_TOTAL,CHANNEL_NO,DATA_DT,REG_CUST_TOTAL";
+	String c=",";
+	List<String> list=formatList(formatStrToList(s,c));
+	System.out.println(formatListToStr(list));*/
+		//System.out.println(getCurrFormatTimeGen());
+		//System.out.println(Tools.timeDiff(Tools.formatDateStrMin(Tools.getCurrFormatTimeGen()),Tools.formatDateStrMin(Tools.getCurrFormatTimeDay(new Date())+" "+Constants.STOPSCANTASKBEGIN)));
+		
+		//System.out.println(Calendar.getInstance().getTime().getTime());
+		//System.out.println(timeDiff(formatDateStr("2017-07-02 16:35:00"),formatDateStr(getCurrFormatTimeGen())));
+		
+		System.out.println("\u52A0\u8F7D\u6570\u636E\u5931\u8D25");
+		System.out.println("\u52A0\u8F7D\u6570\u636E\u5931\u8D25");
+	}
+}

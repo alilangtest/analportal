@@ -1,0 +1,54 @@
+package byit.osdp.portal.sso;
+
+/**
+ * 
+	 * 项目名称：hfportal_05   
+	 * 类名称：Contants   
+	 * 类描述： SSO使用常量
+	 * 创建人：lisw
+	 * 创建时间：2017年5月30日 下午7:36:35   
+	 * 修改人：
+	 * 修改时间：2017年5月30日 下午7:36:35   
+	 * 修改备注：   
+	 * @version
+ */
+public class Contants {
+	
+	//返回到页面的cookie的ticket的key
+	public static final String TICKET_KEY="ticket";
+	//返回到页面的cookie的sessionId的key
+	public static final String SESSIONID_KEY="sessionId";
+	
+	//错误票据的key
+	public static final String ERR_TICKET_KEY="errticket";
+	
+	//sso服务端返回的是否成功标志
+	public static final String RET_KEY="ret";
+	//sso服务端返回的是否成功的值
+	public static final String RET_SUCC_VALUE="0";
+	
+	//sso服务端返回的client的key
+	public static final String CLIENT_KEY="client";
+	
+	//客户端url，和数据库字段保持一致
+	public static final String CLIENTURL="clientDomainurl";
+	
+	//session是否存在的key
+	public static final String IS_SESSION_EXIST_KEY="is_session_exist";
+	
+	public static final String DELIMITER="|||";
+	
+	//true
+	public static final String TRUE="true";
+	
+	public static final String FALSE="false";
+	//sso服务端返回的用户的key
+	public static final String USER="user";
+	
+	//启用单点登录的domainid
+	public static final String DOMAINID="useSSO";
+	//启用单点登录的codeid
+	public static final String CODEID="enable";
+	//是否启用单点登录系统,1表示启用
+	public static final String ISENABLE="1";
+}

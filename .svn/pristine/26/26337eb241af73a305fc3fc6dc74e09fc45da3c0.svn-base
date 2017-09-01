@@ -1,0 +1,163 @@
+var EL = EL || {}, FN = FN || {}, GV = GV || {}, URLS = URLS || {};
+
+URLS.load = _ctx + '/auth_user/load.do';
+URLS.save = _ctx + '/auth_user/save.do';
+URLS.orgSelectPage = _ctx + '/auth_org/auth_org_select.html';
+
+$(function() {
+
+	GV.search = $.decodeUrlParams();
+	GV.id = GV.search.id;
+
+	EL.window = $(window);
+	EL.form = $('#form');
+	EL.confirm = $('#confirm');
+	EL.cancel = $('#cancel');
+
+	EL.orgId = $('#orgId');
+	EL.orgNamePath = $('#orgNamePath');
+
+	//
+	if ($.isEmpty(GV.id)) {
+		EL.form.vals({});
+		document.getElementById("enabled").checked = true;
+	} else {
+		var params = {};
+		params.id = GV.id;
+		$.mask();
+		$.post(URLS.load, params, function(result) {
+			var err = $.err(result);
+			if (err) {
+				$.dlg.msg(err.message, {
+					end : function() {
+						$.dlg.close();
+					}
+				});
+			} else {
+				$.unmask();
+				result.birthday && (result.birthday = result.birthday.substring(0, 10));
+				result.orgNamePath || (result.orgNamePath = result.orgName);
+				result.validity && (result.validity = result.validity.substring(0, 10));
+				//debugger;
+				
+				
+				//alert(result.enabled);
+				EL.form.vals(result);
+			}
+		});
+	}
+
+	laydate({
+		elem : '#birthday',
+		format : 'YYYY-MM-DD'
+	});
+	laydate({
+		elem : '#validity',
+		format : 'YYYY-MM-DD',
+		min: laydate.now()
+	});
+
+	EL.orgNamePath.on('click', function() {
+		$.dlg.open({
+			title : '选择部门',
+			area : [ '470px', '500px' ],
+			content : URLS.orgSelectPage,
+			end : function(result) {
+				if (result) {
+					EL.orgId.val(result.code);
+					EL.orgNamePath.val(result.namePath || result.name);
+				}
+			}
+		});
+	});
+
+	EL.confirm.on('click', function() {
+		var params = EL.form.vals();
+		params.username = $.trim(params.username);
+		params.name = $.trim(params.name);
+		/*params.code = $.trim(params.code);*/
+		params.remark = $.trim(params.remark);
+		params.email = $.trim(params.email);
+		/*params.code = $.trim(params.code);*/
+		params.idCard = $.trim(params.idCard);
+		params.phone = $.trim(params.phone);
+		params.mobile = $.trim(params.mobile);
+		
+		
+		var errors = {};
+
+		if ($.isEmpty(params.username)) {
+			errors.username = '账号不能为空';
+		} else if (!(/^[a-z][a-z_\d]*$/i.test(params.username))) {
+			errors.username = '账号需要以英文字母开头，长度在1~20之间，只能包含英文字母、数字和下划线';
+		}
+		if ($.isEmpty(params.name)) {
+			errors.name = '姓名不能为空';
+		}
+		var regx = /^([0-9A-Za-z\-_\.]+)@([0-9a-z]+\.[a-z]{2,3}(\.[a-z]{2})?)$/;
+		if ($.isEmpty(params.email)) {
+			errors.email = '邮箱不能为空';
+		}else if(!regx.test(params.email)){
+			errors.email = '邮箱格式错误';
+		}
+		/*if (!(/^\S*$/i.test(params.code))) {
+			errors.code = '编码不能含有空格';
+		}*/
+		if ($.isEmpty(params.orgId)) {
+			errors.orgNamePath = '机构不能为空';
+		}
+		/*if ($.isEmpty(params.code)) {
+			errors.code = '编码不能为空';
+		}*/
+		
+		//身份证校验
+//		var regIdCard = /^[1-9]\d{7}((0\d)|(1[0-2]))(([0|1|2]\d)|3[0-1])\d{3}$|^[1-9]\d{5}[1-9]\d{3}((0\d)|(1[0-2]))(([0|1|2]\d)|3[0-1])\d{3}([0-9]|X)$/;
+		var regIdCard = /^[1-9]{1}[0-9]{14}$|^[1-9]{1}[0-9]{16}([0-9]|[xX])$/;
+		if ($.isEmpty(params.idCard)) {
+			
+		}else if (!regIdCard.test(params.idCard)){
+			errors.idCard = '身份证格式错误';
+		}
+		//电话校验
+		var regPhone = /^(0[0-9]{2,3}\-)?([2-9][0-9]{6,7})+(\-[0-9]{1,4})?$/;
+		if ($.isEmpty(params.phone)) {
+			
+		}else if (!regPhone.test(params.phone)){
+			errors.phone = '电话格式错误';
+		}
+		//手机校验
+		var regMobile = /^((13[0-9])|(15[^4,\D])|(18[0,5-9]))\d{8}$/;
+		if ($.isEmpty(params.mobile)) {
+			
+		}else if (!regMobile.test(params.mobile)){
+			errors.mobile = '手机格式错误';
+		}
+		if(params.userDistinguish == "2"){
+			if(params.validity == ""){
+				errors.validity = '请选择有效期';
+			}
+		}
+		if (!$.isEmptyObject(errors)) {
+			EL.form.markInvalid(errors);
+			return;
+		}
+
+		$.post(URLS.save, params, function(result) {
+			var err = $.err(result);
+			if (err) {
+				layer.msg(err.message, {
+					msg : [ '#BB0000' ],
+					shift : 5,
+					time : 1500
+				});
+			} else {
+				$.dlg.close();
+			}
+		});
+	});
+
+	EL.cancel.on('click', function() {
+		$.dlg.close();
+	});
+
+});

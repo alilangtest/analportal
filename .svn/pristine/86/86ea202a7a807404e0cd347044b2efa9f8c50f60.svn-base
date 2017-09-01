@@ -1,0 +1,190 @@
+package byit.osdp.base.security.realm;
+
+//import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+//import java.util.Map;
+
+
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.authc.AuthenticationInfo;
+import org.apache.shiro.authc.AuthenticationToken;
+import org.apache.shiro.authc.SimpleAuthenticationInfo;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.authz.AuthorizationInfo;
+import org.apache.shiro.authz.SimpleAuthorizationInfo;
+import org.apache.shiro.realm.AuthorizingRealm;
+import org.apache.shiro.subject.PrincipalCollection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+
+//import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
+import byit.osdp.base.entity.AuthPermissionEntity;
+import byit.osdp.base.entity.AuthUserEntity;
+import byit.osdp.base.security.exception.UserDisabledAuthcException;
+import byit.osdp.base.security.exception.UserNoRoleAuthcException;
+import byit.osdp.base.security.exception.UserValidAuthcException;
+//import byit.osdp.base.security.password.PasswordEncoder;
+import byit.osdp.base.service.AuthPermissionService;
+import byit.osdp.base.service.AuthRoleService;
+import byit.osdp.base.service.AuthUserService;
+//import byit.osdp.portal.sso.Contants;
+//import byit.osdp.portal.sso.Utils;
+//import byit.osdp.portal.sso.https.LoginHtttpsHelper;
+import byit.utils.Tools;
+
+/**
+ * 权限验证的支持类 (授权域)<br>
+ * Realm 是一个能够访问应用程序特定的安全数据（如用户、角色及权限）的组件。<br>
+ * Realm 通常和数据源是一对一的对应关系，如关系数据库，LDAP 目录，文件系统，或其他类似资源。<br>
+ * 因为这些数据源大多通常存储身份验证数据（如密码的凭证）以及授权数据（如角色或权限），每个Realm能够执行身份验证和授权操作。<br>
+ * @author _YaoYiLang
+ * @version 2016-06-15
+ */
+public class ShiroDbAuthorizingRealm extends AuthorizingRealm {
+
+	// ==============================Fields===========================================
+	@Autowired
+	private AuthUserService authUserService;
+	@Autowired
+	private AuthRoleService authRoleService;
+	@Autowired
+	private AuthPermissionService authPermissionService;
+	
+//	@Autowired
+//	private PasswordEncoder passwordEncoder;
+
+	protected final Logger logger = LoggerFactory.getLogger(getClass());
+
+	// ==============================Methods==========================================
+	/**
+	 * (登陆验证)认证回调函数,登录时调用.
+	 * @param authcToken 认证凭据
+	 * @return 认证信息
+	 */
+	@Override
+	protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authcToken) throws AuthenticationException {
+
+		//使用的是用户名密码凭据
+		UsernamePasswordToken token = (UsernamePasswordToken) authcToken;
+		
+		// sso使用，切换到生产需使用
+		//AuthUserEntity user=Utils.verifyLogin(token);
+		
+				
+		
+		//根据用户名称(登录名)，查询用户信息
+		//AuthUserEntity user=_user;
+		AuthUserEntity user = authUserService.getEntityByUsername(token.getUsername());
+		
+
+		//如果查询到用户，那么封装用户的认证信息并返回
+		if (user != null) {
+			//判断用户是否启用
+			if (!"1".equals(user.getEnabled())) {
+				throw new UserDisabledAuthcException();
+			}
+			//判断是否在有效期内
+			Date nowDay1 = new Date();
+			Date validity1 = user.getValidity();
+			if(validity1 != null && !validity1.equals("")){
+				SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
+				String nowDay = formatter.format(nowDay1);
+				String validity = formatter.format(validity1);
+				int i = validity.compareTo(nowDay);
+				if(i<0){
+					throw new UserValidAuthcException(); 
+				}
+			}
+			
+			ShiroUserPrincipal principal = new ShiroUserPrincipal();
+			principal.setId(user.getId());
+			principal.setName(user.getName());
+			principal.setOrgId(user.getOrgId());
+			principal.setSessionId(user.getSessionId());
+			principal.setTicket(user.getTicket());
+			List<String> roleIds = Lists.newArrayList();
+			Collection<String> permissionIds = Lists.newArrayList();
+			Collection<String> permissionCodes = Sets.newHashSet();
+			/*
+			 *判断登录时输入的密码和从数据库中获取到的用户密码是否一致
+			 *add by lisw 
+			 */
+			//char[] passwordToken=token.getPassword();
+			if(!Tools.isNotEmpty(String.valueOf(token.getPassword()))){
+				token.setPassword(user.getPassword().toCharArray());
+			}
+			
+			if (StringUtils.equals(user.getPassword(), new String(token.getPassword()))) {
+				//根据用户ID(userId)查找用户角色(roles)信息
+				roleIds = authRoleService.findIdByUserId(principal.getId());
+				if(roleIds.size()<=0){
+					throw new UserNoRoleAuthcException();
+				}
+				//根据用户角色(roleIds)查找用户权限(permissions)信息
+				List<AuthPermissionEntity> permissions = authPermissionService.findEntityByRoleId(roleIds);
+				
+				for (AuthPermissionEntity permission : permissions) {
+					String id = permission.getId();
+					String code = permission.getCode();
+					permission.getCode();
+					permissionIds.add(id);
+					if (StringUtils.isNotEmpty(code)) {
+						permissionCodes.add(code);
+					}
+				}
+			}
+			principal.setRoleIds(roleIds.toArray(ArrayUtils.EMPTY_STRING_ARRAY));
+			principal.setPermissionIds(permissionIds.toArray(ArrayUtils.EMPTY_STRING_ARRAY));
+			principal.setPermissionCodes(permissionCodes.toArray(ArrayUtils.EMPTY_STRING_ARRAY));
+
+			return new SimpleAuthenticationInfo(//
+					//1. 认证对象 (可以是任意对象，此处使用自定义的认证对象，放置了一些用户基础数据)
+					principal,
+					//2. 认证凭据(此处是密码)
+					user.getPassword(), //
+					//3. 授权域名称(默认是{当前类名+初始化的序号})
+					getName()//
+			);
+		}
+		//CookiesUtil.setCookies(request, response, tokenKey, tokenValue);
+		//没有查询到用户，直接返回空(NULL)
+		return null;
+	}
+
+	/**
+	 * (权限验证)授权查询回调函数, 进行鉴权但缓存中无用户的授权信息时调用.
+	 * @param principals 身份集合信息
+	 * @return 授权信息
+	 */
+	@Override
+	protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
+
+		//获得认证对象(登陆验证doGetAuthenticationInfo方法中设置的认证对象)
+		ShiroUserPrincipal principal = (ShiroUserPrincipal) principals.getPrimaryPrincipal();
+
+		//基本授权信息对象
+		SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
+
+		//获得用户角色(roles)信息
+		String[] roleIds = principal.getRoleIds();
+
+		//将角色信息授权
+		info.addRoles(Lists.newArrayList(roleIds));
+
+		//获得用户权限(permissionId)信息
+		String[] permissionIds = principal.getPermissionIds();
+
+		//将权限信息授权
+		info.setStringPermissions(Sets.newHashSet(permissionIds));
+		return info;
+	}
+}

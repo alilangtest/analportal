@@ -1,0 +1,362 @@
+package byit.tableausubscribe.tab.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import cn.byitgroup.utils.tableau.TableauUtil;
+import byit.osdp.tableau.TableauConfig;
+import byit.tableausubscribe.common.dao.BaseDao;
+import byit.tableausubscribe.tab.bean.IdaPmReport;
+import byit.tableausubscribe.tab.db.DB;
+import byit.utils.Tools;
+
+
+@Component
+public class TableauDao/* extends BaseDao*/{
+
+	private static final Logger logger = Logger.getLogger(TableauDao.class);
+	/**
+	 * 工作簿-视图
+	 */
+	public List<Map<String,Object>> getAllWorkbooks(){
+		StringBuffer sql=new StringBuffer();
+		sql.append(" select w.id as workbooksId,w.name as workbooksName from _workbooks w ");
+		sql.append(" where EXISTS(select 1 from views v where w.id=v.workbook_id and v.sheettype='dashboard') ");
+		 Connection conn=null;
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 List<Map<String,Object>> list=new ArrayList<Map<String,Object>>();
+		 try {
+			String tableuaPostgresqlIp = TableauConfig.TABLEUA_POSTGRESQL_IP;
+			String tableuaPostgresqlUsername = TableauConfig.TABLEUA_POSTGRESQL_USERNAME;
+			String tableuaPostgresqlPassword = TableauConfig.TABLEUA_POSTGRESQL_PASSWORD;
+			
+			conn = TableauUtil.getTableauConn(tableuaPostgresqlIp,tableuaPostgresqlUsername, tableuaPostgresqlPassword);
+			pstmt = conn.prepareStatement(sql.toString());
+			rs = pstmt.executeQuery();
+			while( rs.next()){
+				Map<String,Object> map=new HashMap<String, Object>();
+				String idValue=rs.getString("workbooksid");
+				String nameValue=rs.getString("workbooksname");
+				
+				map.put("workbooksid", idValue);
+				map.put("workbooksname", nameValue);
+				list.add(map);
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}finally{
+			TableauUtil.closeTableauConn(conn, rs);
+		}
+		 
+		 return list;
+	}
+	
+	public List<Map<String,Object>> getNowUpdate(String reports){
+		Map<String,Object> param = new HashMap<>();
+		StringBuffer sql=new StringBuffer();
+		sql.append("select distinct ws.id reportId from views ws where ws.id in (?) ");
+		sql.append("and to_char(updated_at,'yyyy-mm-dd')>= to_char(now(),'yyyy-mm-dd') and ws.sheettype='dashboard' ");
+		 Connection conn=null;
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 List<Map<String,Object>> list=new ArrayList<Map<String,Object>>();
+		 try {
+			String tableuaPostgresqlIp = TableauConfig.TABLEUA_POSTGRESQL_IP;
+			String tableuaPostgresqlUsername = TableauConfig.TABLEUA_POSTGRESQL_USERNAME;
+			String tableuaPostgresqlPassword = TableauConfig.TABLEUA_POSTGRESQL_PASSWORD;
+			
+			conn = TableauUtil.getTableauConn(tableuaPostgresqlIp,tableuaPostgresqlUsername, tableuaPostgresqlPassword);
+			pstmt = conn.prepareStatement(sql.toString());
+			pstmt.setInt(1,Integer.parseInt(reports));
+			rs = pstmt.executeQuery();
+			while( rs.next()){
+				Map<String,Object> map=new HashMap<String, Object>();
+				String value=rs.getString("reportid");
+				map.put("reportid", value);
+				list.add(map);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally{
+			TableauUtil.closeTableauConn(conn, rs);
+		}
+		
+		return list;
+	}
+	
+	
+	public IdaPmReport getView(int id){
+		StringBuffer sql=new StringBuffer();
+		//sql.append("select id reportId,regexp_replace(v.repository_url, '/sheets'::text, ''::text) url,workbook_id workbooksId ,name reportName ");
+		sql.append("select id reportId,regexp_replace(repository_url, '/sheets'::text, ''::text) url,workbook_id workbooksId ,name reportName ");
+		sql.append(" from views w where w.id=? and sheettype='dashboard' order by name ");
+		 Connection conn=null;
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 IdaPmReport idaPmReport=new IdaPmReport();
+		 try {
+			
+			String tableuaPostgresqlIp = TableauConfig.TABLEUA_POSTGRESQL_IP;
+			String tableuaPostgresqlUsername = TableauConfig.TABLEUA_POSTGRESQL_USERNAME;
+			String tableuaPostgresqlPassword = TableauConfig.TABLEUA_POSTGRESQL_PASSWORD;
+			
+			conn = TableauUtil.getTableauConn(tableuaPostgresqlIp,tableuaPostgresqlUsername, tableuaPostgresqlPassword);
+			pstmt = conn.prepareStatement(sql.toString());
+			rs = pstmt.executeQuery();
+			while( rs.next()){
+				idaPmReport.setReportId(rs.getString("reportId")); 
+				idaPmReport.setUrl(rs.getString("url"));
+				idaPmReport.setWorkbooksId(rs.getString("workbooksId"));
+				idaPmReport.setReportName(rs.getString("reportName"));
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}finally{
+			TableauUtil.closeTableauConn(conn, rs);
+		}
+		return idaPmReport;
+		/*return (IdaPmReport) this.selectOne("getView", id);*/
+	}
+	
+	
+	public List<IdaPmReport> getViews(String ids){
+		StringBuffer sql=new StringBuffer();
+		sql.append("select id reportId,name reportName,workbook_id workbooksId  ");
+		sql.append(" from views v where v.id in (?) order by name ");
+		 Connection conn=null;
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 List<IdaPmReport> list=new  ArrayList<IdaPmReport>();
+		 try {
+			String tableuaPostgresqlIp = TableauConfig.TABLEUA_POSTGRESQL_IP;
+			String tableuaPostgresqlUsername = TableauConfig.TABLEUA_POSTGRESQL_USERNAME;
+			String tableuaPostgresqlPassword = TableauConfig.TABLEUA_POSTGRESQL_PASSWORD;
+			
+			conn = TableauUtil.getTableauConn(tableuaPostgresqlIp,tableuaPostgresqlUsername, tableuaPostgresqlPassword);
+			pstmt = conn.prepareStatement(sql.toString());
+			pstmt.setInt(1,Integer.parseInt(ids));
+			rs = pstmt.executeQuery();
+			while( rs.next()){
+				IdaPmReport idaPmReport=new IdaPmReport();
+				idaPmReport.setReportId(rs.getString("reportId"));
+				idaPmReport.setReportName(rs.getString("reportName"));
+				idaPmReport.setWorkbooksId(rs.getString("workbooksId"));
+				list.add(idaPmReport);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally{
+			TableauUtil.closeTableauConn(conn, rs);
+		}
+		return list;
+		/*Map<String,Object> param = new HashMap<>();
+		param.put("ids", ids);
+		logger.info("******************************param"+param);
+		return this.selectList("getViews", param);*/
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 依据选中的仪表板查询该仪表板的id、name、工作簿id
+		 *@creatTime:2017年6月1日 下午4:18:20 
+		 *@return:@param ids
+		 *@return:@return List<IdaPmReport>
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public List<IdaPmReport> getViewsByReportInfo(String ids){
+		
+		String[] idsString = ids.split(",");
+		List<IdaPmReport> idsList =new ArrayList();
+		 Connection conn=null;
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		//for(String id : idsString){
+			
+			String tableuaPostgresqlIp = TableauConfig.TABLEUA_POSTGRESQL_IP;
+			String tableuaPostgresqlUsername = TableauConfig.TABLEUA_POSTGRESQL_USERNAME;
+			String tableuaPostgresqlPassword = TableauConfig.TABLEUA_POSTGRESQL_PASSWORD;
+			
+			conn = TableauUtil.getTableauConn(tableuaPostgresqlIp,tableuaPostgresqlUsername, tableuaPostgresqlPassword);
+		 try {
+			
+			
+			for(String id : idsString){
+				StringBuffer sql=new StringBuffer();
+				sql.append("select id reportId,name reportName,workbook_id workbooksId    ");
+				sql.append(" from views v where v.id in (?)  ");
+				sql.append(" order by name");
+				pstmt = conn.prepareStatement(sql.toString());
+				pstmt.setInt(1,Integer.parseInt(id));
+				rs = pstmt.executeQuery();
+				while( rs.next()){
+					IdaPmReport idaPmReport=new IdaPmReport();
+					idaPmReport.setReportId(rs.getString("reportId"));
+					idaPmReport.setReportName(rs.getString("reportName"));
+					idaPmReport.setWorkbooksId(rs.getString("workbooksId"));
+					idsList.add(idaPmReport);
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally{
+			TableauUtil.closeTableauConn(conn, rs);
+		}
+		//}
+		
+		return  idsList;		
+	}
+	
+	
+	/**
+	 * 获取多个仪表板    
+	 * @param reports：'6','3'
+	 * @return
+	 */
+	public List<IdaPmReport> getViewDataSources(String  reports){
+		
+		String[] reportString = reports.split(",");
+		List<IdaPmReport> list=new  ArrayList<IdaPmReport>();
+		 Connection conn=null;
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 
+		 try {
+			 String tableuaPostgresqlIp = TableauConfig.TABLEUA_POSTGRESQL_IP;
+			String tableuaPostgresqlUsername = TableauConfig.TABLEUA_POSTGRESQL_USERNAME;
+			String tableuaPostgresqlPassword = TableauConfig.TABLEUA_POSTGRESQL_PASSWORD;
+			conn = TableauUtil.getTableauConn(tableuaPostgresqlIp,tableuaPostgresqlUsername, tableuaPostgresqlPassword);
+	
+			for(String reportid : reportString){
+				StringBuffer sql=new StringBuffer();
+				sql.append("select distinct v.id reportId,regexp_replace(v.repository_url, '/sheets'::text, ''::text) url ,v.workbook_id workbooksId ");
+				sql.append(" ,v.name reportName from views v  where  v.id =? and v.sheettype='dashboard' order by name");
+				pstmt = conn.prepareStatement(sql.toString());
+				pstmt.setInt(1,Integer.parseInt(reportid));
+				rs=	pstmt.executeQuery();
+				while( rs.next()){
+					IdaPmReport idaPmReport=new IdaPmReport();
+					idaPmReport.setReportId(rs.getString("reportId")); 
+					idaPmReport.setUrl(rs.getString("url"));
+					idaPmReport.setWorkbooksId(rs.getString("workbooksId"));
+					idaPmReport.setReportName(rs.getString("reportName"));
+					list.add(idaPmReport);
+				}
+			}
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally{
+			TableauUtil.closeTableauConn(conn, rs);
+		}
+		
+		return  list;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 选中工作簿某条工作簿后查询该工作簿的详细信息
+		 *@creatTime:2017年5月31日 下午8:50:14 
+		 *@return:@param workbookId
+		 *@return:@return List<IdaPmReport>
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public List<IdaPmReport> getViewsByWorkBook(String workbookId){
+		StringBuffer sql=new StringBuffer();
+		sql.append("select id reportId,regexp_replace(v.repository_url, '/sheets'::text, ''::text) url,workbook_id workbooksId,name reportName    ");
+		sql.append(" from views v  where v.workbook_id=?  and sheettype='dashboard' order by name");
+		 Connection conn=null;//DB.getAdmConn();
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 List<IdaPmReport> list=new  ArrayList<IdaPmReport>();
+		 try {
+			 String tableuaPostgresqlIp = TableauConfig.TABLEUA_POSTGRESQL_IP;
+			String tableuaPostgresqlUsername = TableauConfig.TABLEUA_POSTGRESQL_USERNAME;
+			String tableuaPostgresqlPassword = TableauConfig.TABLEUA_POSTGRESQL_PASSWORD;
+			
+			conn = TableauUtil.getTableauConn(tableuaPostgresqlIp,tableuaPostgresqlUsername, tableuaPostgresqlPassword);
+			pstmt = conn.prepareStatement(sql.toString());
+			pstmt.setInt(1,Integer.parseInt(workbookId));
+			rs=	pstmt.executeQuery();
+			while( rs.next()){
+				IdaPmReport idaPmReport=new IdaPmReport();
+				idaPmReport.setReportId(rs.getString("reportid")); 
+				idaPmReport.setUrl(rs.getString("url"));
+				idaPmReport.setWorkbooksId(rs.getString("workbooksid"));
+				idaPmReport.setReportName(rs.getString("reportname"));
+				list.add(idaPmReport);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally{
+			TableauUtil.closeTableauConn(conn, rs);
+		}
+		return list;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 检查tableau数据是否刷新
+		 *@creatTime:2017年6月7日 下午8:05:38 
+		 *@return:@return List<Map<String,Object>>
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public Map<String,String> getTableauRefreshed(String reportids){
+		Map<String,String> map=new HashMap<String, String>();
+		String[] idsString = reportids.split(",");
+		String refreshedTime="";
+		StringBuffer sql=new StringBuffer();
+		sql.append(" SELECT to_char(extracts_refreshed_at,'yyyy-mm-dd hh24:mi') refreshed_time FROM workbooks WHERE id=? ");
+		 Connection conn=null;
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 try {
+			 
+			 for(String id : idsString){
+				 id=id.replace("'","");
+				 String tableuaPostgresqlIp = TableauConfig.TABLEUA_POSTGRESQL_IP;
+				String tableuaPostgresqlUsername = TableauConfig.TABLEUA_POSTGRESQL_USERNAME;
+				String tableuaPostgresqlPassword = TableauConfig.TABLEUA_POSTGRESQL_PASSWORD;
+				
+				conn = TableauUtil.getTableauConn(tableuaPostgresqlIp,tableuaPostgresqlUsername, tableuaPostgresqlPassword);
+				pstmt = conn.prepareStatement(sql.toString());
+				pstmt.setString(1, id);
+				rs = pstmt.executeQuery();
+				while( rs.next()){
+					refreshedTime=rs.getString("refreshed_time");
+					map.put(id, refreshedTime);
+				}
+			 }
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}finally{
+			TableauUtil.closeTableauConn(conn, rs);
+		}
+		 
+		 return map;
+	}
+	
+}

@@ -1,0 +1,45 @@
+
+#============================================================================
+# Configure Main Scheduler Properties  
+#============================================================================
+org.quartz.scheduler.instanceName = MY_CLUSTERED_JOB_SCHEDULER
+org.quartz.scheduler.instanceId = AUTO
+
+#============================================================================
+# Configure ThreadPool  
+#============================================================================
+org.quartz.threadPool.class = org.quartz.simpl.SimpleThreadPool
+org.quartz.threadPool.threadCount = 10
+org.quartz.threadPool.threadPriority = 5
+org.quartz.threadPool.threadsInheritContextClassLoaderOfInitializingThread = true
+
+#============================================================================
+# Configure JobStore single
+#============================================================================
+#RAM
+#org.quartz.jobStore.class = org.quartz.simpl.RAMJobStore #\u8fd9\u662f\u9ed8\u8ba4\u7684
+
+#============================================================================
+# Configure JobStore Cluster
+#============================================================================
+org.quartz.jobStore.class = org.quartz.impl.jdbcjobstore.JobStoreTX
+#org.quartz.jobStore.driverDelegateClass=org.quartz.impl.jdbcjobstore.StdJDBCDelegate 
+org.quartz.jobStore.driverDelegateClass=org.quartz.impl.jdbcjobstore.oracle.OracleDelegate
+org.quartz.jobStore.tablePrefix = QRTZ_
+org.quartz.jobStore.misfireThreshold = 60000
+org.quartz.jobStore.isClustered = true
+org.quartz.jobStore.clusterCheckinInterval = 15000
+
+#\u6307\u5b9a\u6570\u636e\u6e90
+org.quartz.jobStore.dataSource = myDS  
+#============================================================================
+# Configure dataSource  
+#============================================================================
+#dataSource--myDS
+org.quartz.dataSource.myDS.driver = oracle.jdbc.driver.OracleDriver
+#org.quartz.dataSource.myDS.URL = jdbc:oracle:thin:@localhost:1521:orcl
+org.quartz.dataSource.myDS.URL=jdbc:oracle:thin:@25.0.90.73:1521:dc
+org.quartz.dataSource.myDS.user = hfportal
+org.quartz.dataSource.myDS.password = hfportal
+org.quartz.dataSource.myDS.maxConnections =30
+org.quartz.dataSource.myDS.validationQuery=select 0 from dual

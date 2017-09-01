@@ -1,0 +1,62 @@
+package byit.aladdin.dataAnalysis.entity;
+
+import java.io.Serializable;
+
+/**
+ * 标签基本信息表
+ * @author YANGFAN
+ *
+ */
+public class LabelInfo implements Serializable{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	private String menuId;//标签id
+	private String menuparent;//标签父id
+	private String menuname;//标签名称
+	
+	private String reportId;
+	private String reportName;
+	private Long  ordinal;
+	
+	
+	public Long getOrdinal() {
+		return ordinal;
+	}
+	public void setOrdinal(Long ordinal) {
+		this.ordinal = ordinal;
+	}
+	public String getReportId() {
+		return reportId;
+	}
+	public void setReportId(String reportId) {
+		this.reportId = reportId;
+	}
+	public String getReportName() {
+		return reportName;
+	}
+	public void setReportName(String reportName) {
+		this.reportName = reportName;
+	}
+	public String getMenuId() {
+		return menuId;
+	}
+	public void setMenuId(String menuId) {
+		this.menuId = menuId;
+	}
+	public String getMenuparent() {
+		return menuparent;
+	}
+	public void setMenuparent(String menuparent) {
+		this.menuparent = menuparent;
+	}
+	public String getMenuname() {
+		return menuname;
+	}
+	public void setMenuname(String menuname) {
+		this.menuname = menuname;
+	}
+}

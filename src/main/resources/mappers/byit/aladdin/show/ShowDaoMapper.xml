@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.osdp.base.dao.ShowDao">
+
+	<!--根据当前登录用户查询 -->
+	<select id="queryUserById" resultType="byit.osdp.base.entity.ShowEntity"
+		parameterType="java.lang.String">
+		SELECT distinct(d.id),d.name,d.path,d.ordinal FROM auth_user a
+			LEFT JOIN auth_user_role b
+			ON a.id=b.user_id
+			left join auth_role_permission c
+			on b.role_id=c.role_id
+			left join auth_permission d
+			on c.permission_id=d.id
+		where d.parent_id='SHOW'
+			and a.id=#{loginid}
+			order by d.ordinal asc
+	</select>
+	
+	<!-- 根据用户id查询用户信息 -->
+	<select id="getById" resultType="byit.osdp.base.entity.AuthUserEntity" parameterType="java.lang.String">
+	   select * from AUTH_USER t where t.id = #{id}
+	</select>
+</mapper>

@@ -1,0 +1,162 @@
+package byit.tableausubscribe.tab.init;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
+
+import byit.tableausubscribe.common.util.Constants;
+import byit.tableausubscribe.tab.bean.ExcelSubscribe;
+import byit.tableausubscribe.tab.bean.SendExcelResult;
+
+
+public class InitExcelSubscribeConfig {
+	
+	@SuppressWarnings("unused")
+	private final static Logger logger = Logger.getLogger(InitExcelSubscribeConfig.class);
+	private static InitExcelSubscribeConfig messageConfig = new InitExcelSubscribeConfig();
+	
+	private InitExcelSubscribeConfig(){
+	}
+	public static InitExcelSubscribeConfig getInstance(){
+		return messageConfig;
+	}
+	
+	public void initConfigData(){
+		excelSubscribeConfig  = getExcelConfig(Constants.excelSubscribXML);
+		sendExcelResultConfig = getSendExcelResult(Constants.excelResultXML);
+	}
+	
+	public static List<ExcelSubscribe>  excelSubscribeConfig = new ArrayList<ExcelSubscribe>() ;
+	public static Map<String,List<SendExcelResult>>  sendExcelResultConfig = new HashMap<>() ;
+	
+	/**
+	 * 读取订阅配置文件
+	 * @param fileName
+	 * @param rootNode
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	private  List<ExcelSubscribe> getExcelConfig(String fileName)  {
+		////logger.info("------------start getExcelConfig-------------");
+		try { 
+			SAXReader reader = new SAXReader();
+			String xmlFile = Constants.CLASSPATH+"/"+fileName;
+			Document doc = reader.read(new File(xmlFile));
+			//Document doc = reader.read(new File(fileName));
+			Element root = doc.getRootElement();
+			List<Element> elementList = root.elements("excel");
+			
+			for (Element e : elementList) {
+				ExcelSubscribe excel = new ExcelSubscribe();
+				////logger.info("----------------setMailTitleExcel----------------");
+				excel.setMailTitleExcel((String)e.element("mailTitleExcel").getData());
+				////logger.info("----------------setTableId----------------");
+				excel.setTableId((String)e.element("tableId").getData());
+				////logger.info("----------------setTableName----------------");
+				excel.setTableName((String)e.element("tableName").getData());
+				////logger.info("----------------setScreening----------------");
+				excel.setScreening((String)e.element("screening").getData());
+				////logger.info("----------------setSendTypeExcel----------------");
+				excel.setSendTypeExcel((String)e.element("sendTypeExcel").getData());
+				////logger.info("----------------setSendTimeExcel----------------");
+				excel.setSendTimeExcel((String)e.element("sendTimeExcel").getData());		
+				////logger.info("----------------setSendStateExcel----------------");
+			    //获取发送结果 				
+				excel.setSendStateExcel((String)e.element("sendStateExcel").getData());
+				////logger.info("----------------setExcelMails----------------");
+				List<String> mailListExcel = new ArrayList<String>();
+				////logger.info("----------------excelMailElments----------------");
+				List<Element> excelMailElments = e.element("excelMails").elements("excelMail");
+				////logger.info("----------------for-add----------------");
+				for(Element data:excelMailElments){
+					////logger.info("----------------add----------------");
+					mailListExcel.add((String) data.getData());
+				}
+				////logger.info("----------------setMailListExcel----------------");
+				excel.setMailListExcel(mailListExcel);
+				////logger.info("----------------add(excel)----------------");
+				excelSubscribeConfig.add(excel);
+			}
+			
+		} catch (DocumentException e) {
+			e.printStackTrace();
+		}
+		////logger.info("------------end getExcelConfig-------------");
+		System.out.println("^^^^^^^^InitExcelSubscribeConfig.getExcelConfig()^^^^^^^^^^^^^^"+excelSubscribeConfig);
+		return excelSubscribeConfig;
+	}
+	/**
+	 * 读取发送结果
+	 * @param fileName
+	 * @param rootNode
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	private Map<String,List<SendExcelResult>> getSendExcelResult(String fileName)  {
+		////logger.info("------------start getSendExcelResult-------------");
+		Map<String,List<SendExcelResult>>  sendExcelResultMap =new HashMap<String,List<SendExcelResult>>() ;
+		try { 
+			SAXReader reader = new SAXReader();
+			String xmlFile = Constants.CLASSPATH+"/"+fileName;
+			Document doc = reader.read(new File(xmlFile));
+			//Document doc = reader.read(new File(fileName));
+			Element root = doc.getRootElement();
+			List<Element> elementList = root.elements("resultExcel");
+			
+			for (Element e : elementList) {
+				
+				String tableId=(String)e.element("tableId").getData();
+				List<SendExcelResult> sendListExcel=sendExcelResultMap.get(tableId);
+				if(sendListExcel==null){
+					sendListExcel = new ArrayList<>();
+					sendExcelResultMap.put(tableId, sendListExcel);
+				}
+				List<Element> mailsExcel = e.elements("excelMail");
+				for(Element maExcel:mailsExcel){
+					SendExcelResult sendExcelResult = new SendExcelResult();
+					if(tableId!=null && !"null".equals(tableId)&& !"".equals(tableId)){
+						sendExcelResult.setTableId(tableId);
+					}
+					if((String)maExcel.attributeValue("id")!=null && !"null".equals((String)maExcel.attributeValue("id"))&& !"".equals((String)maExcel.attributeValue("id"))){
+						sendExcelResult.setEmailId((String)maExcel.attributeValue("id"));
+					}
+					if((String)maExcel.element("sendTimeExcel").getData()!=null && !"null".equals((String)maExcel.element("sendTimeExcel").getData())&& !"".equals((String)maExcel.element("sendTimeExcel").getData())){
+						sendExcelResult.setSendTimeExcel((String)maExcel.element("sendTimeExcel").getData());
+					}
+					if((String)maExcel.element("sendStateExcel").getData()!=null && !"null".equals((String)maExcel.element("sendStateExcel").getData())&& !"".equals((String)maExcel.element("sendStateExcel").getData())){
+						sendExcelResult.setSendStateExcel((String)maExcel.element("sendStateExcel").getData());
+					}
+
+//					sendExcelResult.setTableId(tableId);
+//					sendExcelResult.setEmailId((String)maExcel.attributeValue("id"));
+//					sendExcelResult.setSendTimeExcel((String)maExcel.element("sendTimeExcel").getData());
+//					sendExcelResult.setSendStateExcel((String)maExcel.element("sendStateExcel").getData());
+					sendListExcel.add(sendExcelResult);
+				}
+			}
+			
+		} catch (DocumentException e) {
+			e.printStackTrace();
+		}
+		////logger.info("------------end getSendExcelResult-------------");
+		return sendExcelResultMap;
+	}
+	
+	
+//	public static void main(String arg[]){
+//		String path="E:\\excelSubscribe.xml";
+//		List<ExcelSubscribe> list = InitExcelSubscribeConfig.getInstance().getExcelConfig(path);
+//		for(ExcelSubscribe es:list){
+//			System.out.println(es);
+//		}
+//	}
+	 
+}

@@ -1,0 +1,137 @@
+package byit.tableausubscribe.common.dao;
+
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.session.RowBounds;
+import org.apache.log4j.Logger;
+import org.mybatis.spring.SqlSessionTemplate;
+
+
+/** 
+* Comments:  dao基础类
+*/ 
+public class BaseDao<T> {
+
+	@SuppressWarnings("unused")
+	private static final Logger logger = Logger.getLogger(BaseDao.class);
+	
+    //@Autowired
+    public SqlSessionTemplate sqlSessionTemplate;
+    
+	/**
+	 * 根据实体添加记录, 返回添加成功条数
+	 * 
+	 * @param statement
+	 * @param parameter
+	 * @return 返回添加成功条数
+	 */
+    public int add(String statement, T parameter){
+    	return sqlSessionTemplate.insert(statement, parameter);
+    }
+    
+	/**
+	 * 根据id删除记录, 返回删除成功条数
+	 * 
+	 * @param statement
+	 * @param parameter
+	 * @return 返回删除成功条数
+	 */
+    public int delete(String statement, Object id){
+    	return sqlSessionTemplate.delete(statement, id) ;
+    }
+    
+	/**
+	 * 根据参数条件更新记录, 返回更新成功条数
+	 * 
+	 * @param statement
+	 * @param parameter
+	 * @return 返回更新成功条数
+	 */
+    public int update(String statement, Object parameter){
+    	return sqlSessionTemplate.update(statement, parameter) ;
+    }
+    
+	/**
+	 * 根据单个参数条件查询单条记录, 返回查询的实体
+	 * 
+	 * @param statement
+	 * @param parameter
+	 * @return 返回更新成功条数
+	 */
+    @SuppressWarnings("unchecked")
+	public T selectOne(String statement, Object parameter){
+    	return (T) sqlSessionTemplate.selectOne(statement, parameter) ;	 
+    }
+    
+	/**
+	 * 根据多个参数条件查询单条记录, 返回查询的实体
+	 * 
+	 * @param statement
+	 * @param parameter
+	 * @return 返回更新成功条数
+	 */
+    @SuppressWarnings("unchecked")
+    public T selectOne(String statement, Map<String, Object> parameter){
+    	return (T) sqlSessionTemplate.selectOne(statement, parameter) ;	 
+    }
+    
+    /**
+     * 根据参数条件查询单条记录, 返回查询的实体
+     * 
+     * @param statement
+     * @param parameter
+     * @return 返回更新成功条数
+     */
+    @SuppressWarnings("unchecked")
+    public List<T> selectList(String statement, Map<String, Object> parameter){
+//		if(sqlSessionTemplate == null){
+//			try {
+////				String resource = Constants.CLASSPATH+"myBatisConfig.xml";
+//				String resource = "myBatisConfig.xml";
+//				InputStream in = Resources.getResourceAsStream(resource);
+//				SqlSessionFactory sessionFactory = new SqlSessionFactoryBuilder().build(in);
+//				sqlSessionTemplate = new SqlSessionTemplate(sessionFactory);
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//		}
+		//logger.info("--------BaseDao--------------------selectList---------------------"+sqlSessionTemplate);
+    	return (List<T>) sqlSessionTemplate.selectList(statement, parameter); 
+    }
+    
+    
+  
+    
+	/**
+	 * 根据参数条件查询单条记录, 返回查询的实体
+	 * 
+	 * @param statement
+	 * @param parameter
+	 * @return 返回更新成功条数
+	 */
+    @SuppressWarnings("unchecked")
+    public List<T> selectList(String statement){
+    	return (List<T>) sqlSessionTemplate.selectList(statement); 
+    }
+    
+	/**
+	 * 根据参数条件查询, 返回分页后的结果集
+	 * @param statement
+	 * @param parameter
+	 * @param rowBounds new RowBounds(2, 1)
+	 * @return
+	 */
+    @SuppressWarnings("unchecked")
+    public List<T> selectList(String statement, Map<String, Object> parameter, RowBounds rowBounds){
+    	return (List<T>) sqlSessionTemplate.selectList(statement, parameter, rowBounds); 
+    }
+    
+    /*public List selectListObj(String statement, Map<String, Object> parameter, RowBounds rowBounds){
+    	return   sqlSessionTemplate.selectList(statement, parameter, rowBounds); 
+    }*/
+    public List<T> selectListObj(String statement, Map<String, Object> parameter, RowBounds rowBounds){
+    	return  sqlSessionTemplate.selectList(statement, parameter, rowBounds); 
+    }
+}

@@ -1,0 +1,785 @@
+* {
+	margin: 0;
+	padding: 0;
+}
+
+ul,li,ol {
+	list-style: none;
+}
+
+input,textarea,select,button {
+	outline: none;
+}
+
+body,html {
+	width: 100%;
+	height: 100%;
+}
+
+.button_add_excel {
+	float: left;
+	width: 60px;
+	height: 50px;
+	background-color: #055FB3;
+	border-radius: 5px;
+	margin-top: 16px;
+	margin-left: 25px;
+	cursor: pointer;
+	opacity: 1;
+	filter: alpha(opacity =     100);
+}
+
+.button_add_excel:hover {
+	opacity: 0.8;
+	filter: alpha(opacity =     80);
+}
+
+.button_add_excel_top {
+	float: left;
+	width: 100%;
+	height: 30px;
+	line-height: 30px;
+	text-align: center;
+	font-family: 'my_font';
+	color: #fff;
+	font-size: 1.4em;
+}
+
+.button_add_excel_bottom {
+	float: left;
+	width: 100%;
+	height: 20px;
+	line-height: 20px;
+	text-align: center;
+	color: #fff;
+	font-size: 13px;
+	font-family: '微软雅黑';
+}
+
+.h5_section_excel {
+	width: 100%;
+}
+
+.h5_section_excel .h5_section_excel_top {
+	width: 100%;
+}
+
+.h5_section_excel_bottom {
+	width: 100%;
+	height: 60px;
+	line-height: 60px;
+	text-align: center;
+}
+
+.h5_section_excel_bottom span {
+	display: inline-block;
+	width: 64px;
+	height: 26px;
+	border: 1px solid #8AA7C2;
+	font-size: 13px;
+	color: #666;
+	line-height: 26px;
+	text-align: center;
+	border-radius: 5px;
+	cursor: pointer;
+}
+
+.h5_section_excel_bottom ul {
+	display: inline-block;
+	width: 100px;
+	height: 30px;
+}
+
+.h5_section_excel_bottom ul li {
+	display: inline-block;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	border: 1px solid #8AA7C2;
+	font-size: 13px;
+	color: #666;
+	text-align: center;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.h5_section_excel_bottom ul li:hover {
+	background-color: #055FB3;
+	color: #fff;
+}
+
+.closeBtnExcel {
+	width: 30px;
+	height: 30px;
+	position: absolute;
+	top: -6px;
+	right: -6px;
+	cursor: pointer;
+}
+
+.closeBtnExcel img {
+	width: 100%;
+	height: 100%;
+	float: left;
+}
+
+.tanchuangExcel {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+	top: 0;
+	left: 0;
+}
+
+.tanchuangExcel1 {
+	/*width: 600px;*/
+	width: 1000px;
+	height: 390px;
+	background-color: #fff;
+	border-radius: 10px;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin-left: -300px;
+	margin-top: -145px;
+	margin: auto;
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+}
+
+.tanchuangExcel1_t {
+	width: 100%;
+	height: 90px;
+	background-color: #7BB0E1;
+	border-radius: 5px 5px 0 0;
+}
+
+.tanchuangExcel1_t .tanchuangExcel1_t_t {
+	width: 100%;
+	height: 55px;
+	line-height: 65px;
+	font-family: 'my_font';
+	color: #fff;
+	font-size: 2.7em;
+	text-align: center;
+}
+
+.tanchuangExcel1_t_b {
+	width: 100%;
+	height: 35px;
+	line-height: 35px;
+	font-family: '微软雅黑';
+	color: #fff;
+	text-align: center;
+}
+
+.tanchuangExcel1_c {
+	width: 100%;
+	height: 150px;
+}
+
+.tanchuangExcel1_c_l {
+	width: 50%;
+	height: 150px;
+	float: left;
+}
+
+.tanchuangExcel1_c_r {
+	width: 50%;
+	height: 150px;
+	float: left;
+}
+
+.excelTabName_t {
+	float: left;
+	height: 40px;
+	line-height: 40px;
+	margin-left: 65px;
+	width: 406px;
+}
+
+.excelTabName_t input[type='text'] {
+	width: 148px;
+	height: 25px;
+	line-height: 25px;
+	padding-left: 15px;
+	border: 1px solid #ccc;
+	border-radius: 3px;
+}
+
+.excelTabName_t button {
+	display: inline-block;
+	width: 50px;
+	height: 25px;
+	line-height: 25px;
+	text-align: center;
+	background-color: #7BB0E1;
+	border-radius: 5px;
+	cursor: pointer;
+	color: #fff;
+}
+
+
+.excelTabName_c input[type='text'] {
+	width: 148px;
+	height: 25px;
+	line-height: 25px;
+	padding-left: 15px;
+	border: 1px solid #ccc;
+	border-radius: 3px;
+}
+
+.addDate {
+	font-size: 13px;
+	font-family: '微软雅黑';
+	float: left;
+	/*margin-right: 100px;*/
+}
+
+.excelTabName_c select {
+	display: inline-block;
+	width: 134px;
+	height: 26px;
+	text-align: center;
+	line-height: 26px;
+	border: 1px solid #9F9F9F;
+	background-color: #7BB0E3;
+	border-radius: 3px;
+	color: #fff;
+	font-size: 12px;
+	cursor: pointer;
+	
+}
+
+
+.excelTabName_c {
+	float: left;
+	height: 30px;
+	line-height: 30px;
+	margin-left: 65px;
+	width: 500px;
+	font-size: 13px;
+	font-family: '微软雅黑';
+}
+
+.excelTabName_b {
+	float: left;
+	width: 378px;
+	height: 141px;
+	border: 1px solid #ccc;
+	padding: 5px 10px;
+	margin-left: 65px;
+	border-radius: 5px;
+	margin-top: 6px;
+}
+
+.excelTabName_ul {
+	float: left;
+	width: 100%;
+	height: 100%;
+	overflow-y: auto;
+	white-space: nowrap;
+}
+
+.excelTabName_ul li {
+	float: left;
+	width: 50%;
+	height: 30px;
+	line-height: 30px;
+	font-size: 14px;
+	color: #666;
+	display: inline-table;
+}
+
+.columnExcel {
+	width: 450px;
+	height: 254px;
+	float: right;
+	margin-top: -96px;
+	margin-right: 65px;
+}
+
+.columnExcel li {
+	height: 254px;
+	float: left;
+}
+
+.columnExcel p {
+	width: 100%;
+	height: 25px;
+	text-align: center;
+	line-height: 25px;
+	font-size: 13px;
+	font-family: '微软雅黑';
+}
+
+.columnAddExcel {
+	width: 100%;
+	height: 225px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	margin-top: 4px;
+	overflow: scroll;
+}
+
+.columnChangeExcel {
+	width: 100%;
+	height: 225px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	margin-top: 4px;
+	overflow: scroll;
+}
+
+
+.columnButton {
+	width: 100%;
+	height: 225px;
+	float: left;
+	margin-top: 29px;
+}
+
+.columnButton ul li {
+	width: 100%;
+	height: 75px;
+}
+
+.columnButton button {
+	display: inline-block;
+	width: 50px;
+	height: 25px;
+	line-height: 25px;
+	text-align: center;
+	background-color: #7BB0E1;
+	border-radius: 5px;
+	cursor: pointer;
+	color: #fff;
+}
+
+.tanc_c_topExcel {
+	width: 1000px;
+	float: left;
+	height: 25px;
+	line-height: 25px;
+	/**margin: 28px 0 0 33px;**/
+	margin-top: 4px;
+	margin-left: 65px;
+	font-size: 13px;
+	font-family: '微软雅黑';
+	/*width:500px;*/
+}
+
+.tanc_c_topExcel  input {
+	margin-right: 5px;
+	margin-left: 30px;
+}
+
+.tanchuangExcel1_b {
+	width: 100%;
+	height: 52px;
+	line-height: 52px;
+	text-align: center;
+	background-color: #7BB0E1;
+	border-radius: 0 0 5px 5px;
+	margin-top: 30px;
+}
+
+.tanchuangExcel1_b button {
+	width: 108px;
+	height: 26px;
+	border-radius: 5px;
+	background-color: #fff;
+	border: 1px solid #ccc;
+	text-align: center;
+	line-height: 26px;
+	color: #666;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.tanc_c_centerExcel {
+	float: left;
+	height: 45px;
+	line-height: 45px;
+	font-family: '微软雅黑';
+	margin: 0 0 0 33px;
+}
+
+.tanc_c_centerExcel  ul,.tanc_c_centerExcel ul li {
+	display: inline-block;
+}
+
+.tanc_c_centerExcel ul li select {
+	display: inline-block;
+	width: 77px;
+	height: 26px;
+	text-align: center;
+	line-height: 26px;
+	border: 1px solid #9F9F9F;
+	background-color: #7BB0E3;
+	border-radius: 3px;
+	color: #fff;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.tanc_c_centerExcel ul li input {
+	display: inline-block;
+	width: 53px;
+	height: 23px;
+	border: 1px solid #9F9F9F;
+	border-radius: 3px;
+	margin-left: 10px;
+	padding-left: 5px;
+}
+
+.tanc_c_centerExcel ul li span {
+	color: #666;
+	font-size: 13px;
+}
+
+.tanc_c_bottomExcel {
+	float: left;
+	height: 45px;
+	line-height: 45px;
+	font-family: '微软雅黑';
+	margin: 0 0 0 33px;
+	color: #666;
+	font-size: 14px;
+}
+
+.mailExcel_t {
+	float: left;
+	height: 40px;
+	line-height: 40px;
+	margin-left: 65px;
+	width: 500px;
+}
+
+.mailExcel_t input[type='mail'] {
+	width: 148px;
+	height: 25px;
+	line-height: 25px;
+	padding-left: 15px;
+	border: 1px solid #ccc;
+	border-radius: 3px;
+}
+
+.mailExcel_t input[type='text'] {
+	height: 25px;
+	line-height: 25px;
+	border: 1px solid #ccc;
+	border-radius: 3px;
+}
+
+.mailExcel_t button {
+	display: inline-block;
+	width: 50px;
+	height: 25px;
+	line-height: 25px;
+	text-align: center;
+	background-color: #7BB0E1;
+	border-radius: 5px;
+	cursor: pointer;
+	color: #fff;
+}
+
+.mailExcel_c {
+	float: left;
+	height: 30px;
+	line-height: 30px;
+	margin-left: 65px;
+	width: 500px;
+	font-size: 13px;
+	font-family: '微软雅黑';
+}
+
+.mailExcel_b {
+	float: left;
+	width: 378px;
+	height: 147px;
+	border: 1px solid #ccc;
+	padding: 5px 10px;
+	margin-left: 65px;
+	border-radius: 5px;
+}
+
+.mailExcel_ul {
+	float: left;
+	width: 100%;
+	height: 100%;
+	overflow-y: auto;
+	white-space: nowrap;
+}
+
+.mailExcel_ul li {
+	float: left;
+	width: 50%;
+	height: 30px;
+	line-height: 30px;
+	font-size: 14px;
+	color: #666;
+	display: inline-table;
+}
+
+.mailExcel_show {
+	float: left;
+	width: 100%;
+	margin-left: 10px 0 0 33px;
+	margin-top: 10px;
+}
+
+.mailExcel_show_l {
+	float: left;
+	width: 50%;
+}
+
+.mailExcel_show_r {
+	float: left;
+	width: 100%;
+	margin-top: 15px;
+}
+
+.mailExcel_show_l span {
+	float: left;
+	font-size: 14px;
+	color: #666;
+	/*margin-left:19px;*/
+	font-family: '微软雅黑';
+	width: 100px;
+	height: 40px;
+	line-height: 40px;
+	text-align: center;
+}
+
+.mailExcel_sh {
+	float: left;
+	width: 160px;
+	height: 125px;
+	border-radius: 5px;
+	border: 1px solid #939393;
+	overflow-y: auto;
+}
+
+.mailExcel_sh p {
+	float: left;
+	font-size: 12px;
+	color: #666;
+	width: 100%;
+	height: 25px;
+	line-height: 25px;
+	text-align: center;
+}
+
+.mailExcel_show_r ul {
+	float: left;
+	width: 100%;
+}
+
+.mailExcel_show_r ul li {
+	float: left;
+	width: 50%;
+}
+
+.mailExcel_show_r li span {
+	float: left;
+	width: 100px;
+	height: 25px;
+	font-size: 14px;
+	font-family: '微软雅黑';
+	line-height: 25px;
+	text-align: center;
+	color: #666;
+}
+
+.mailExcel_show_r li input {
+	float: left;
+	width: 145px;
+	height: 25px;
+	border: 1px solid #939393;
+	padding-left: 15px;
+	border-radius: 5px;
+}
+
+.excelTabName_show_l {
+	float: left;
+	width: 50%;
+}
+
+.excelTabName_show_l span {
+	float: left;
+	font-size: 14px;
+	color: #666;
+	/*margin-left:19px;*/
+	font-family: '微软雅黑';
+	width: 100px;
+	height: 40px;
+	line-height: 40px;
+	text-align: center;
+}
+
+.excelTabName_sh {
+	float: left;
+	width: 160px;
+	height: 125px;
+	border-radius: 5px;
+	border: 1px solid #939393;
+	/*overflow-y:auto;*/
+	overflow: scroll;
+}
+
+.excelTabName_sh p {
+	float: left;
+	font-size: 12px;
+	color: #666;
+	width: 100%;
+	height: 25px;
+	line-height: 25px;
+	/*text-align: center;*/
+	text-align: left;
+}
+
+.biaoExcel_header {
+	width: 100%;
+	height: 40px;
+	line-height: 40px;
+	background-color: #055FB3;
+}
+
+.biaoExcel_header li {
+	float: left;
+	height: 40px;
+	width: 174px;
+	font-size: 14px;
+	text-align: center;
+	line-height: 40px;
+	color: #fff;
+	font-family: '微软雅黑';
+}
+
+.biaoExcel_section {
+	width: 100%;
+	height: 38px;
+	border-top: 1px solid #C8D1DA;
+	border-left: 1px solid #C8D1DA;
+	background-color: #F7F7F7;
+}
+
+.biaoExcel_section li {
+	float: left;
+	width: 173px;
+	height: 38px;
+	line-height: 38px;
+	text-align: center;
+	color: #666;
+	border: 1px solid #C8D1DA;
+	border-top: none;
+	border-left: none;
+	font-family: '微软雅黑';
+	font-size: 14px;
+	overflow: hidden;
+}
+
+.biaoExcel_section li strong {
+	display: inline-block;
+	width: 26px;
+	height: 26px;
+	border: 1px solid #D5D5D5;
+	font-family: 'my_font';
+	color: #666666;
+	line-height: 26px;
+	text-align: center;
+	border-radius: 3px;
+	margin-left: 5px;
+	cursor: pointer;
+}
+
+.biaoExcel_section li strong:hover {
+	background-color: #fff;
+}
+
+.tanchuangExcel5 {
+	width: 708px;
+	height: 166px;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin-left: -354px;
+	margin-top: -83px;
+	background: #fff;
+	border-radius: 10px;
+}
+
+.tanchuangExcel5_top {
+	width: 100%;
+	height: 30px;
+	background: #1C6FBC;
+	line-height: 30px;
+	border-radius: 10px 10px 0 0;
+}
+
+.tanchuangExcel5_top ul {
+	float: left;
+	width: 100%;
+	height: 30px;
+	left: 30px;
+}
+
+.tanchuangExcel5_top ul li {
+	float: left;
+	width: 33.3%;
+	height: 30px;
+	line-height: 30px;
+	color: #fff;
+	font-size: 13px;
+	text-align: center;
+}
+
+.tanchuangExcel5_top ul li i {
+	font-size: 14px;
+	color: #fff;
+	font-family: 'my_font';
+	font-style: normal;
+}
+
+.tanchuangExcel5_bottom {
+	width: 100%;
+	height: 30px;
+	line-height: 30px;
+}
+
+.tanchuangExcel5_bottom ul {
+	float: left;
+	width: 100%;
+	height: 30px;
+}
+
+.tanchuangExcel5_bottom ul li {
+	float: left;
+	width: 33.3%;
+	height: 30px;
+	line-height: 30px;
+	font-size: 13px;
+	text-align: center;
+	font-family: '微软雅黑';
+	font-size: 12px;
+}
+
+.tanchuangExcel5_bottom ul li i {
+	font-size: 14px;
+	font-family: 'my_font';
+	font-style: normal;
+	margin-right: 5px;
+}
+
+.columnExcel ul {
+	
+}
+
+.columnExcel ul li {
+	
+}

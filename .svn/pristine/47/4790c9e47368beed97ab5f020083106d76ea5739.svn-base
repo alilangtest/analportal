@@ -1,0 +1,28 @@
+package byit.tableausubscribe.common.util.mail;
+
+
+public class MailConstants {
+	// 邮箱登陆账号
+	//public static final String USERNAME = "yidongjinrongbu@hfbank.com.cn";
+	public static final String USERNAME = "lishaowei@byitgroup.com";
+	
+	// 邮箱登陆密码
+	//public static final String PASSWORD = "yidong2016";//2016-11-15
+	public static final String PASSWORD = "lishaowei112358";//2016-11-15
+	
+	// 邮箱地址
+	//public static final String MAILADDRESS = "yidongjinrongbu@hfbank.com.cn";
+	public static final String MAILADDRESS = "lishaowei@byitgroup.com";
+	
+	// 邮箱服务器发送地址
+	//public static final String MAILHOST = "mail.hfbank.com.cn";
+	public static final String MAILHOST = "smtp.byitgroup.com";
+	// 邮箱服务器端口
+	public static final String MAILPORT = "25";
+	// 邮箱服务器状态
+	public static final boolean VALIDATE = true;
+	
+	//发送类型，workbook表示发送工作簿，excel表示发送excel
+	public static final String SENDTYPE_WORKBOOK = "workbook";
+	public static final String SENDTYPE_EXCEL = "excel";
+}

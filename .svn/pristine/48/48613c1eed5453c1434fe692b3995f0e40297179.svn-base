@@ -1,0 +1,18 @@
+package byit.aladdin.dataAnalysis.dao;
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.session.RowBounds;
+import byit.core.plug.mybatis.Mapper;
+
+@Mapper
+public interface LogDao {
+	/**
+	 * 根据分页参数查询列表
+	 * @param params
+	 * @param bounds
+	 * @return
+	 */
+	public List<Map<String, Object>> queryLogListforPage(Map<String, Object> params, RowBounds bounds);
+}

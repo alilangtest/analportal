@@ -1,0 +1,766 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@include file="../_include/_taglib.jsp"%>
+<script type="text/javascript">
+	var _ctx = '${ctx}',EL=EL||{},FN=FN||{},GV=GV||{},URLS=URLS||{};
+</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>移动订阅开发平台(首页)</title>
+<link rel="stylesheet" href="${ctx}/assets/assets/tableausubscribe/css/index.css">
+<link rel="stylesheet" href="${ctx}/assets/assets/tableausubscribe/css/indexExcel.css">
+<link rel="stylesheet" href="${ctx}/assets/bootstrap/css/layui.css">
+<script src='${ctx}/js/tableausubscribe/jquery-1.11.1.min.js'></script>
+<script src="${ctx}/assets/layer/layer.js"></script>
+<script src="${ctx}/assets/bootstrap/js/layui.all.js"></script>
+
+<script src='${ctx}/js/tableausubscribe/index.js'></script>
+<script src='${ctx}/js/tableausubscribe/page.js'></script>
+<script src='${ctx}/js/tableausubscribe/util.js'></script>
+
+<style type="text/css">
+.tanchuang3 .mail_b .mail_ul li input,
+.tanchuangExcel0 .excelTabName_b .excelTabName_ul li input,
+.tanchuangExcel3 .mailExcel_b .mailExcel_ul li input{
+	vertical-align: middle;
+	margin-right: 2px;
+}
+.layui-table{
+	mix-width:100%;
+}
+.layui-table td{
+	max-width:160px;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;	
+}
+.columnExcel ul li .columnChangeExcel li{
+	width:156px;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+}
+.btn-infos{
+	background-color: #f5c86e;
+}
+.btn{
+	display: inline-block;
+    margin-bottom: 0;
+    font-weight: 400;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    background-image: none;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    padding: 6px 18px;
+    font-size: 14px;
+    line-height: 1.428571429;
+    border-radius: 4px;
+    -webkit-user-select: none;
+}
+</style>
+</head>
+<body>
+	<div class="main_one">
+		<div class="header-top-search">
+			<em class="local-sub"><i class="local-icon"></i><a href="#">报表订阅</a></em>
+		</div>
+		<div class="main_one_in">
+			<div class="h5_header">
+				<div class="button_add" id='button_add'>
+					<span class="button_add_bottom">新增</span>
+				</div>
+				<!-- note by lisw :搜索框 -->
+				<div class="button_search">
+					<input type="text" id="searchName" name="search" style="height: 34px" placeholder="请输入仪表板/表名称、订阅人、发送状态或发送时间" />
+					<input type="hidden" id="searchValue"><span onclick="searchList();">搜索</span>&nbsp;
+					
+					<!-- <b class="search-right"> -->
+						<button id="search" onclick="clearInfo();" class="btn btn-infos green" style="color:#fff;">清空</button>
+					<!-- </b> -->
+				</div>
+			</div>
+			<div class="h5_section">
+				<div class="h5_section_top" id="h5_section_top"></div>
+				<div class="h5_section_bottom">
+					<!--翻页-->
+					<div id = "page1"></div>
+					<!-- <span>上一页</span>
+					<ul>
+						<li>1</li>
+						<li>2</li>
+						<li>3</li>
+					</ul>
+					<span>下一页</span> -->
+				</div>
+			</div>
+			<!-- excel -->
+			<div class="h5_header">
+				<div class="button_add_excel" id='button_add_excel'>
+					<span class="button_add_bottom">新增Excel</span>
+				</div>
+			</div>
+			<!-- excel end-->
+			<!-- excel -->
+			<div class="h5_section_excel">
+				<div class="h5_section_excel_top" id="h5_section_excel_bottom">
+				</div>
+				<div class="h5_section_excel_bottom">
+					<!--翻页-->
+					<div id = "page2"></div>
+					<!-- <span>上一页</span>
+					<ul>
+						<li>1</li>
+						<li>2</li>
+						<li>3</li>
+					</ul>
+					<span>下一页</span> -->
+				</div>
+			</div>
+
+		</div>
+	</div>
+	<!-- note by lisw :点击“新增”按钮，弹出的一系列浮动框 -->
+	<div class="tanchuang" style='display: none;'>
+		<!--弹框1-->
+		<div class="tanchuang1 tanchuang0" style='display: none;'>
+			<span class="closeBtn"><img src="${ctx}/assets/assets/tableausubscribe/images/closeBtn.png" alt=""></span>
+			<div class="tanchuang1_t clearfix">
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fpfd.png" /></dt>
+					<dd>翻盘判定</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fssj-mr.png" /></dt>
+					<dd>发送时间</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/sryj-mr.png" /></dt>
+					<dd>输入邮件</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fjnr-mr.png" /></dt>
+					<dd>附件or内容</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/ck-mr.png" /></dt>
+					<dd>查看</dd>
+				</dl>
+			</div>
+			<div class="tanchuang1_c clearfix">
+				<div class="tanchuang1_c_l">
+					<div class="name_input" id="name_input">
+						<span>工作簿 ：</span> <select class="name_select" id="name_select"></select>
+					</div>
+				</div>
+				<div class="tanchuang1_c_r">
+					<div class="name_input">
+						<span>判定条件：</span> <input type="text" name="condition_name" style="width:170px" />
+					</div>
+					
+				</div>
+			</div>
+			<div class="xuanze-box clearfix">
+				<ul class='xuanze_list fl' id="dashboard_list">
+				</ul>
+				<ul class='xuanze_list tebie fr' id="xuanze_list">
+				</ul>
+			</div>
+			<div class="tanchuang1_b">
+				<button id='next_1'>下一步</button>
+			</div>
+		</div>
+		<!--弹框1结束-->
+		<!--弹框2-->
+		<div class="tanchuang1 tanchuang2" style="display:none;">
+			<span class="closeBtn"><img src="${ctx}/assets/assets/tableausubscribe/images/closeBtn.png" alt=""></span>
+			<div class="tanchuang1_t clearfix">
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fpfd.png" /></dt>
+					<dd>翻盘判定</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fssj.png" /></dt>
+					<dd>发送时间</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/sryj-mr.png" /></dt>
+					<dd>输入邮件</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fjnr-mr.png" /></dt>
+					<dd>附件or内容</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/ck-mr.png" /></dt>
+					<dd>查看</dd>
+				</dl>
+			</div>
+			<div class="tanchuang1_c" style="">
+				<div class="tanc_c_top" style="margin-top: 4px;">
+					选择定时发送的时间（公历）
+				</div>
+				<div class="tanc_c_bottom" style="">
+					<!-- 本邮件将在2016年6月6日12时00分投递到对方邮箱 -->
+				</div>
+				<div style="clear: all;"></div>
+			</div>
+			<div class="tanc_c_center" style="margin-left:20px;">
+					<ul>
+						<li style="">
+							<select name="" id="sendTimeSelect" onchange="changeSendTime()">
+								<option value="1">仅发一次</option>
+								<option value="2">每日发送</option>
+								<option value="3">每周发送</option>
+								<option value="4">每月发送</option>
+								<option value="5">每年发送</option>
+							</select>
+						</li>
+						<li id="yearLi">
+						<input type="number" value='' id="year" onchange="changeTimeHtml()" min="2016" max="2100"> <span>年</span>
+						</li>
+						<li id="monthLi"><input type="number" value='' id="month"
+							onchange="changeTimeHtml()" max="12" min="1"> <span>月</span>
+						</li>
+						<li id="weekLi"
+							style="display: none; background-color: none; width: 280px;height: 78px;font-size: 20%;vertical-align: top;">
+							<div>
+								<ul class="xday" id="xday" style="margin-top:0;">
+									<li style="height: 20px;">
+									<input type="checkbox" value="1"
+										name="dayx" style="width: 16px; height: 15px;" /><span>星期日</span></li>
+									<li style="height: 20px;"><input type="checkbox" value="2"
+										name="dayx" style="width: 16px; height: 15px;" /><span>星期一</span></li>
+									<li style="height: 20px;"><input type="checkbox" value="3"
+										name="dayx" style="width: 16px; height: 15px;" /><span>星期二</span></li>
+									<li style="height: 20px;"><input type="checkbox" value="4"
+										name="dayx" style="width: 16px; height: 15px;" /><span>星期三</span></li>
+									<li style="height: 20px;"><input type="checkbox" value="5"
+										name="dayx" style="width: 16px; height: 15px;" /><span>星期四</span></li>
+									<li style="height: 20px;"><input type="checkbox" value="6"
+										name="dayx" style="width: 16px; height: 15px;" /><span>星期五</span></li>
+									<li style="height: 20px;"><input type="checkbox" value="7"
+										name="dayx" style="width: 16px; height: 15px;" /><span>星期六</span></li>
+								</ul>
+							</div>
+						</li>
+						<li id="dayLi"><input type="number" value='' id="day"
+							onchange="changeTimeHtml()" max="31" min="1"> <span>日</span>
+						</li>
+						<li id="hourLi"><input type="number" value='' id="hour"
+							onchange="changeTimeHtml()" max="23" min="0"> <span>时</span>
+						</li>
+						<li id="minuteLi"><input type="number" value='' id="minute"
+							onchange="changeTimeHtml()" max="59" min="0"> <span>分</span>
+						</li>
+					</ul>
+				</div>
+			<div class="tanchuang1_b">
+				<button id='prev_1' class="up-step">上一步</button>
+				<button id='next_2'>下一步</button>
+			</div>
+		</div>
+		<!--弹框2结束-->
+		<!--弹框3-->
+		<div class="tanchuang1 tanchuang3" style=' display: none;'>
+			<span class="closeBtn"><img src="${ctx}/assets/assets/tableausubscribe/images/closeBtn.png" alt=""></span>
+			<div class="tanchuang1_t clearfix">
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fpfd.png" /></dt>
+					<dd>翻盘判定</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fssj.png" /></dt>
+					<dd>发送时间</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/sryj.png" /></dt>
+					<dd>输入邮件</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fjnr-mr.png" /></dt>
+					<dd>附件or内容</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/ck-mr.png" /></dt>
+					<dd>查看</dd>
+				</dl>
+			</div>
+			<div class="">
+				<div class="">
+					<div class="email-threm">
+						<label>邮件主题：</label><input type="text" id="mailTitle" name="mailTitle" size="15" class="ipt-sty" />
+					</div>
+					<div class="email-threm">
+						<label>收件人：</label><input type="mail" id="mailName" value="@hfbank.com.cn" class="ipt-sty" />
+						<button onclick="addMail()" class="add-btn">添加</button>
+						<button onclick="delMail()" class="add-btn">移除</button>
+					</div>
+				</div>
+				<div class="mail-box">
+					<div class="mail_c"><label>已选联系人(0)</label></div>
+					<div class="mail_b">
+						<ul class="mail_ul">
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="tanchuang1_b">
+				<button class="up-step" id='prev_2'>上一步</button>
+				<button id='next_6'>下一步</button>
+			</div>
+		</div>
+		<!--弹框3结束-->
+		<!-- 弹框6 -->
+		<div class="tanchuang1 tanchuang6" style='display: none;'>
+			<span class="closeBtn"><img src="${ctx}/assets/assets/tableausubscribe/images/closeBtn.png" alt=""></span>
+			<div class="tanchuang1_t clearfix">
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fpfd.png" /></dt>
+					<dd>翻盘判定</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fssj.png" /></dt>
+					<dd>发送时间</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/sryj.png" /></dt>
+					<dd>输入邮件</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fjnr.png" /></dt>
+					<dd>附件or内容</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/ck-mr.png" /></dt>
+					<dd>查看</dd>
+				</dl>
+			</div>
+			<div class="tanchuang1_c">
+				<div class="tanc_c_top">发送类型的选择(附件 or内容)</div>
+			</div>
+			<div class="tanc_c_center" style="padding:0; ">
+					<ul style="display:block; margin-top:0;">
+						<li class="li-style">
+							<span>类型：</span>
+							<select name="" id="sendDetailsSelect" onchange="changeSendDetails()" style="vertical-align: baseline;">
+									<option value="2">发送内容</option>
+									<option value="1">发送附件</option>
+							</select>
+						</li>
+						<li id="detailsLi" style="margin-left:20px;">
+							<table class="table-sty" style="width: 100%; height: 100%;">
+								<tr>
+									<td valign="top"><span>正文：</span></td>
+									<td>
+										<!-- <input type="text" id="sendInfo" name="sendInfo" placeholder="请输入你的内容......" style='height:150px;width:300px;'> -->
+										<textarea rows="7" cols="71" placeholder="请输入你的内容......" id="sendInfo" name="sendInfo" class="textarex-sty"></textarea>
+									</td>
+								</tr>
+							</table>
+						</li>
+					</ul>
+			</div>
+			<div class="tanchuang1_b">
+				<button class="up-step" id='prev_6'>上一步</button>
+				<button id='next_3' onclick="viewInfor()">下一步</button>
+			</div>
+		</div>
+		<!-- 弹框6结束 -->
+		<!--弹框4-->
+		<!-- <div class="tanchuang1 tanchuang4" style='height:426px;margin-top:-213px;display:none;'> -->
+		<div class="tanchuang1 tanchuang4" style="display:none;">
+			<span class="closeBtn"><img src="${ctx}/assets/assets/tableausubscribe/images/closeBtn.png" alt=""></span>
+			<div class="tanchuang1_t clearfix">
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fpfd.png" /></dt>
+					<dd>翻盘判定</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fssj.png" /></dt>
+					<dd>发送时间</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/sryj.png" /></dt>
+					<dd>输入邮件</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fjnr.png" /></dt>
+					<dd>附件or内容</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/ck.png" /></dt>
+					<dd>查看</dd>
+				</dl>
+			</div>
+			<div class="tanchuang1_c clearfix" style="border:0; height:328px;">
+				<div class="tanchuang-border clearfix">
+					<div class="tanchuang1_c_l">
+						<div class="name_input name-input-sty">
+							<span style="margin-right:8px;">工作簿：</span>
+							<!-- <input type="text" name="reportName"> -->
+							<select class="name_select" id="view_name_select" style="width: 140px; margin-top:6px;" disabled="disabled"></select>
+						</div>
+						<ul class='xuanze_list' id="view_dashboard_list">
+						</ul>
+					</div>
+					<div class="tanchuang1_c_r" style="">
+						<div class="name_input name-input-sty">
+							<span>判定条件：</span> <input type="text" name="view_condition_name" readonly="readonly" class="inp-css" style="width:165px;" />
+						</div>
+						<ul class='xuanze_list' id="view_xuanze_list">
+						</ul>
+					</div>
+				</div>	
+				<div class="mail_show border-bob clearfix">
+					<div class="mail_show_l">
+						<span style="margin-left:8px;">邮件名称：</span>
+						<div class="mail_sh" id="view_mail_sh">
+						</div>
+					</div>
+					<div class="mail_show_r">
+						<ul>
+							<li><span>邮件主题：</span> <input type="text"
+								name="viewMailTitle" readonly="readonly"></li>
+							<li style="margin-top: 6px;"><span>发送时间：</span> <input
+								type="text" name="viewSendTime" readonly="readonly"></li>
+							<li style="margin-top: 6px;"><span>发送条件：</span> <input
+								type="text" id="viewsendTimeSelect" readonly="readonly">
+							</li>
+							<li style="margin-top: 6px;"><span>发送类型：</span> <input
+								type="text" id="viewSendDetailsSelect" readonly="readonly">
+							</li>
+						</ul>
+					</div>
+				</div>
+				<div class="detail_show clearfix" style="margin-top:10px;">
+					<div class="detail_show_l" style="margin-top: 6px;">
+						<span style="margin-left:8px;">正文信息：</span>
+						<textarea rows="5" cols="54" class="detail_sh" readonly="readonly"
+							name="viewSendInfo"></textarea>
+					</div>
+				</div>
+
+			</div>
+			<div class="tanchuang1_b">
+				<button class="up-step" id='prev_3'>上一步</button>
+				<button id='sure_close' onclick="saveInfor()">确定</button>
+			</div>
+		</div>
+		<!--弹框4结束-->
+		<!--弹框5-->
+		<div class="tanchuang5" style='display: none;'>
+			<span class="closeBtn"><img src="${ctx}/assets/assets/tableausubscribe/images/closeBtn.png" alt=""></span>
+			<div class="tanchuang5_top">
+				<ul>
+					<li>邮箱地址</li>
+					<li>发送状态</li>
+					<li>发送时间</li>
+				</ul>
+			</div>
+			<div class="tanchuang5_bottom" id="tanchuang5_bottom">
+			</div>
+		</div>
+		<!--弹框5结束-->
+	</div>
+
+	<!-- excel -->
+	<div class="tanchuangExcel" style='display: none;'>
+		<!--弹框1-->
+		<div class="tanchuangExcel1 tanchuangExcel0" style='display: none;'>
+			<span class="closeBtnExcel"><img src="${ctx}/assets/assets/tableausubscribe/images/closeBtn.png" alt=""></span>
+			<div class="tanchuangExcel1_t clearfix">
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/bmpz.png" /></dt>
+					<dd>翻盘判定</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fssj-mr.png" /></dt>
+					<dd>发送时间</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/sryj-mr.png" /></dt>
+					<dd>输入邮件</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/ck-mr.png" /></dt>
+					<dd>查看</dd>
+				</dl>
+			</div>
+			<div class="tanchuangExcel1_c">
+				<div class="over-gundotiao">
+					<div class="excelTabName_t" id="updateHide">
+						<label class="tanc_c_topExcel">输入格式：</label>
+						<input type="text" id="excelTabName" placeholder="tablename-中文表名" />
+						<button onclick="addExcelTabName()" class="add-btn">添加</button>
+						<button onclick="delExcelTabName()" class="add-btn">移除</button>
+					</div>
+
+					<div class="excelTabName_c" style="height:auto;">
+						<div class="addDate">
+							筛选天数：<input style="width: 25px;" type="text" id="addDate"
+								onchange="changeAddDateExcel()" name="addDate" placeholder="">
+						</div>
+						&nbsp;&nbsp;&nbsp;&nbsp;
+						<div class="addDate" style="margin-left: 10px;">
+							判定条件：
+							<!-- <input style="width: 25px;" type="text" id="addDate" onchange="changeAddDateExcel()" name="addDate"placeholder=""> -->
+							<select name="" id="screeningExcel">
+								<option value="1"></option>
+								<option value="2">存在前一日数据</option>
+								<option value="3">bi_chk_account_end</option>
+								<option value="4">bi_end_check</option>
+								<option value="5">bi_cl_end_check</option>
+								<option value="6">bi_on_end_check</option>
+								<option value="7">bi_cuishou_end_check</option>
+								<option value="8">bi_ear_end_check</option>
+							</select>
+						</div>
+						<div class="">
+							筛选条件：
+							<textarea rows="3" cols="64" id="selCond" name="selCond" class="text-sty-box"></textarea>
+						</div>
+					</div>
+					<form name="excelClick">
+						<div class="excelTabName_b">
+							<ul class="excelTabName_ul">
+							</ul>	
+						</div>
+					</form>
+				<!-- 字段添加 -->
+				<div class="columnExcel">
+					<ul>
+						<li style="width: 40%;">
+							<p>字段配置</p>
+							<div class="columnAddExcel"></div>
+						</li>
+						<li style="width: 20%;">
+							<div class="columnButton">
+								<ul class="ul-menu-btn">
+									<li>
+										<button onclick="addColumn()" class="add-btn">添加</button>
+									</li>
+									<li>
+										<button onclick="delColumn()" class="add-btn">删除</button>
+									</li>
+								</ul>
+							</div>
+						</li>
+						<li style="width: 40%;">
+							<p>已选字段</p>
+							<div class="columnChangeExcel"></div>
+						</li>
+					</ul>
+				</div>
+			</div>
+			</div>
+			<div class="tanchuangExcel1_b">
+				<button id='nextExcel_1'>下一步</button>
+			</div>
+		</div>
+		<!--弹框1结束-->
+		<!--弹框2-->
+		<div class="tanchuangExcel1 tanchuangExcel2" style='display: none;'>
+			<span class="closeBtnExcel"><img src="${ctx}/assets/assets/tableausubscribe/images/closeBtn.png" alt=""></span>
+			<div class="tanchuangExcel1_t clearfix">
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/bmpz.png" /></dt>
+					<dd>翻盘判定</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fssj.png" /></dt>
+					<dd>发送时间</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/sryj-mr.png" /></dt>
+					<dd>输入邮件</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/ck-mr.png" /></dt>
+					<dd>查看</dd>
+				</dl>
+			</div>
+			<div class="tanchuangExcel1_c" style="">
+				<div class="tanc_c_top" style="margin-top: 4px;">
+					<!-- 					选择定时发送的时间（<input type="radio" name='rili' value="1">公历<input type="radio" name='rili' value="2">农历） -->
+					选择定时发送的时间（公历）
+				</div>
+				
+				<div class="tanc_c_bottomExcel" style="">
+					<!-- 本邮件将在2016年6月6日12时00分投递到对方邮箱 -->
+				</div>
+				<div style="clear: all;"></div>
+			</div>
+			<div class="tanc_c_centerExcel">
+					<ul style="margin-top:33px;">
+						<li style=""><select name="" id="sendTimeSelectExcel"
+							onchange="changeSendTimeExcel()">
+								<option value="1">仅发一次</option>
+								<option value="2">每日发送</option>
+								<option value="3">每周发送</option>
+								<option value="4">每月发送</option>
+								<option value="5">每年发送</option>
+						</select></li>
+						<li id="yearLiExcel"><input type="number" value=''
+							id="yearExcel" onchange="changeTimeHtmlExcel()" min="2016"
+							max="2100"> <span>年</span></li>
+						<li id="monthLiExcel"><input type="number" value=''
+							id="monthExcel" onchange="changeTimeHtmlExcel()" max="12" min="1">
+							<span>月</span></li>
+						<li id="weekLiExcel"
+							style="display: none; width: 280px; height: 78px; font-size: 20%; vertical-align: top; display:">
+							<div>
+								<ul class="xday" id="xdayExcel">
+									<li style="height: 20px;"><input type="checkbox" value="1"
+										name="dayxExcel" style="width: 40px; height: 15px;" /><span>星期日</span></li>
+									<li style="height: 20px;"><input type="checkbox" value="2"
+										name="dayxExcel" style="width: 40px; height: 15px;" /><span>星期一</span></li>
+									<li style="height: 20px;"><input type="checkbox" value="3"
+										name="dayxExcel" style="width: 40px; height: 15px;" /><span>星期二</span></li>
+									<li style="height: 20px;"><input type="checkbox" value="4"
+										name="dayxExcel" style="width: 40px; height: 15px;" /><span>星期三</span></li>
+									<li style="height: 20px;"><input type="checkbox" value="5"
+										name="dayxExcel" style="width: 40px; height: 15px;" /><span>星期四</span></li>
+									<li style="height: 20px;"><input type="checkbox" value="6"
+										name="dayxExcel" style="width: 40px; height: 15px;" /><span>星期五</span></li>
+									<li style="height: 20px;"><input type="checkbox" value="7"
+										name="dayxExcel" style="width: 40px; height: 15px;" /><span>星期六</span></li>
+								</ul>
+							</div>
+						</li>
+						<li id="dayLiExcel"><input type="number" value=''
+							id="dayExcel" onchange="changeTimeHtmlExcel()" max="31" min="1">
+							<span>日</span></li>
+						<li id="hourLiExcel"><input type="number" value=''
+							id="hourExcel" onchange="changeTimeHtmlExcel()" max="23" min="0">
+							<span>时</span></li>
+						<li id="minuteLiExcel"><input type="number" value=''
+							id="minuteExcel" onchange="changeTimeHtmlExcel()" max="59"
+							min="0"> <span>分</span></li>
+					</ul>
+				</div>
+			<div class="tanchuangExcel1_b">
+				<button class="up-step" id='prevExcel_1'>上一步</button>
+				<button id='nextExcel_2'>下一步</button>
+			</div>
+		</div>
+		<!--弹框2结束-->
+		<!--弹框3-->
+		<div class="tanchuangExcel1 tanchuangExcel3" style=' display: none;'>
+			<span class="closeBtnExcel"><img src="${ctx}/assets/assets/tableausubscribe/images/closeBtn.png"
+				alt=""></span>
+			<div class="tanchuangExcel1_t clearfix">
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/bmpz.png" /></dt>
+					<dd>翻盘判定</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fssj.png" /></dt>
+					<dd>发送时间</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/sryj.png" /></dt>
+					<dd>输入邮件</dd>
+				</dl>
+				<dl>
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/ck-mr.png" /></dt>
+					<dd>查看</dd>
+				</dl>
+			</div>
+			<div class="tanchuangExcel1_c" style="height:317px;">
+				<div class="email-threm">
+					<label>邮件主题：</label><input type="text" class="ipt-sty" id="mailTitleExcel" name="mailTitleExcel"size="15">
+				</div>
+				<div class="mailExcel_t">
+					<label>收件人：</label>
+					<input type="mail" id="mailNameExcel" value="@hfbank.com.cn" class="ipt-sty" />
+					<button class="add-btn" onclick="addMailExcel()">添加</button>
+					<button class="add-btn" onclick="delMailExcel()">移除</button>
+				</div>
+				<div class="mailExcel_c">已选联系人(0)</div>
+				<div class="mailExcel_b">
+					<ul class="mailExcel_ul">
+					</ul>
+				</div>
+			</div>
+			<div class="tanchuangExcel1_b">
+				<button class="up-step" id='prevExcel_2'>上一步</button>
+				<button id='nextExcel_3' onclick="viewInforExcel()">下一步</button>
+			</div>
+		</div>
+		<!--弹框3结束-->
+		<!--弹框4-->
+		<div class="tanchuangExcel1 tanchuangExcel4" style=' display: none;'>
+			<span class="closeBtnExcel"><img src="${ctx}/assets/assets/tableausubscribe/images/closeBtn.png"
+				alt=""></span>
+			<div class="tanchuangExcel1_t clearfix">
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/bmpz.png" /></dt>
+					<dd>翻盘判定</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/fssj.png" /></dt>
+					<dd>发送时间</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/sryj.png" /></dt>
+					<dd>输入邮件</dd>
+				</dl>
+				<dl class="current-sty">
+					<dt><img src="${ctx}/assets/assets/tableausubscribe/images/ck.png" /></dt>
+					<dd>查看</dd>
+				</dl>
+			</div>
+			<div class="tanchuangExcel1_c" style='height: 318px;'>
+				<div class="mailExcel_show" style="">
+					<div class="excelTabName_show_l">
+						<span>表名配置：</span>
+						<div class="excelTabName_sh" id="view_excelTabName_sh"></div>
+					</div>
+					<div class="mailExcel_show_l">
+						<span>收件人：</span>
+						<div class="mailExcel_sh" id="view_mailExcel_sh"></div>
+					</div>
+					<div class="mailExcel_show_r">
+						<ul>
+							<li><span>邮件主题：</span> <input type="text"
+								name="viewMailTitleExcel" readonly="readonly"></li>
+							<li><span>发送时间：</span> <input type="text"
+								name="viewSendTimeExcel" readonly="readonly"></li>
+							<li style="width:566px;margin-top: 6px;"><span>发送条件：</span> <input
+								type="text" id="viewsendTimeSelectExcel" readonly="readonly" style="width:460px;" />
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="tanchuangExcel1_b">
+				<button id='prevExcel_3' class="up-step">上一步</button>
+				<button id='sure_closeExcel' onclick="saveInforExcel()">确定</button>
+			</div>
+		</div>
+		<!--弹框4结束-->
+		<!--弹框5-->
+		<div class="tanchuangExcel5" style='display: none;'>
+			<span class="closeBtnExcel"><img src="${ctx}/assets/assets/tableausubscribe/images/closeBtn.png"
+				alt=""></span>
+			<div class="tanchuangExcel5_top">
+				<ul>
+					<li>邮箱地址</li>
+					<li>发送状态</li>
+					<li>发送时间</li>
+				</ul>
+			</div>
+			<div class="tanchuangExcel5_bottom" id="tanchuangExcel5_bottom">
+
+			</div>
+		</div>
+		<!--弹框5结束-->
+	</div>
+	<!-- excel end-->
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.osdp.base.dao.AuthOrgsDao">
+	<resultMap type="byit.osdp.base.entity.AuthOrgEntity" id="authOrgResultMap">
+		<id column="ID" property="id" />
+		<result column="NAME" property="name" />
+		<result column="CODE" property="code" />
+		<result column="MANAGER_ID" property="managerId" /> 
+		<result column="PARENT_ID" property="parentId" />
+		<result column="PHONE" property="phone" />
+		<result column="FAX" property="fax" />
+		<result column="ADDRESS" property="address" />
+		<result column="LEV" property="level" />
+		<result column="STATE" property="state"/>
+		<result column="REMARK" property="remark" />
+		<result column="ORDINAL" property="ordinal"/>
+		<result column="CREATOR_ID" property="creatorId" />
+		<result column="ID_PATH" property="idPath" />
+		<result column="NAME_PATH" property="namePath"/>
+		<result column="UPDATE_TIME" property="updateTime"/>
+		<result column="UPDATER_ID" property="updaterId"/> 
+	</resultMap>
+	
+	<resultMap type="byit.osdp.base.entity.AuthUserEntity" id="authUserResultMap">
+		<id column="ID" property="id" />
+		<result column="username" property="username" />
+		<result column="org_id" property="orgId" />
+	</resultMap> 
+	
+	<!-- 该机构下面是否存在子机构 -->
+	<select id="existsChildren" resultMap="authOrgResultMap" parameterType="java.lang.String">
+		SELECT ID,NAME,CODE,PARENT_ID FROM AUTH_ORG   
+		WHERE PARENT_ID=#{id,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 该机构下面是否存在用户 -->
+	 <select id="existsByOrgId" resultMap="authUserResultMap" parameterType="java.lang.String">
+		SELECT "ID",USERNAME,ORG_ID  FROM AUTH_USER  
+		WHERE ORG_ID=#{id,jdbcType=VARCHAR}
+	</select> 
+	
+	<!-- 删除机构 -->
+	 <delete id="removeById"  parameterType="java.lang.String">
+		DELETE FROM AUTH_ORG WHERE ID=#{id,jdbcType=VARCHAR}
+	</delete>
+	
+	<!--添加机构  -->
+	<insert id="saveAuthOrg" parameterType="byit.osdp.base.entity.AuthOrgEntity" >
+		INSERT INTO AUTH_ORG("ID","NAME",CODE,PARENT_ID,PHONE,FAX,ADDRESS,STATE,REMARK,ORDINAL,
+							  CREATOR_ID,CREATE_TIME,LEV,ID_PATH,NAME_PATH)
+		VALUES(
+			#{id},#{name},#{code},#{parentId},#{phone},#{fax},#{address},#{state},
+			#{remark},#{ordinal},#{creatorId},SYSDATE,#{level},#{idPath},#{namePath}
+		)
+	</insert>
+		
+	<!--修改机构  -->
+	<update id="updateAuthOrg" parameterType="byit.osdp.base.entity.AuthOrgEntity">
+		UPDATE AUTH_ORG
+		SET 
+			
+			  CODE=#{code},
+		 PARENT_ID=#{parentId},
+		 	 PHONE=#{phone},
+		 	   FAX=#{fax},
+		   ADDRESS=#{address},
+		 	 STATE=#{state},
+		 	REMARK=#{remark},
+		   ORDINAL=#{ordinal},
+		 	   LEV=#{level},
+		   ID_PATH=#{idPath},
+		 NAME_PATH=#{namePath},
+		UPDATER_ID=#{updaterId},
+	  UPDATE_TIME=SYSDATE
+		WHERE "ID"=#{id}
+	</update>
+	
+</mapper>

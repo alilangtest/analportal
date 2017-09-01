@@ -1,0 +1,184 @@
+@charset "utf-8";
+
+.x-customize .datagrid {
+	border: 1px solid #ccc;
+}
+
+.x-customize .datagrid .datagrid-header-row td {
+	color: #4b72cc;
+	border-bottom: 1px solid #ccc;
+	height: 45px;
+	background: #fff;
+}
+
+.x-customize .datagrid div.datagrid-header-inner {
+	background: #fff;
+}
+
+.x-customize .datagrid tr td {
+	border-bottom: 1px solid #e6e6e6;
+	height: aoto;
+}
+
+.x-customize .datagrid .datagrid-row {
+	background: #fff;
+}
+
+.x-customize .datagrid .datagrid-row.datagrid-row-alt {
+	background: #fff;
+}
+
+.x-customize .datagrid .datagrid-row.datagrid-row-alt {
+	background: #fff;
+}
+
+.x-customize .datagrid .datagrid-row.datagrid-row-selected {
+	background: #FBEC88;
+}
+
+.x-customize .datagrid tr.datagrid-row {
+	height: 35px;
+}
+
+.x-customize .datagrid tr td .tree-title {
+	font-size: 12px;
+}
+
+.x-customize .singleSelect-datagrid .datagrid-header-check input {
+	display: none;
+}
+
+.x-customize .datagrid .pagination {
+	display: block;
+	width: 100%;
+	margin: 0 0 0 0;
+}
+
+.x-customize .datagrid .pagination td:nth-child(3) a:before {
+	content: "首页";
+	position: relative;
+	top: 0px;
+	left: 0px;
+	line-height: 28px;
+	text-align: center;
+	display: block;
+}
+
+.x-customize .datagrid .pagination td:nth-child(4) a:before {
+	content: "上一页";
+	position: relative;
+	top: 0px;
+	left: 0px;
+	line-height: 28px;
+	text-align: center;
+	display: block;
+}
+
+.x-customize .datagrid .pagination td:nth-child(10) a:before {
+	content: "下一页";
+	position: relative;
+	top: 0px;
+	left: 0px;
+	line-height: 28px;
+	text-align: center;
+	display: block;
+}
+
+.x-customize .datagrid .pagination td:nth-child(11) a:before {
+	content: "尾页";
+	position: relative;
+	top: 0px;
+	left: 0px;
+	line-height: 28px;
+	text-align: center;
+	display: block;
+}
+
+.x-customize .pagination  .l-btn, .x-customize .l-btn:hover {
+	border-radius: 2px;
+	font-size: 12px;
+	border: 1px solid #ededed;
+	display: inline-block;
+	line-height: 28px;
+	margin: 0 3px;
+	text-align: center;
+	background: #fafafa;
+}
+
+.x-customize .pagination  .l-btn {
+	width: 55px;
+	height: 28px;
+}
+
+.x-customize .pagination  .l-btn:hover {
+	width: 57px;
+	height: 28px;
+	line-height: 28px;
+	border: 1px solid #bca06f;
+	color: #bca06f
+}
+
+.x-customize .pagination  .l-btn-plain-disabled, .l-btn-plain-disabled:hover
+	{
+	background: #fafafa;
+	filter: alpha(opacity = 100);
+}
+
+.x-customize .pagination  .l-btn-disabled, .l-btn-disabled:hover {
+	opacity: 1;
+}
+
+.x-customize .pagination-page-list, .pagination .pagination-num {
+	border-color: #ededed
+}
+
+.x-customize .pagination  .l-btn-focus {
+	outline: 0;
+}
+
+.x-customize .pagination  .l-btn-left {
+	display: block;
+	border: 1px solid #ededed;
+	width: 54px;
+	height: 26px;
+	line-height: 28px;
+	display: none;
+}
+
+.x-customize .pagination  .l-btn-icon {
+	width: 55px;
+	height: 28px
+}
+
+.x-customize .pagination  .l-btn-empty {
+	display: none;
+}
+
+.x-customize .pagination  a.l-btn span.l-btn-left {
+	display: none;
+}
+
+.x-customize .pagination-info {
+	margin-top: 5px;
+	float: left
+}
+
+.x-customize .pagination td:nth-last-child(2), .x-customize .pagination td:nth-last-child(1),
+	.x-customize .pagination-btn-separator {
+	display: none;
+}
+
+.x-customize .l-btn-plain:hover .pagination-first:before, .x-customize .l-btn-plain:hover .pagination-prev:before,
+	.x-customize .l-btn-plain:hover .pagination-next:before, .x-customize .l-btn-plain:hover .pagination-last:before
+	{
+	color: #a99064;
+}
+
+.x-customize .datagrid-pager {
+	background: #fff;
+}
+
+.x-customize .pagination tr td {
+	background: #fff;
+	border: 0
+}

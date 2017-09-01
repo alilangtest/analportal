@@ -1,0 +1,28 @@
+package byit.tableausubscribe.config;
+
+import java.io.InputStream;
+import java.util.Properties;
+
+import org.apache.commons.io.IOUtils;
+
+public class PropertiesConfig {
+
+	public static final String EXCEL_PATH;
+	public static final int EXCEL_MAXSIZE;
+	
+	static {
+		Properties properties = new Properties();
+		InputStream input = null;
+		try {
+			properties.load(input = PropertiesConfig.class.getResourceAsStream("/tableausubscribeConf/config.properties"));
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			IOUtils.closeQuietly(input);
+		}
+		EXCEL_PATH = properties.getProperty("excel.path");
+		EXCEL_MAXSIZE=Integer.parseInt(properties.getProperty("excel.maxsize"));
+	}
+
+	//public static final String getEmbedMappingUrl() {}
+}

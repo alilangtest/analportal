@@ -1,0 +1,65 @@
+package byit.aladdin.workBook.dao;
+
+import java.util.List;
+
+import byit.aladdin.workBook.entity.WorkbookPlanTaskVo;
+import byit.aladdin.workBook.entity.XmlTables;
+import byit.aladdin.workBook.entity.XmlTablesMain;
+import byit.core.plug.mybatis.Mapper;
+
+@Mapper
+public interface XmlTablesMainDao {
+	/**
+	* @Description: 根绝workbookid查询工作簿与表映射详细信息
+	* @author wangxingfei   
+	* @param @param workBookId
+	* @param @return
+	* @date 2017年6月19日 上午11:15:42 
+	* @version V1.0
+	 */
+	XmlTablesMain queryXmlTablesMainByWorkBookId(String workBookId);
+	/**
+	* @Description: 更新XmlTablesMain表相关信息
+	* @author wangxingfei   
+	* @param @param vo
+	* @param @return
+	* @date 2017年6月20日 下午3:05:29 
+	* @version V1.0
+	 */
+	int updXmlTablesMain(WorkbookPlanTaskVo vo);
+	/**
+	* @Description: 根据workbook_id删除XmlTables信息
+	* @author wangxingfei   
+	* @param @param id
+	* @param @return
+	* @date 2017年6月20日 下午3:07:36 
+	* @version V1.0
+	 */
+	int delXmlTables(String id);
+	/**
+	* @Description: 批量新增XmlTables信息
+	* @author wangxingfei   
+	* @param @param id
+	* @param @return
+	* @date 2017年6月20日 下午3:07:36 
+	* @version V1.0
+	 */
+	int addTables(List<XmlTables> list);
+	/**
+	* @Description: 根据workbookid获取xmltables信息
+	* @author wangxingfei   
+	* @param @param id
+	* @date 2017年6月20日 下午3:46:28 
+	* @version V1.0
+	 */
+	List<XmlTables> queryXmlTablesByWorkBookId(String id);
+	/**
+	* @Description: 按照workbookid删除xmltables 
+	* @author wangxingfei   
+	* @param @param workbookId
+	* @param @return
+	* @date 2017年6月21日 上午10:07:39 
+	* @version V1.0
+	 */
+	int deleteTablesByWorkBookId(String workBookId);
+}

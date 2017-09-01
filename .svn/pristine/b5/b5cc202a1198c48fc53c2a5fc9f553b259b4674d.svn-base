@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.osdp.base.dao.AuthOrgsDao">
+	<resultMap type="byit.osdp.base.entity.AuthOrgEntity" id="authOrgResultMap">
+		<id column="ID" property="id" />
+		<result column="NAME" property="name" />
+		<result column="CODE" property="code" />
+		<result column="MANAGER_ID" property="managerId" /> 
+		<result column="PARENT_ID" property="parentId" />
+		<result column="PHONE" property="phone" />
+		<result column="FAX" property="fax" />
+		<result column="ADDRESS" property="address" />
+		<result column="LEV" property="level" />
+		<result column="STATE" property="state"/>
+		<result column="REMARK" property="remark" />
+		<result column="ORDINAL" property="ordinal"/>
+		<result column="CREATOR_ID" property="creatorId" />
+		<result column="ID_PATH" property="idPath" />
+		<result column="NAME_PATH" property="namePath"/>
+		<result column="UPDATE_TIME" property="updateTime"/>
+		<result column="UPDATER_ID" property="updaterId"/> 
+	</resultMap>
+	
+	<resultMap type="byit.osdp.base.entity.AuthUserEntity" id="authUserResultMap">
+		<id column="ID" property="id" />
+		<result column="username" property="username" />
+		<result column="org_id" property="orgId" />
+	</resultMap> 
+	
+	<!-- 该机构下面是否存在子机构 -->
+	<select id="existsChildren" resultMap="authOrgResultMap" parameterType="java.lang.String">
+		SELECT ID,NAME,CODE,PARENT_ID FROM AUTH_ORG   
+		WHERE PARENT_ID=#{id,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 该机构下面是否存在用户 -->
+	 <select id="existsByOrgId" resultMap="authUserResultMap" parameterType="java.lang.String">
+		SELECT "ID",USERNAME,ORG_ID  FROM AUTH_USER  
+		WHERE ORG_ID=#{id,jdbcType=VARCHAR}
+	</select> 
+	
+	<!-- 删除机构 -->
+	 <delete id="removeById"  parameterType="java.lang.String">
+		DELETE FROM AUTH_ORG WHERE ID=#{id,jdbcType=VARCHAR}
+	</delete>
+	
+	<!--添加机构  -->
+	<insert id="saveAuthOrg" parameterType="byit.osdp.base.entity.AuthOrgEntity" >
+		INSERT INTO AUTH_ORG("ID","NAME",CODE,PARENT_ID,PHONE,FAX,ADDRESS,STATE,REMARK,ORDINAL,
+							  CREATOR_ID,CREATE_TIME,LEV,ID_PATH,NAME_PATH)
+		VALUES(
+			#{id},#{name},#{code},#{parentId},#{phone},#{fax},#{address},#{state},
+			#{remark},#{ordinal},#{creatorId},SYSDATE,#{level},#{idPath},#{namePath}
+		)
+	</insert>
+		
+	<!--修改机构  -->
+	<update id="updateAuthOrg" parameterType="byit.osdp.base.entity.AuthOrgEntity">
+		UPDATE AUTH_ORG
+		SET 
+		<if test="name!=null and name!=''">
+			NAME=#{name},
+		</if>
+		<if test="code!=null and code!=''">
+			 CODE=#{code},
+		</if>
+		<if test="parentId!=null and parentId!=''">
+			PARENT_ID=#{parentId},
+		</if>
+		<if test="phone!=null and phone!=''">
+			 PHONE=#{phone},
+		</if>
+		<if test="fax!=null and fax!=''">
+			  FAX=#{fax},
+		</if>
+		<if test="address!=null and address!=''">
+			ADDRESS=#{address},
+		</if>
+		<if test="state!=null and state!=''">
+			STATE=#{state},
+		</if>
+		<if test="remark!=null and remark!=''">
+			REMARK=#{remark},
+		</if>
+		<if test="ordinal!=null and ordinal!=''">
+			 ORDINAL=#{ordinal},
+		</if>
+		<if test="level!=null and level!=''">
+			LEV=#{level},
+		</if>
+		<if test="idPath!=null and idPath!=''">
+			ID_PATH=#{idPath},
+		</if>
+		<if test="namePath!=null and namePath!=''">
+			 NAME_PATH=#{namePath},
+		</if>	
+		<if test="updaterId!=null and updaterId!=''">
+		UPDATER_ID=#{updaterId},
+		</if>	
+	  	UPDATE_TIME=SYSDATE
+		WHERE "ID"=#{id}
+	</update>
+	
+	<select id="getById" resultType="byit.osdp.base.entity.AuthOrgEntity" parameterType="String">
+		SELECT "ID","NAME",CODE,PARENT_ID parentId,MANAGER_ID managerId,PHONE,FAX,ADDRESS,REMARK,LEV,NAME_PATH namePath,ORDINAL,ID_PATH idPath,NAME_PATH namePath
+		FROM AUTH_ORG  
+		WHERE STATE='1' AND "ID"=#{id}
+	</select>
+	
+		<!-- 该机构下面是否存在子机构 -->
+	<select id="find" resultMap="authOrgResultMap">
+		SELECT "ID","NAME",CODE,PARENT_ID,MANAGER_ID,PHONE,FAX,ADDRESS,REMARK,LEV,NAME_PATH,ORDINAL,ID_PATH,NAME_PATH
+		FROM AUTH_ORG  
+		WHERE STATE='1'
+		ORDER BY ordinal,"NAME"
+	</select>
+	
+		<!-- 查询子机构 -->
+	<select id="findChildren" resultMap="authOrgResultMap" parameterType="String">
+		SELECT "ID","NAME",CODE,PARENT_ID parentId,MANAGER_ID managerId,PHONE,FAX,ADDRESS,REMARK,LEV,NAME_PATH namePath,ORDINAL,ID_PATH idPath,NAME_PATH namePath
+		FROM AUTH_ORG  
+		WHERE STATE='1' AND PARENT_ID=#{parentId}
+		ORDER BY ordinal
+	</select>
+	
+		<!-- 查询子机构 -->
+	<select id="getByCode" resultMap="authOrgResultMap" parameterType="String">
+		SELECT "ID","NAME",CODE,PARENT_ID parentId,MANAGER_ID managerId,PHONE,FAX,ADDRESS,REMARK,LEV,NAME_PATH namePath,ORDINAL,ID_PATH idPath,NAME_PATH namePath
+		FROM AUTH_ORG  
+		WHERE STATE='1' AND CODE=#{code}
+	</select>
+	
+	
+	<select id="getByNameParentId" resultType="byit.osdp.base.entity.AuthOrgEntity" parameterType="String">
+		SELECT "ID","NAME",CODE,PARENT_ID parentId,MANAGER_ID managerId,PHONE,FAX,ADDRESS,REMARK,LEV,NAME_PATH namePath,ORDINAL,ID_PATH idPath,NAME_PATH namePath
+		FROM AUTH_ORG  
+		WHERE STATE='1' AND "NAME"=#{name} AND PARENT_ID=#{parentId}
+	</select>
+	
+	<select id="findAllChildren" resultMap="authOrgResultMap" parameterType="String">
+		 SELECT "ID","NAME",CODE,PARENT_ID parentId,MANAGER_ID managerId,PHONE,FAX,ADDRESS,REMARK,LEV,NAME_PATH namePath,ORDINAL,ID_PATH idPath,NAME_PATH namePath
+		 FROM AUTH_ORG  
+		 WHERE STATE='1' AND "ID"=#{id}
+	</select>
+	
+</mapper>

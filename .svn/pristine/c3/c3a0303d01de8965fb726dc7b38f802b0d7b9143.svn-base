@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.aladdin.TableauConfigure.dao.PmTableauserverDao">
+
+	<!--列表table数据库配置  -->
+	<select id="getPagedQuery" parameterType="java.util.Map" resultType="java.util.Map">
+		select * from pm_tableauserver where 1=1
+		<if test="postgreuname != null">
+			and postgreuname  LIKE CONCAT(CONCAT('%',#{postgreuname,jdbcType=VARCHAR}),'%')   
+		</if>
+	</select>
+	<!--新增table数据库配置  -->
+	<insert id="saveTableauServer" parameterType="byit.aladdin.TableauConfigure.entity.PmTableauserverEntity">
+		INSERT INTO pm_tableauserver VALUES(
+			#{serverid,jdbcType=VARCHAR},
+			#{tableauserverip,jdbcType=VARCHAR},
+			#{postgreurl,jdbcType=VARCHAR},
+			#{postgreuname,jdbcType=VARCHAR},
+			#{postgrepwd,jdbcType=VARCHAR}
+		)
+	</insert>
+	<!--修改table数据库配置  -->
+	<update id="updateTableauServer"  parameterType="byit.aladdin.TableauConfigure.entity.PmTableauserverEntity">
+		UPDATE pm_tableauserver 
+		<set>
+			tableauserverip=#{tableauserverip},
+			postgreurl=#{postgreurl},
+			postgreuname=#{postgreuname},
+			postgrepwd=#{postgrepwd}
+		</set>
+		WHERE serverid=#{serverid}
+	</update>
+	<!--删除table数据库配置  -->
+	<delete id="removeById" parameterType="java.lang.String">
+		DELETE FROM pm_tableauserver WHERE serverid=#{serverid}
+	</delete>
+	<!--根据id查询一条table数据库配置的数据  -->
+	<select id="getById" resultType="byit.aladdin.TableauConfigure.entity.PmTableauserverEntity" parameterType="java.lang.String">
+		select * from pm_tableauserver where serverid=#{serverid}
+	</select>
+	<!--根据登录用户id查询收藏列表  -->
+	<select id="countCollections" resultType="java.util.Map" parameterType="java.lang.String">
+	select c.COLLECTID,
+       c.SEQDATE,
+       c.REPORTID,
+       r.REPORTNAME,
+       s.username as EMPLOYEENAME,
+       s.id as employeeid
+  from PM_REPORTCOLLECT c
+  LEFT JOIN PM_REPORT r ON c.REPORTID = r.REPORTID
+  LEFT JOIN AUTH_USER s ON c.EMPLOYEEID = s.id
+ where c.EMPLOYEEID = #{loginid}
+ order by c.orderdate desc
+		<!-- select c.COLLECTID,c.SEQDATE,c.REPORTID,r.REPORTNAME,s.EMPLOYEENAME,s.employeeid from PM_REPORTCOLLECT c 
+        LEFT JOIN PM_REPORT r ON c.REPORTID=r.REPORTID
+        LEFT JOIN PM_EMPLOYEE s ON c.EMPLOYEEID=s.EMPLOYEEID 
+        where c.EMPLOYEEID=#{loginid} order by c.orderdate desc -->
+	</select>
+	<!--取消收藏报表  -->
+	<delete id="collectDelete" parameterType="byit.aladdin.TableauConfigure.bo.CollectBo">
+		delete from PM_REPORTCOLLECT where reportid=#{reportid} and employeeid=#{employeeid}
+	</delete>
+	<delete id="collectDeleteRetOperation" parameterType="byit.aladdin.TableauConfigure.bo.CollectBo">
+		delete from REP_OPERATION where top_type='2' and report_id=#{reportid} and operation_user=#{employeeid} 
+	</delete>
+	<!-- 报表收藏置顶  -->
+	<update id="collectToTop"  parameterType="byit.aladdin.TableauConfigure.bo.CollectBo">
+		update PM_REPORTCOLLECT set orderdate=sysdate where reportid=#{reportid} and employeeid=#{employeeid}
+	</update>
+</mapper>

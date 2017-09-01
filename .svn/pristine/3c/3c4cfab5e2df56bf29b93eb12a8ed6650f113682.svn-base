@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.aladdin.report.dao.IdaPmReportMenuDao">
+	<sql id="ReportMenuColumns">
+		MENUID,
+		MENUPARENT,
+		MENUNAME,
+		MENUDESP,
+		REM,
+		URL
+	</sql>
+<!-- 列表及查询 -->
+	<select id="queryReportMenuList" resultType="byit.aladdin.report.entity.IdaPmReportMenu" parameterType="byit.aladdin.report.bo.IdaPmReportMenuBo">
+	   select  <include refid="ReportMenuColumns" />
+		 from PM_REPORTMENU
+	 
+		  <where>
+		      <if test= "menuid != null ">
+		        and MENUID = #{menuid,jdbcType=VARCHAR}      
+		      </if>
+		  </where>
+	</select>
+	
+	
+<!-- 添加 -->
+  <insert id="saveReportMenu"   parameterType="byit.aladdin.report.bo.IdaPmReportMenuBo" >
+    insert into PM_REPORTMENU
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test= "menuid != null  and menuid != '' ">
+         MENUID,
+      </if>
+      <if test= "menuparent != null and menuparent != '' ">
+         MENUPARENT,
+      </if>
+      <if test= "menuname != null and menuname != '' ">
+         MENUNAME,
+      </if>
+      <if test= "menudesp != null and menudesp != '' ">
+         MENUDESP,
+      </if>
+      <if test= "rem != null and rem != '' ">
+         REM,
+      </if>
+      <if test= "url != null  and url != '' ">
+         URL,
+      </if>
+    </trim>
+    
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test= "menuid != null ">
+         #{menuid,jdbcType=VARCHAR},
+      </if>
+      <if test= "menuparent != null and menuparent != '' ">
+         #{menuparent,jdbcType=VARCHAR},
+      </if>
+      <if test= "menuname != null and menuname != '' ">
+         #{menuname,jdbcType=VARCHAR},
+      </if>
+      <if test= "menudesp != null and menudesp != '' ">
+         #{menudesp,jdbcType=VARCHAR},
+      </if>
+      <if test= "rem != null and rem != '' ">
+         #{rem,jdbcType=VARCHAR},
+      </if>
+      <if test= "url != null and url != '' ">
+         #{url,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+	
+	
+<!--修改  -->	
+<update id="updateReportMenu" parameterType="byit.aladdin.report.bo.IdaPmReportMenuBo" >
+    update PM_REPORTMENU
+    <set>
+	    <trim  suffixOverrides=",">
+	      <if test= "menuid != null and menuid != '' ">
+	      menuid = #{menuid,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "menuparent != null and menuparent != '' ">
+	      menuparent = #{menuparent,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "menuname != null and menuname != '' ">
+	      menuname = #{menuname,jdbcType=VARCHAR},
+	      </if>
+	     <if test= "menudesp != null ">
+	      menudesp = #{menudesp,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "rem != null ">
+	      rem = #{rem,jdbcType=VARCHAR},
+	      </if>
+	      <if test= "url != null and url != '' ">
+	      url = #{url,jdbcType=TIMESTAMP},
+	      </if>
+	    </trim>
+    </set>
+    where menuid = #{menuid,jdbcType=BIGINT}
+  </update>
+	
+	
+<!-- 删除 -->
+  <delete id="deleteReportMenu" parameterType="byit.aladdin.report.bo.IdaPmReportMenuBo" >
+     delete from PM_REPORTMENU where menuid=#{menuid}
+  </delete>
+  
+  <!-- 验证id,名称唯一 -->
+	<select id="queryReportMenuBy" resultType="byit.aladdin.report.bo.IdaPmReportMenuBo" parameterType="byit.aladdin.report.bo.IdaPmReportMenuBo">
+	   select  <include refid="ReportMenuColumns" />
+		 from PM_REPORTMENU
+		  <where>
+		      <if test= "menuid != null  and menuid != '' ">
+		        and MENUID = #{menuid,jdbcType=VARCHAR}      
+		      </if>
+		      <if test= "menuname != null  and menuname != '' ">
+		        and menuname = #{menuname,jdbcType=VARCHAR}      
+		      </if>
+		  </where>
+	</select>
+	
+	 <!-- 获取下级菜单 -->
+	<select id="queryMenuList" resultType="byit.aladdin.report.entity.IdaPmReportMenu" parameterType="byit.aladdin.report.bo.IdaPmReportMenuBo">
+	   select  <include refid="ReportMenuColumns" />													
+		 from PM_REPORTMENU
+		  <where>
+		      <if test= "menuid != null  and menuid != '' ">
+		        and menuparent = #{menuid,jdbcType=VARCHAR}      
+		      </if>
+		  </where>
+	</select>
+	
+	<!-- 删除报表菜单与角色关系 -->
+  <delete id="deleteRoleRelateReportMenu" parameterType="byit.aladdin.report.bo.IdaPmReportMenuBo" >
+     delete from REP_MENU_ROLE_RELA where menuid=#{menuid}
+  </delete>
+  
+  <delete id="deleteRoleReportMenuRelate" parameterType="java.util.Map" >
+     delete from REP_MENU_ROLE_RELA where menuid=#{menuid} and roleid=#{roleid}
+  </delete>
+  
+  <!-- 授权 -->
+  <insert id="RoleRelateReportMenu"   parameterType="java.util.Map" >
+    insert into REP_MENU_ROLE_RELA
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test= "eventid != null  and eventid != '' ">
+         EVENTID,
+      </if>
+      <if test= "roleid != null and roleid != '' ">
+         ROLEID,
+      </if>
+      <if test= "menuid != null and menuid != '' ">
+         MENUID,
+      </if>
+    </trim>
+    
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test= "eventid != null ">
+         #{eventid,jdbcType=VARCHAR},
+      </if>
+      <if test= "roleid != null and roleid != '' ">
+         #{roleid,jdbcType=VARCHAR},
+      </if>
+      <if test= "menuid != null and menuid != '' ">
+         #{menuid,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  
+   <!-- 查询所有可分配的角色 -->
+	<select id="queryRoleList" parameterType="java.util.Map" resultType="java.util.Map">
+	   select r.id,r.name from AUTH_ROLE r where  r.STATE = '1'  order by r.id
+	</select>
+	
+	 <!--查询已分配的角色 -->
+	<select id="queryReportMenuRoleList" parameterType="java.util.Map" resultType="java.util.Map">
+	   select r.* from REP_MENU_ROLE_RELA s left join AUTH_ROLE r on s.ROLEID=r.ID where s.MENUID=#{menuid} and r.STATE = '1'  order by r.id
+	</select>
+	
+	
+ 	<!--菜单树 -->
+	<select id="queryMenuListTree" resultType="byit.aladdin.report.entity.IdaPmReportMenu" parameterType="java.lang.String">
+		select m.* from PM_REPORTMENU m where 1=1
+		 <if test= "parentid != null ">
+		        and m.MENUPARENT = #{parentid}      
+		 </if>
+		 
+		 <if test= "parentid == null ">
+		        and (m.MENUPARENT is null or m.MENUPARENT='')      
+		 </if>
+		 order by m.MENUID
+	</select>
+	
+	
+	<!-- 回显角色与菜单的关系 -->
+	<select id="queryRoleReportMenuList" resultType="byit.aladdin.report.bo.RoleReportMenuBo" parameterType="byit.aladdin.report.bo.RoleReportMenuBo">
+		select t.* from REP_MENU_ROLE_RELA t where 1=1
+		 <if test= "menuid != null ">
+		        and t.menuid = #{menuid}      
+		 </if>
+		 <if test= "menuid == null ">
+		        and t.menuid is null     
+		 </if>
+	</select>
+	
+	<!-- 查询角色id -->
+	<select id="queryReportMenuRoleListBymenuid" resultType="java.lang.String" parameterType="java.lang.String">
+		select t.roleid from REP_MENU_ROLE_RELA t where 1=1
+		 <if test= "menuid != null ">
+		        and t.menuid = #{menuid}      
+		 </if>
+	</select>
+</mapper>

@@ -1,0 +1,386 @@
+package byit.osdp.base.service;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.google.common.collect.Maps;
+
+import byit.aladdin.workBook.entity.UserOrgInfo;
+import byit.core.plug.expection.PromptException;
+import byit.core.plug.mybatis.PageBounds;
+import byit.core.util.collect.Mapx;
+import byit.core.util.identifier.IdUtil;
+import byit.core.util.page.Page;
+import byit.core.util.page.Pagination;
+import byit.osdp.base.common.BaseConstants;
+import byit.osdp.base.dao.AuthUserDao;
+import byit.osdp.base.entity.AuthUserEntity;
+import byit.osdp.base.entity.AuthUserRoleEntity;
+import byit.osdp.base.entity.AuthUserSso;
+import byit.osdp.base.entity.SsoClientEntity;
+import byit.osdp.base.model.AuthUserRoleVo;
+import byit.osdp.base.model.AuthUserVo;
+import byit.osdp.base.model.PasswordUpdateDto;
+import byit.osdp.base.security.UserHolder;
+import byit.osdp.base.security.password.PasswordEncoder;
+
+/**
+ * 用户(服务类)
+ */
+@Transactional(rollbackFor = Exception.class)
+@Service
+public class AuthUserService {
+
+	// ==============================Logger===========================================
+
+	protected final Logger logger = LoggerFactory.getLogger(getClass());
+
+	// ==============================Fields===========================================
+	@Autowired
+	private AuthUserDao authUserDao;
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
+	
+	// ==============================Methods==========================================
+
+	/**
+	 * 分页查询
+	 * @param pageQuery 查询条件
+	 * @return 查询结果
+	 */
+	public Object pagedQuery(Pagination pagination) {
+		Map<String, Object> params = Maps.newHashMap();
+		
+		Mapx filters = pagination.getFilters();
+		String name = filters.getString("username");
+		String orgId = filters.getString("orgId");
+		params.put("username", name);
+		params.put("orgId", orgId);
+
+		//获得分页
+		PageBounds bounds = new PageBounds(pagination.getStart(),pagination.getLimit());
+		Page<Map<String, Object>> page = bounds.wrap(authUserDao.pagedQuery(params, bounds));
+		return page;
+		
+	}
+
+	/**
+	 * 根据用户名查找用户信息(查询实体)
+	 * @param username 用户名(登录名)
+	 * @return 用户信息
+	 */
+	public AuthUserEntity getEntityByUsername(String username) {
+		AuthUserEntity authUserEntity = authUserDao.getByUsername(username);
+		return authUserEntity;
+	}
+
+	/**
+	 * 查询用户
+	 * @param id 用户ID
+	 * @return 用户信息
+	 */
+	public AuthUserVo getById(String id) {
+		AuthUserVo vo = authUserDao.getVoById(id);
+		if (vo == null) {
+			throw new PromptException("用户不存在或者已经失效");
+		}
+
+		//密码占位符号(密码不对外提供)
+		vo.setPassword(BaseConstants.PASSWORD_PLACEHOLDER);
+		return vo;
+	}
+
+	/**
+	 * 新增
+	 * @param vo 模型对象
+	 */
+	public void save(AuthUserVo vo) {
+		this.validate(vo);
+		String uid = UserHolder.getId();
+		Date now = new Date();
+		
+		AuthUserEntity entity = new AuthUserEntity();
+		entity.setId(IdUtil.uuid32());
+		entity.setUsername(vo.getUsername());
+		//entity.setPassword(vo.getPassword());
+		entity.setPassword(passwordEncoder.encode(BaseConstants.DEFAULT_PASSWORD));
+		entity.setName(vo.getName());
+		entity.setCode(vo.getCode());
+		entity.setOrgId(vo.getOrgId());
+		entity.setSex(vo.getSex());
+		entity.setBirthday(vo.getBirthday());
+		entity.setIdCard(vo.getIdCard());
+		entity.setPhone(vo.getPhone());
+		entity.setMobile(vo.getMobile());
+		entity.setEmail(vo.getEmail());
+		entity.setEnabled(vo.getEnabled());
+		entity.setRemark(vo.getRemark());
+		entity.setCreatorId(uid);
+		entity.setCreateTime(now);
+		entity.setState(1);
+		entity.setValidity(vo.getValidity());
+		entity.setUserDistinguish(vo.getUserDistinguish());
+		authUserDao.save(entity);
+	}
+
+	/**
+	 * 修改
+	 * @param vo 模型对象
+	 */
+	public void update(AuthUserVo vo) {
+		validate(vo);
+
+		AuthUserVo authUserVo = authUserDao.getVoById(vo.getId());
+		if (authUserVo == null) {
+			throw new PromptException("用户不存在或者已经失效");
+		}
+		
+		String uid = UserHolder.getId();
+		Date now = new Date();
+		vo.setUpdaterId(uid);
+		vo.setUpdateTime(now);
+		vo.setState(1);
+		if(vo.getEnabled() == null){
+			vo.setEnabled("0");
+		}
+		authUserDao.update(vo);
+	}
+
+	/**
+	 * 删除
+	 * @param id 用户ID
+	 */
+	public void removeById(String id) {
+		if (BaseConstants.ADMIN_USER_ID.equals(id)) {
+			throw new PromptException("系统管理员不能被删除！");
+		}
+		//删除用户角色关联
+		authUserDao.removeByUserId(id);
+		//删除用户
+		authUserDao.removeById(id);
+	}
+
+	/**
+	 * 启用(禁用)
+	 * @param id 用户ID
+	 * @param enabled 是否启用
+	 */
+	public void enable(String id, String enabled) {
+		if (BaseConstants.ADMIN_USER_ID.equals(id) && !Boolean.TRUE.equals(enabled)) {
+			throw new PromptException("系统管理员不能被禁用！");
+		}
+		AuthUserVo authUserVo = authUserDao.getVoById(id);
+		if (authUserVo != null) {
+			authUserVo.setEnabled(enabled);
+			authUserDao.update(authUserVo);
+		}
+	}
+
+	/**
+	 * 保存用户角色关系
+	 * @param userId 用户ID
+	 * @param roleIds 角色ID列表
+	 */
+	public void updateUserRole(String userId, String[] roleIds) {
+		if (authUserDao.getVoById(userId) == null) {
+			throw new PromptException("用户不存在");
+		}
+
+		ArrayList<String> list = new ArrayList<String>();
+		//根据用户ID查询用户角色关联
+		for (AuthUserRoleVo entity : authUserDao.findByUserId(userId)) {
+			list.add(entity.getRole_id());
+		}
+
+//		List<AuthUserRoleEntity> newEntities = Lists.newArrayList();
+		for (String roleId : roleIds) {
+			if (list.contains(roleId)) {
+				list.remove(roleId);
+			} else {
+				AuthUserRoleEntity entity = new AuthUserRoleEntity();
+				entity.setId(IdUtil.uuid32());
+				entity.setUserId(userId);
+				entity.setRoleId(roleId);
+				authUserDao.addUserRole(entity);
+			}
+		}
+
+		for (String roleId : list) {
+			if(null!=roleId){
+				authUserDao.deleteUserRole(roleId,userId);
+			}
+			
+		}
+	}
+
+	/**
+	 * 修改密码
+	 * @param dto 密码对象
+	 */
+	public void updatePassword(PasswordUpdateDto dto) {
+		if (dto == null) {
+			return;
+		}
+		String id = dto.getUserId();
+		String oldPassword = dto.getOldPassword();
+		String newPassword = dto.getNewPassword();
+
+		if (BaseConstants.PASSWORD_PLACEHOLDER.equals(newPassword)) {
+			return;
+		}
+
+		if (StringUtils.isEmpty(newPassword) || BaseConstants.PASSWORD_PLACEHOLDER.equals(newPassword)) {
+			throw new PromptException("新登录密码不能为空！");
+		}
+		AuthUserVo authUserVo = authUserDao.getVoById(id);
+		if (authUserVo == null) {
+			throw new PromptException("用户不存在！");
+		}
+
+		if (!passwordEncoder.matches(oldPassword, authUserVo.getPassword())) {
+			throw new PromptException("登录密码输入错误！");
+		}
+
+		String newEncodedPassword = passwordEncoder.encode(newPassword);
+		authUserVo.setPassword(newEncodedPassword);
+		authUserDao.updatePassword(authUserVo);
+	}
+
+	/**
+	 * 密码重置
+	 * @param id 用户ID
+	 */
+	public void resetPasswordById(String id) {
+		AuthUserVo authUserVo = authUserDao.getVoById(id);
+		if (authUserVo != null) {
+			authUserVo.setPassword(passwordEncoder.encode(BaseConstants.DEFAULT_PASSWORD));
+			authUserDao.update(authUserVo);
+		}
+	}
+
+	//==============================ToolMethods======================================
+	/**
+	 * 验证数据
+	 * @param vo 角色数据
+	 */
+	private void validate(AuthUserVo vo) throws PromptException {
+		String id = vo.getId();
+		String username = vo.getUsername();
+		String name = vo.getName();
+		/*String code = vo.getCode();*/
+
+		if (StringUtils.isEmpty(username)) {
+			throw new PromptException("账号不能为空");
+		} else {
+			AuthUserEntity entity = authUserDao.getByUsername(username);
+			if (entity != null && !StringUtils.equals(entity.getId(), id)) {
+				throw new PromptException("账号名称重复");
+			}
+		}
+		if (StringUtils.isEmpty(name)) {
+			throw new PromptException("姓名不能为空");
+		}
+
+		/*if (StringUtils.isNotEmpty(code)) {
+			AuthUserEntity entity = authUserDao.getByCode(code);
+			if (entity != null && !StringUtils.equals(entity.getId(), id)) {
+				throw new PromptException("用户编码重复");
+			}
+		}*/
+	}
+
+	//获得角色关联
+	public Object findIdByUserId(String userId) {
+		// TODO Auto-generated method stub
+		List<AuthUserRoleVo> list = authUserDao.findByUserId(userId) ;
+		return list;
+	}
+	
+	//依据用户id查询用户角色关联信息，add by lisw
+	public List<String> findUserRoleByUserId(String userId) {
+		// TODO Auto-generated method stub
+		List<String> list = authUserDao.findUserRoleByUserId(userId) ;
+		return list;
+	}
+	/**
+	* @Description: 根据type查询字典表
+	* @author wangxingfei   
+	* @param @param type
+	* @param @return
+	* @date 2017年6月7日 下午2:34:42 
+	* @version V1.0
+	 */
+	public String findSystemDomainByType(String type){
+		return authUserDao.findSystemDomainByType(type);
+	}
+	/**
+	* @Description: 查询分配系统字典表信息
+	* @author wangxingfei   
+	* @param @return
+	* @date 2017年8月11日 上午10:02:02 
+	* @version V1.0
+	 */
+	public List<SsoClientEntity> findSystemAll(){
+		return authUserDao.findSystemAll();
+	}
+	/**
+	* @Description:根据用户id查询已分配的系统信息
+	* @author wangxingfei   
+	* @param @param userId
+	* @param @return
+	* @date 2017年8月11日 上午10:12:03 
+	* @version V1.0
+	 */
+	public List<String> findUserSystemByUserId(String userId){
+		return authUserDao.findUserSystemByUserId(userId);
+	}
+	
+	/**
+	 * 保存用户角色关系
+	 * @param userId 用户ID
+	 * @param roleIds 角色ID列表
+	 */
+	public void updateUserSystem(String userId, String[] ssoIds) {
+		if (authUserDao.getVoById(userId) == null) {
+			throw new PromptException("用户不存在");
+		}
+		//删除关联关系
+		authUserDao.deleteUserSystem(userId);
+		//添加关联关系
+		for (String ssoId : ssoIds) {
+			AuthUserSso sso = new AuthUserSso();
+			sso.setId(IdUtil.uuid32());
+			sso.setUserId(userId);
+			sso.setSsoId(ssoId);
+			sso.setCreatorId(UserHolder.getId());
+			sso.setCreateTime(new Date());
+			sso.setUpdaterId(UserHolder.getId());
+			sso.setUpdateTime(new Date());
+			sso.setState("1");
+			authUserDao.addUserSystem(sso);
+		}
+	}
+	
+	/**
+	* @Description:根据用户id查询已分配的系统信息
+	* @author wangxingfei   
+	* @param @param userId
+	* @param @return
+	* @date 2017年8月11日 上午10:12:03 
+	* @version V1.0
+	 */
+	public List<UserOrgInfo> findUserByUserName(String userName){
+		return authUserDao.findUserByUserName(userName);
+	}
+}

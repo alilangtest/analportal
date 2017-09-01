@@ -1,0 +1,72 @@
+var EL = EL || {}, FN = FN || {}, GV = GV || {}, URLS = URLS || {};
+
+URLS.updatePassword = _ctx + '/auth_user/updatePassword.do';
+
+$(function() {
+
+	EL.window = $(window);
+	EL.form = $('#form');
+	EL.confirm = $('#confirm');
+	EL.cancel = $('#cancel');
+
+	EL.confirm.on('click', function() {
+		var params = EL.form.vals();
+		
+		var password = params.newPasswordConfirm;
+		var len = strlen(password);
+		if(len<6){
+			layer.alert("密码长度不能少于6位！");
+		}else{
+			var errors = {};
+
+			if ($.isEmpty(params.oldPassword)) {
+				errors.oldPassword = '密码不能为空';
+			}
+			if ($.isEmpty(params.newPassword)) {
+				errors.newPassword = '密码不能为空';
+			}
+			if ($.isEmpty(params.newPasswordConfirm)) {
+				errors.newPasswordConfirm = '密码不能为空';
+			} else if (params.newPassword != params.newPasswordConfirm) {
+				errors.newPasswordConfirm = '两次密码输入不一致';
+			}
+
+			if (!$.isEmptyObject(errors)) {
+				EL.form.markInvalid(errors);
+				return;
+			}
+
+			$.post(URLS.updatePassword, params, function(result) {
+				var err = $.err(result);
+				if (err) {
+					layer.msg(err.message, {
+						msg : [ '#BB0000' ],
+						shift : 5,
+						time : 1500
+					});
+				} else {
+					$.dlg.close();
+				}
+			});
+		}
+		
+	});
+
+	EL.cancel.on('click', function() {
+		$.dlg.close();
+	});
+
+	function strlen(str) {
+		var len = 0;
+		for (var i = 0; i < str.length; i++) {
+			var c = str.charCodeAt(i);
+			//单字节加1 
+			if ((c >= 0x0001 && c <= 0x007e) || (0xff60 <= c && c <= 0xff9f)) {
+				len++;
+			} else {
+				len += 2;
+			}
+		}
+		return len;
+	}
+});

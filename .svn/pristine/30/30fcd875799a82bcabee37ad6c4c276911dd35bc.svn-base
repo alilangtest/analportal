@@ -1,0 +1,74 @@
+var EL = EL || {}, FN = FN || {}, GV = GV || {}, URLS = URLS || {};
+
+URLS.findRoleAll = _ctx + '/auth_role/findAll.do';
+URLS.findRoldIdByUserId = _ctx + '/auth_user/findUserRold.do';
+URLS.updateUserRole = _ctx + '/auth_user/updateUserRole.do';
+
+$(function() {
+
+	GV.search = $.decodeUrlParams();
+	GV.userId = GV.search.id;
+
+	EL.window = $(window);
+	EL.grid = $('#grid');
+	EL.confirm = $('#confirm');
+	EL.cancel = $('#cancel');
+
+	EL.grid.datagrid({
+		url : URLS.pagedQuery,
+		columns : [ [ {
+			field : 'ck',
+			checkbox : true
+		}, {
+			field : 'name',
+			title : '角色',
+			width : 150,
+			fixed : true,
+			align : 'center'
+		}, {
+			field : 'remark',
+			title : '备注',
+			width : 100,
+			halign : 'center'
+		} ] ]
+	});
+
+	FN.refresh = function() {
+		$.mask();
+		$.post(URLS.findRoleAll, function(records) {
+			EL.grid.datagrid('loadData', records);
+			var params = {};
+			params.id = GV.userId;
+			$.post(URLS.findRoldIdByUserId, params, function(roldIds) {
+				$.unmask();
+				EL.grid.datagrid('checkById', roldIds);
+			});
+		});
+	};
+	FN.refresh();
+
+	EL.confirm.on('click', function() {
+		var records = EL.grid.datagrid('getChecked');
+		var params = {
+			userId : GV.userId,
+			roleIds : $.map(records, function(record) {
+				return record.id;
+			})
+		};
+		$.mask();
+		$.post(URLS.updateUserRole, params, function(result) {
+			$.unmask();
+			var err = $.err(result);
+			if (err) {
+				$.dlg.msg(err.message);
+			} else {
+				$.dlg.close();
+			}
+		});
+	});
+
+	EL.cancel.on('click', function() {
+		$.dlg.close();
+	});
+
+});

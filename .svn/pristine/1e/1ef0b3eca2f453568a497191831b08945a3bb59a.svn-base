@@ -1,0 +1,657 @@
+package byit.tableausubscribe.tab.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import net.sf.json.JSONObject;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import byit.osdp.base.security.UserHolder;
+import byit.tableausubscribe.common.util.Constants;
+import byit.tableausubscribe.tab.bean.IdaPmReport;
+import byit.tableausubscribe.tab.bean.ReportSubscribe;
+import byit.tableausubscribe.tab.bean.SendResult;
+import byit.tableausubscribe.tab.bean.SubscribeType;
+import byit.tableausubscribe.tab.db.DB;
+import byit.utils.Tools;
+
+@Component
+public class PushReportDao {
+	@SuppressWarnings("unused")
+	private static final Logger logger = Logger.getLogger(PushReportDao.class);
+	
+	@Autowired
+	private TableauDao tabDao;
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 将仪表板数据存储到数据库中
+		 *@creatTime:2017年6月1日 下午4:22:25 
+		 *@return:@param report
+		 *@return:@throws Exception void
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public boolean addReportConfig(ReportSubscribe report) throws Exception {
+			boolean result=false; 
+			//依据仪表板id获取仪表板名称
+			String reportName ="";
+			List<IdaPmReport> iprList = tabDao.getViewsByReportInfo(report.getReportId());
+			 for(IdaPmReport ipr:iprList){
+				 reportName+=","+ipr.getReportName();
+			 }
+			 if(!"".equals(reportName)){
+				 reportName = reportName.substring(1);
+			 }
+			 //获取当前登录人id
+			 //String uid = UserHolder.getId();
+			 
+			 //获取mail
+			 String mail=""; 
+			 List<String> mailList = report.getMailList();
+			 for (int i = 0; i < mailList.size(); i++) {
+				// mail=mail+"\""+dataList.get(i)+"\"";
+				if(i==0){
+						mail=mailList.get(i);
+				}else{
+					mail+=Constants.DELIMITER+mailList.get(i);
+				}
+				 
+			 }
+			
+			 
+			 //获取dataSources
+			 String dataSources="";
+			 Map<String,String> dataSourcesMap = report.getDataSources();
+			 if(dataSourcesMap!=null &&dataSourcesMap.size()>0){
+				 JSONObject json = JSONObject.fromObject(dataSourcesMap);
+				 dataSources=json.toString();
+			}
+			 
+			 StringBuffer sql=new StringBuffer();
+			 sql.append("insert into subscribe_report ");
+			 sql.append(" (id,workbook_id,report_id,report_name,send_type,send_time,send_state,condition,mail_title,mails,data_sources," );
+			 sql.append(" send_details,sendInfo,status,creator_id,create_time,updater_id,update_time) ");
+			 sql.append(" values ");
+			 sql.append(" (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ");
+			 Connection conn=null;
+			 PreparedStatement pstmt=null;
+			 try {
+				conn=DB.getPortalConn();
+				 pstmt=conn.prepareStatement(sql.toString());
+				 pstmt.setString(1,UUID.randomUUID().toString());
+				 pstmt.setString(2,report.getWorkbookId());
+				 pstmt.setString(3,report.getReportId());
+				 pstmt.setString(4,reportName);
+				 pstmt.setString(5,report.getSendType());
+				 pstmt.setString(6,report.getSendTime());
+				 pstmt.setString(7,report.getSendState());
+				 pstmt.setString(8,report.getCondition());
+				 pstmt.setString(9,report.getMailTitle());
+				 pstmt.setString(10,mail);//mails
+				 //pstmt.setArray(10,mailList);
+				 pstmt.setString(11,dataSources);//data_sources
+				 pstmt.setString(12,report.getSendDetails());//send_details
+				 pstmt.setString(13,report.getSendInfo());//sendInfo
+				 pstmt.setString(14,"1");
+				 pstmt.setString(15,report.getUserId());//creator_id
+				 pstmt.setString(16,Tools.getCurrFormatTimeGen());//create_time
+				 pstmt.setString(17,report.getUserId());//updater_id
+				 pstmt.setString(18,Tools.getCurrFormatTimeGen());//update_time
+				 //pstmt.executeQuery();
+				 pstmt.execute();
+				 result=true;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}finally{
+				DB.commit(conn);
+				DB.close(conn, pstmt);
+			}
+			 return result;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<ReportSubscribe>  getReportSubscribeList(String searchValue){
+		List<ReportSubscribe> list=new ArrayList<ReportSubscribe>();
+		
+		StringBuffer sql=new StringBuffer();
+		sql.append(" select id,workbook_id,report_id,report_name,send_type,send_time,send_state,condition,mail_title,mails,data_sources,send_details,sendInfo,temp_send_time,is_today_send from subscribe_report  ");
+		sql.append(" where 1=1 and status='1' ");
+		
+		if(Tools.isNotEmpty(searchValue)){
+			sql.append(" and (report_name like '%'||?||'%'  or mails like '%'||?||'%'  or send_state like '%'||?||'%' or send_time like '%'||?||'%')  ");
+		}
+		 Connection conn=DB.getPortalConn();
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 try {
+			
+			pstmt=conn.prepareStatement(sql.toString());
+			if(Tools.isNotEmpty(searchValue)){
+				searchValue=Tools.formatWeekToNo(searchValue);
+				pstmt.setString(1, searchValue);
+				pstmt.setString(2, searchValue);
+				pstmt.setString(3, searchValue);
+				pstmt.setString(4, searchValue);
+			}
+			
+			rs=	pstmt.executeQuery();
+			while( rs.next()){
+				ReportSubscribe reportSubscribe=new ReportSubscribe();
+				reportSubscribe.setWorkbookId(rs.getString("workbook_id"));
+				reportSubscribe.setReportId(rs.getString("report_id"));
+				reportSubscribe.setReportName(rs.getString("report_name"));
+				String tSendType=rs.getString("send_type");
+				reportSubscribe.setSendType(tSendType);
+				reportSubscribe.setSendTypeName(SubscribeType.getName(tSendType));
+				reportSubscribe.setSendTime(rs.getString("send_time"));
+				reportSubscribe.setSendState(rs.getString("send_state"));
+				reportSubscribe.setCondition(rs.getString("condition"));
+				reportSubscribe.setMailTitle(rs.getString("mail_title"));
+				reportSubscribe.setMails(rs.getString("mails"));
+				String dataSource=rs.getString("data_sources");
+				Map<String,String> map = new HashMap<String,String>();
+				if(Tools.isNotEmpty(dataSource)){
+					ObjectMapper mapper = new ObjectMapper();
+					try {
+						map=mapper.readValue(dataSource, Map.class);
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				reportSubscribe.set_dataSources(dataSource);
+				reportSubscribe.setDataSources(map);
+				
+				reportSubscribe.setSendDetails(rs.getString("send_details"));
+				reportSubscribe.setSendInfo(rs.getString("sendInfo"));
+				String DateStr=rs.getString("temp_send_time");
+				if(Tools.isNotEmpty(DateStr) ){
+					reportSubscribe.setTempSendTime(Tools.formatDateStrMin(DateStr));
+				}
+				reportSubscribe.setIsTodaySend(rs.getString("is_today_send"));
+				list.add(reportSubscribe);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally{
+			DB.close(conn, pstmt, rs);
+		}
+		 return list;
+		
+	}
+	
+	
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 依据仪表板id查询详细信息
+		 *@creatTime:2017年6月1日 下午8:25:19 
+		 *@return:@param reportId
+		 *@return:@return ReportSubscribe
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	@SuppressWarnings("unchecked")
+	public ReportSubscribe getSubscribe(String reportId){
+		ReportSubscribe reportSubscribe=new ReportSubscribe();
+		
+		StringBuffer sql=new StringBuffer();
+		sql.append(" select id,workbook_id,report_id,report_name,send_type,send_time,send_state,condition,mail_title,mails,data_sources,send_details,sendInfo,temp_send_time,is_today_send from subscribe_report ");
+		sql.append(" where report_id =? and status=?");
+		 Connection conn=DB.getPortalConn();
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 try {
+			
+			pstmt=conn.prepareStatement(sql.toString());
+			pstmt.setString(1,reportId);
+			pstmt.setString(2,"1");
+			rs=	pstmt.executeQuery();
+			while( rs.next()){
+				reportSubscribe.setWorkbookId(rs.getString("workbook_id"));
+				reportSubscribe.setReportId(rs.getString("report_id"));
+				reportSubscribe.setReportName(rs.getString("report_name"));
+				String tSendType=rs.getString("send_type");
+				reportSubscribe.setSendType(tSendType);
+				reportSubscribe.setSendTypeName(SubscribeType.getName(tSendType));
+				reportSubscribe.setSendTime(rs.getString("send_time"));
+				reportSubscribe.setSendState(rs.getString("send_state"));
+				reportSubscribe.setCondition(rs.getString("condition"));
+				reportSubscribe.setMailTitle(rs.getString("mail_title"));
+				reportSubscribe.setMails(rs.getString("mails"));
+				reportSubscribe.setSendDetails(rs.getString("send_details"));
+				reportSubscribe.setSendInfo(rs.getString("sendInfo"));
+				String dataSource=rs.getString("data_sources");
+				Map<String,String> map = new HashMap<String,String>();
+				if(Tools.isNotEmpty(dataSource)){
+					ObjectMapper mapper = new ObjectMapper();
+					try {
+						map=mapper.readValue(dataSource, Map.class);
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				reportSubscribe.set_dataSources(dataSource);
+				reportSubscribe.setDataSources(map);
+				
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally{
+			DB.close(conn, pstmt, rs);
+		}
+		return reportSubscribe;
+		
+	}
+	
+	public List<SendResult>  getSendResultList(String reportId){
+		List<SendResult> list=new ArrayList<SendResult>();
+		
+		StringBuffer sql=new StringBuffer();
+		sql.append(" select id,report_id,mails,send_time,send_state from subscribe_report_result  ");
+		sql.append(" where report_id=? and status=1  ");
+		 Connection conn=DB.getPortalConn();
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 try {
+			
+			pstmt=conn.prepareStatement(sql.toString());
+			pstmt.setString(1,reportId);
+			rs=	pstmt.executeQuery();
+			while( rs.next()){
+				SendResult sendResult=new SendResult();
+				sendResult.setReportId(rs.getString("report_id"));
+				sendResult.setSendTime(rs.getString("send_time"));
+				sendResult.setSendState(rs.getString("send_state"));
+				sendResult.setEmailId(rs.getString("mails"));
+				list.add(sendResult);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally{
+			DB.close(conn, pstmt, rs);
+		}
+		 return list;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 修改仪表板
+		 *@creatTime:2017年6月1日 下午8:25:44 
+		 *@return:@param report
+		 *@return:@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public  String updateReportSubscribe(ReportSubscribe report){
+		String result=null;
+		//依据reportId查询reportName
+		String reportName ="";
+		List<IdaPmReport> iprList = tabDao.getViewsByReportInfo(report.getReportId());
+		 for(IdaPmReport ipr:iprList){
+			 reportName+=","+ipr.getReportName();
+		 }
+		 if(!"".equals(reportName)){
+			 reportName = reportName.substring(1);
+		 }
+		 Map<String, String> map=report.getDataSources();
+		 String _dataSource=Tools.formatMapToStr(map);
+		 
+		 StringBuffer sql=new StringBuffer();
+		 sql.append("update  subscribe_report set ");
+		 sql.append(" workbook_id =?,report_name=?,send_type=?,send_time=?,send_state=?,condition=?,mail_title=?,mails=?,data_sources=?," );
+		 sql.append(" send_details=?,sendInfo=?,updater_id=?,update_time=?,temp_send_time=?,is_today_send=? ");
+		 sql.append(" where report_id =?");
+		 Connection conn=null;
+		 PreparedStatement pstmt=null;
+		 try {
+			conn=DB.getPortalConn();
+			 pstmt=conn.prepareStatement(sql.toString());
+			 pstmt.setString(1,report.getWorkbookId());
+			// pstmt.setString(2,report.getReportId());
+			 pstmt.setString(2,reportName);
+			 pstmt.setString(3,report.getSendType());
+			 pstmt.setString(4,report.getSendTime());
+			 pstmt.setString(5,report.getSendState());
+			 pstmt.setString(6,report.getCondition());
+			 pstmt.setString(7,report.getMailTitle());
+			 pstmt.setString(8,report.getMails());//mails
+			 pstmt.setString(9,_dataSource);//data_sources
+			 pstmt.setString(10,report.getSendDetails());//send_details
+			 pstmt.setString(11,report.getSendInfo());//sendInfo
+			 pstmt.setString(12,report.getUserId());//updater_id
+			 pstmt.setString(13,Tools.getCurrFormatTimeGen());//update_time
+			 pstmt.setString(14,report.getPtempSendTime());//update_time
+			 pstmt.setString(15,report.getIsTodaySend());//update_time
+			 pstmt.setString(16,report.getReportId());
+			 pstmt.execute();
+			 result="修改成功";
+		} catch (Exception e) {
+			e.printStackTrace();
+			result="修改失败";
+		}finally{
+			DB.commit(conn);
+			DB.close(conn, pstmt);
+		}
+		 
+		 
+		 return result;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 邮件发送完成后修改主表信息
+		 *@creatTime:2017年6月16日 下午3:23:23 
+		 *@return:@param report
+		 *@return:@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public  String updateReportSubscribeAfterSendEmail(ReportSubscribe report){
+		String result=null;
+		 
+		 StringBuffer sql=new StringBuffer();
+		 sql.append("update  subscribe_report set ");
+		 sql.append(" send_state=?,updater_id=?,update_time=?,temp_send_time=?,is_today_send=? ");
+		 sql.append(" where report_id =?");
+		 Connection conn=null;
+		 PreparedStatement pstmt=null;
+		 try {
+			conn=DB.getPortalConn();
+			 pstmt=conn.prepareStatement(sql.toString());
+			 pstmt.setString(1,report.getSendState());
+			 pstmt.setString(2,report.getUserId());//updater_id
+			 pstmt.setString(3,Tools.getCurrFormatTimeGen());//update_time
+			 pstmt.setString(4,report.getPtempSendTime());//update_time
+			 pstmt.setString(5,report.getIsTodaySend());//update_time
+			 pstmt.setString(6,report.getReportId());
+			 pstmt.execute();
+			 result="修改成功";
+		} catch (Exception e) {
+			e.printStackTrace();
+			result="修改失败";
+		}finally{
+			DB.commit(conn);
+			DB.close(conn, pstmt);
+		}
+		 
+		 
+		 return result;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 更新当天发送情况字段
+		 *@creatTime:2017年6月11日 下午3:49:52 
+		 *@return:@param report
+		 *@return:@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public  String updateSendTimeSubscribe(ReportSubscribe report){
+		String result=null;
+		//依据reportId查询reportName
+
+		StringBuffer sql=new StringBuffer();
+		 sql.append("update  subscribe_report set ");
+		 sql.append(" is_today_send =?,temp_send_time=? ");
+		 sql.append(" where report_id =? and status=1");
+		 Connection conn=null;
+		 PreparedStatement pstmt=null;
+		 try {
+			conn=DB.getPortalConn();
+			 pstmt=conn.prepareStatement(sql.toString());
+			 pstmt.setString(1,report.getIsTodaySend());
+			 pstmt.setString(2,report.getPtempSendTime());
+			 pstmt.setString(3,report.getReportId());
+			 pstmt.execute();
+			 result="修改成功";
+		} catch (Exception e) {
+			e.printStackTrace();
+			result="修改失败";
+		}finally{
+			DB.commit(conn);
+			DB.close(conn, pstmt);
+		}
+		 return result;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 删除，仅修改状态。
+		 *@creatTime:2017年6月1日 下午8:56:16 
+		 *@return:@param reportId
+		 *@return:@return boolean
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public  boolean  deleteReportSubscribe(String reportId)  {
+		boolean result=false;
+		
+		 
+		 Connection conn=DB.getPortalConn();;
+		 PreparedStatement pstmt=null;
+		 PreparedStatement resPstmt=null;
+		 try {
+			 //修改主表
+			 StringBuffer sql=new StringBuffer();
+			 sql.append(" update  subscribe_report set ");
+			 sql.append(" status=?,updater_id=?,update_time=?");
+			 sql.append(" where report_id =? ");
+			//conn=DB.getPortalConn();
+			 pstmt=conn.prepareStatement(sql.toString());
+			 pstmt.setString(1,"0");
+			 pstmt.setString(2,UserHolder.getId());
+			 pstmt.setString(3,Tools.getCurrFormatTimeGen());//update_time
+			 pstmt.setString(4,reportId);//update_time
+			 pstmt.execute();
+			 
+			 StringBuffer resultSql=new StringBuffer();
+			 resultSql.append(" update  subscribe_report_result set ");
+			 resultSql.append(" status=?,updater_id=?,update_time=? ");
+			 resultSql.append(" where report_id =? ");
+			 resPstmt=conn.prepareStatement(resultSql.toString());
+			 resPstmt.setString(1,"0");
+			 resPstmt.setString(2,UserHolder.getId());
+			 resPstmt.setString(3,Tools.getCurrFormatTimeGen());//update_time
+			 resPstmt.setString(4,reportId);//update_time
+			 resPstmt.execute();
+			 result=true;
+			 DB.commit(conn);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			DB.close(conn, pstmt);
+			DB.close(resPstmt);
+		}
+		 return result;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description:删除，物理删除，删除数据
+		 *@creatTime:2017年6月6日 上午11:21:42 
+		 *@return:@param reportId
+		 *@return:@return boolean
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public  boolean  dropReportSubscribe(String reportId)  {
+		boolean result=false;
+		 
+		 StringBuffer sql=new StringBuffer();
+		 sql.append("delete subscribe_report where report_id =?");
+		 Connection conn=null;
+		 PreparedStatement pstmt=null;
+		 try {
+			conn=DB.getPortalConn();
+			 pstmt=conn.prepareStatement(sql.toString());
+			 pstmt.setString(1,reportId);//update_time
+			 pstmt.execute();
+			 result=true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			DB.commit(conn);
+			DB.close(conn, pstmt);
+		}
+		 return result;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 添加发送结果
+		 *@creatTime:2017年6月5日 下午6:54:46 
+		 *@return:@param report void
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public void addReportResult(Map<String, List<SendResult>> sendResultMap){
+		 String reportId=null;
+		 String sendtime=null;
+		 String sendState=null;
+		 String emailId=null;
+		 Connection conn=DB.getPortalConn();;
+		 PreparedStatement resulrPstmt=null;
+		 //PreparedStatement pstmt=null;
+		 StringBuffer sql=new StringBuffer();
+		   sql.append("insert into subscribe_report_result ");
+		   sql.append(" (id,report_id,mails,send_time,send_state,creator_id,create_time,status) ");
+		   sql.append(" values ");
+		   sql.append(" (?,?,?,?,?,?,?,?) ");
+		
+			for (String key : sendResultMap.keySet()) {
+				   for(SendResult sr:sendResultMap.get(key)){
+					   reportId=sr.getReportId();
+					   emailId=sr.getEmailId();
+					   sendtime=sr.getSendTime();
+					   sendState=sr.getSendState();
+					   try {
+						   //conn=DB.getPortalConn();
+						   resulrPstmt=conn.prepareStatement(sql.toString());
+						   resulrPstmt.setString(1,UUID.randomUUID().toString());
+						   resulrPstmt.setString(2,reportId);
+						   resulrPstmt.setString(3,emailId);
+						   resulrPstmt.setString(4,sendtime);
+						   resulrPstmt.setString(5,sendState);
+						   resulrPstmt.setString(6,Constants.USERID);//creator_id
+						   resulrPstmt.setString(7,Tools.getCurrFormatTimeGen());//create_time
+						   resulrPstmt.setString(8,"1");
+						   resulrPstmt.execute();
+					   } catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}finally{
+							DB.commit(conn);
+							DB.close(conn, resulrPstmt);
+						}
+				   }
+			}
+	}
+	
+	
+	public void addReportResult(Map<String, List<SendResult>> sendResultMap,ReportSubscribe reportSubscribe ){
+		
+	}
+	
+	public boolean dropReportResult(String reportId){
+		boolean flag=false;
+		String sql="delete from subscribe_report_result where report_id=?";
+		//String sql="select distinct 代理名字  datasourceName ,代理名字  datasourceId from v_dm_f_mail_bi where 结束日期>= trunc(sysdate - 7)";
+		 Connection conn=DB.getPortalConn();
+		 PreparedStatement pstmt=null;
+		 ResultSet rs=null;
+		 try {
+			pstmt=conn.prepareStatement(sql);
+			pstmt.setString(1,reportId);
+			pstmt.execute();
+			flag=true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally{
+			DB.close(conn, pstmt, rs);
+		}
+		 return flag;
+		
+	}
+	
+/*	public  void deleteReportConfig(String reportId) throws Exception {
+			SAXReader reader = new SAXReader();
+			String xmlFile =Constants.CLASSPATH+"/"+Constants.subscribXML;
+			Document doc = reader.read(new File(xmlFile));
+			Element root = doc.getRootElement();
+			List<Element> elementList = root.elements("report");
+			for (Element e : elementList) {
+				if(reportId.equals((String)e.element("reportId").getData())){
+					e.getParent().remove(e);
+					break;
+				}
+			}
+			FileUtils.writeStringToFile(new File(xmlFile), doc.asXML(),"UTF-8"); 
+	}*/
+	
+	/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~发送结果~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+	/*public void addSendResult(Map<String,List<SendResult>>  sendResultMap)  throws Exception  {
+			SAXReader reader = new SAXReader();
+			String xmlFile =Constants.CLASSPATH+"/"+Constants.resultXML;
+			Document doc = reader.read(new File(xmlFile));
+			Element root = doc.getRootElement();
+			for (String key : sendResultMap.keySet()) {
+				   Element newReport = root.addElement("result");
+				   for(SendResult sr:sendResultMap.get(key)){
+					   newReport.addElement("reportId").setText(sr.getReportId());
+					   Element mail = newReport.addElement("mail");
+					   mail.addAttribute("id",sr.getEmailId());
+					   mail.addElement("sendtime").setText(sr.getSendTime());
+					   mail.addElement("sendState").setText(sr.getSendState());
+					   
+				   }
+			}
+			FileUtils.writeStringToFile(new File(xmlFile), doc.asXML(),"UTF-8"); 
+	}*/
+	/*public void deleteSendResult(String reportId)  throws Exception  {
+			SAXReader reader = new SAXReader();
+			String xmlFile =Constants.CLASSPATH+"/"+Constants.resultXML;
+			Document doc = reader.read(new File(xmlFile));
+			Element root = doc.getRootElement();
+			List<Element> elementList = root.elements("result");
+			for (Element e : elementList) {
+				if(reportId.equals((String)e.element("reportId").getData())){
+					e.getParent().remove(e);
+					break;
+				}
+			}
+			FileUtils.writeStringToFile(new File(xmlFile), doc.asXML(),"UTF-8");
+	}*/
+	
+}

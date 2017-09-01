@@ -1,0 +1,270 @@
+package byit.aladdin.dataAnalysis.service.impl;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import byit.aladdin.dataAnalysis.service.ReportDataAnalysisService;
+import byit.osdp.base.security.UserHolder;
+import byit.osdp.tableau.TableauConfig;
+import cn.byitgroup.utils.tableau.TableauUtil;
+import byit.aladdin.TableauConfigure.bo.CollectBo;
+import byit.aladdin.dataAnalysis.dao.ReportDataAnalysisDao;
+import byit.aladdin.dataAnalysis.entity.AuthRole;
+import byit.aladdin.dataAnalysis.entity.Dic;
+import byit.aladdin.dataAnalysis.entity.Employee;
+import byit.aladdin.dataAnalysis.entity.LabelInfo;
+import byit.aladdin.dataAnalysis.entity.Org;
+import byit.aladdin.dataAnalysis.entity.PmReportCollect;
+import byit.aladdin.dataAnalysis.entity.PmTableauUser;
+import byit.aladdin.dataAnalysis.entity.RepAttributeInfo;
+import byit.aladdin.dataAnalysis.entity.Report;
+import byit.aladdin.dataAnalysis.entity.ReportHomepage;
+import byit.aladdin.dataAnalysis.entity.TypeTop;
+
+@Transactional
+@Service("reportDataAnalysisService")
+public class ReportDataAnalysisServiceImpl implements ReportDataAnalysisService{
+	@Autowired
+	private ReportDataAnalysisDao reportDataAnalysisDao;
+
+
+
+	@Override
+	public List<Dic> queryDic(Dic dic) {
+		return reportDataAnalysisDao.queryDic(dic);
+	}
+
+
+	@Override
+	public List<LabelInfo> querylabelInfoList(List<AuthRole> authRoles) {
+		return reportDataAnalysisDao.querylabelInfoList(authRoles);
+	}
+
+	@Override
+	public List<TypeTop> queryAnalysis(String repLab,String operationUser) {
+		Map<String, Object> param=new HashMap<String,Object>();
+		param.put("repLab", repLab);
+		param.put("operationUser", operationUser);
+		return reportDataAnalysisDao.queryAnalysis(param);
+	}
+
+	@Override
+	public List<LabelInfo> queryDataLabel(List<AuthRole> authRoles) {
+		return reportDataAnalysisDao.queryDataLabel(authRoles);
+	}
+
+	@Override
+	public List<TypeTop> queryReportInfo(List<AuthRole> authRoles) {
+		return reportDataAnalysisDao.queryReportInfo(authRoles);
+	}
+
+	@Override
+	public int addReportInfo(TypeTop typeTop) {
+		return reportDataAnalysisDao.addReportInfo(typeTop);
+	}
+
+	@Override
+	public List<TypeTop> queryReportBy(TypeTop typeTop) {
+		return reportDataAnalysisDao.queryReportBy(typeTop);
+	}
+
+	@Override
+	public List<TypeTop> isReportDo(TypeTop typeTop) {
+		return reportDataAnalysisDao.isReportDo(typeTop);
+	}
+
+	@Override
+	public int deleteReport(TypeTop typeTop) {
+		return reportDataAnalysisDao.deleteReport(typeTop);
+	}
+
+	@Override
+	public Report getReportByIdAndType(String reportid) {
+		return reportDataAnalysisDao.getReportByIdAndType(reportid);
+	}
+
+	@Override
+	public Map<String, Object> getOrgInfo(String userId) {
+		Map<String,Object> info=new HashMap<String,Object>();
+		Employee emp=reportDataAnalysisDao.queryEmpById(userId);
+		if (emp!=null) {
+			//查询根节点不包含子节点
+			Org org=this.reportDataAnalysisDao.queryOrgParentById(emp.getOrgId());
+			if(org==null){
+				//查询当前节点
+				org=this.reportDataAnalysisDao.queryOrgById(emp.getOrgId());
+				if(org == null){
+					return null;
+				}
+			}
+			info.put("orgcode",  org.getCode());
+			info.put("orglev", org.getLev());
+			info.put("orgName", org.getName());
+		} else {
+			return null;
+		}
+		return info;
+	}
+
+	@Override
+	public Report getRoleReport(String reportid, String userId) {
+		Map<String, Object> param=new HashMap<String,Object>();
+		param.put("reportid", reportid);
+		param.put("userId", userId);
+		return reportDataAnalysisDao.getRoleReport(param);
+	}
+
+	@Override
+	public PmTableauUser getTableauUser(String optype) {
+		return reportDataAnalysisDao.getTableauUser(optype);
+	}
+
+	@Override
+	public void addCollectInfo(PmReportCollect collect) {
+		reportDataAnalysisDao.addCollectInfo(collect);
+	}
+
+	@Override
+	public void deleteCollectInfo(PmReportCollect collect) {
+		reportDataAnalysisDao.deleteCollectInfo(collect);
+	}
+
+	@Override
+	public List<AuthRole> queryRoleById(String operationUser) {
+		return reportDataAnalysisDao.queryRoleById(operationUser);
+	}
+
+
+	@Override
+	public List<RepAttributeInfo> queryrepAttributeInfo(String operationUser) {
+		return reportDataAnalysisDao.queryrepAttributeInfo(operationUser);
+	}
+
+	@Override
+	public List<TypeTop> queryReportByUser(String operationUser) {
+		return reportDataAnalysisDao.queryReportByUser(operationUser);
+	}
+
+	@Override
+	public List<TypeTop> getSCSort() {
+		return reportDataAnalysisDao.getSCSort();
+	}
+
+	@Override
+	public List<TypeTop> getSCBSort(String operationUser) {
+		return reportDataAnalysisDao.getSCBSort(operationUser);
+	}
+
+	@Override
+	public List<TypeTop> getFXBSort(String operationUser) {
+		return reportDataAnalysisDao.getFXBSort(operationUser);
+	}
+
+	@Override
+	public List<TypeTop> queryAnalysis2(String operationUser) {
+		return reportDataAnalysisDao.queryAnalysis2(operationUser);
+	}
+	
+	
+	//收藏列表
+	public List<CollectBo> countCollections(String loginid) {
+		return reportDataAnalysisDao.countCollections(loginid);
+	}
+	
+	//取消收藏
+	public int collectDelete(CollectBo collectBo) {
+		//删除查看、分享、点赞表的数据（REP_OPERATION）
+		reportDataAnalysisDao.collectDeleteRetOperation(collectBo);
+		//报表收藏表（PM_REPORTCOLLECT）
+		return reportDataAnalysisDao.collectDelete(collectBo);
+	}
+	
+	//报表收藏置顶
+	public boolean collectToTop(CollectBo collectBo) {
+		return reportDataAnalysisDao.collectToTop(collectBo);
+	}
+	
+	//添加首页
+	@Override
+	public int addHomepage(String reportid) {
+		
+		ReportHomepage reportHomepage = new ReportHomepage();
+		reportHomepage.setId(UUID.randomUUID().toString());
+		reportHomepage.setUser_id(UserHolder.getId());
+		reportHomepage.setReport_id(reportid);
+		
+		
+		//删除首页
+		reportDataAnalysisDao.deleteHomepage(UserHolder.getId());
+		//添加首页
+		int i = reportDataAnalysisDao.addHomepage(reportHomepage);
+		
+		return i;
+	}
+
+
+	//查询首页
+	@Override
+	public ReportHomepage getHomepage(String userid) {
+		ReportHomepage reportHomepage = reportDataAnalysisDao.getHomepage(userid);
+		return reportHomepage;
+	}
+
+
+	@Override
+	public int deleteHomepage() {
+		// TODO Auto-generated method stub
+		//删除首页
+		int i = reportDataAnalysisDao.deleteHomepage(UserHolder.getId());
+		return i;
+	}
+
+
+	//报表菜单树
+	@Override
+	public List<LabelInfo> queryReportMenuList(List<AuthRole> authRoles) {
+		// TODO Auto-generated method stub
+		List<LabelInfo> list = reportDataAnalysisDao.queryReportMenuList(authRoles);
+		return list;
+	}
+
+
+	//获取站点UrlNamespace
+	@Override
+	public String getUrlNamespace(String siteid) {
+		String sql = "select s.url_namespace from sites s where id = " + siteid ;
+		String  url_namespace = "";
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		try {
+			String tableuaPostgresqlIp = TableauConfig.TABLEUA_POSTGRESQL_IP;
+			String tableuaPostgresqlUsername = TableauConfig.TABLEUA_POSTGRESQL_USERNAME;
+			String tableuaPostgresqlPassword = TableauConfig.TABLEUA_POSTGRESQL_PASSWORD;
+			
+			conn = TableauUtil.getTableauConn(tableuaPostgresqlIp,tableuaPostgresqlUsername, tableuaPostgresqlPassword);
+			pstmt = conn.prepareStatement(sql);
+			rs = pstmt.executeQuery();
+			
+			while (rs.next()) {
+				url_namespace=rs.getString("url_namespace");
+			}
+			TableauUtil.closeTableauConn(conn, rs);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "";
+		}
+		return url_namespace;
+	}
+
+}

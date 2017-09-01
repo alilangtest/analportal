@@ -1,0 +1,655 @@
+package byit.aladdin.dataAnalysis.controller;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import byit.aladdin.TableauConfigure.bo.CollectBo;
+import byit.aladdin.dataAnalysis.entity.AuthRole;
+import byit.aladdin.dataAnalysis.entity.LabelInfo;
+import byit.aladdin.dataAnalysis.entity.PmReportCollect;
+import byit.aladdin.dataAnalysis.entity.PmTableauUser;
+import byit.aladdin.dataAnalysis.entity.RepAttributeInfo;
+import byit.aladdin.dataAnalysis.entity.Report;
+import byit.aladdin.dataAnalysis.entity.ReportHomepage;
+import byit.aladdin.dataAnalysis.entity.TypeTop;
+import byit.aladdin.dataAnalysis.service.ReportDataAnalysisService;
+import byit.aladdin.dataAnalysis.utils.Constant;
+import byit.aladdin.report.bo.IdaPmReportMenuBo;
+import byit.osdp.base.security.UserHolder;
+import byit.osdp.portal.interceptor.dao.InsertSystemLogDao;
+import byit.osdp.portal.interceptor.entity.SystemLogEntity;
+import byit.osdp.tableau.TableauConfig;
+import byit.osdp.tableau.TableauHelper;
+
+/**
+ * 报表统计分析
+ * @author Administrator
+ *
+ */
+@Controller
+@RequestMapping(value = "/dataAnalysis")
+public class ReportDataAnalysisController {
+
+	@Autowired
+	private ReportDataAnalysisService reportDataAnalysisService;
+	
+	@Autowired
+	private InsertSystemLogDao insertSystemLogDao;
+
+	Map<String, Object> resultMap;
+
+	public ReportDataAnalysisController() {
+		resultMap = new HashMap<String, Object>();
+	}
+
+
+
+	/**************************************** Tableau数据分析页面 ***************************************/
+
+	/**
+	 * 跳转到Tableau数据分析页面
+	 * @return
+	 */
+	@RequestMapping(value = "/TableauDataAnalysis.html")
+	public String TableauDataAnalysis() {
+		return "dataAnalysis/data_fenxi";
+	}
+	
+	//从Tableau跳转到数据分析页面
+	@RequestMapping(value = "/dataAnalysis.html")
+	public String toDataAnalysis(HttpServletRequest request,String id) {
+		request.setAttribute("id", id);
+		return "dataAnalysis/data_fenxi";
+	}
+
+	//报表展示页面
+	@RequestMapping(value = "/reportShow.html")
+	public String reportShow(HttpServletRequest request,String reportid) {
+		request.setAttribute("reportid", reportid);
+		return "dataAnalysis/reportShow";
+	}
+	
+	//数据分析页面 报表菜单  属性  收藏   列表
+	@RequestMapping(value = "/queryTableauDataAnalysis.do")
+	@ResponseBody
+	public Map<String, Object> queryTableauDataAnalysis(HttpServletRequest request){
+		String operationUser=UserHolder.getId();
+		//获取当前登录人的所属角色
+		List<AuthRole> authRoles=reportDataAnalysisService.queryRoleById(operationUser);
+//		List<LabelInfo> label=null;
+//		List<LabelInfo> labelInfoList=null;
+//		List<TypeTop> labelAnalysis=null;
+//		List<RepAttributeInfo> repAttributeInfos=null;
+		List<CollectBo> listCollects = null;
+		ReportHomepage reportHomepage = null;
+		if (authRoles.isEmpty()) {
+		} else {
+//			label=reportDataAnalysisService.queryDataLabel(authRoles);//父标签
+//			labelInfoList=reportDataAnalysisService.querylabelInfoList(authRoles);//子标签
+//			labelAnalysis=reportDataAnalysisService.queryAnalysis2(operationUser);//报表
+//			repAttributeInfos=reportDataAnalysisService.queryrepAttributeInfo(operationUser);//报表属性  
+			
+			listCollects = this.reportDataAnalysisService.countCollections(operationUser);//收藏报表
+		    reportHomepage = reportDataAnalysisService.getHomepage(operationUser);//首页报表
+			
+		}
+		if(null!=reportHomepage){
+			resultMap.put("id", reportHomepage.getReport_id());
+		}else{
+			resultMap.put("id","");
+		}
+		
+//		resultMap.put("label", label);
+//		resultMap.put("labelInfoList", labelInfoList);
+//		resultMap.put("labelAnalysis", labelAnalysis);
+//		resultMap.put("repAttributeInfos", repAttributeInfos);
+		
+		resultMap.put("listCollects", listCollects);
+//		resultMap.put("changdu", listCollects.size());
+		
+		return resultMap;
+	}
+	
+	/***判断是否收藏
+	 * 
+	 * 方法描述：<描述方法的作用，注意：接口中只描述方法的作用，实现类中要将方法是实现思路描述清楚>
+	 *
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/isCollectReport.do")
+	@ResponseBody
+   public Object  isCollectReport(HttpServletRequest request){
+	   Map<String, Object> result = new HashMap<String, Object>();
+		 try{
+			String operationUser = UserHolder.getId();
+			String reportId = request.getParameter("reportid");
+			TypeTop typeTop = new TypeTop();
+			typeTop.setReportId(reportId);
+			typeTop.setTopType(2);
+			typeTop.setOperationUser(operationUser);
+			List<TypeTop> list=this.reportDataAnalysisService.isReportDo(typeTop);
+			if(list.size()>0){
+				result.put("flag", true);
+			}else{
+				result.put("flag", false);
+			}
+			result.put("success", true);
+		 }catch(Exception e){
+			 result.put("success", false);
+			 e.printStackTrace();
+		 }
+		 return result;
+   }
+	/***收藏
+	 * 
+	 * 方法描述：<描述方法的作用，注意：接口中只描述方法的作用，实现类中要将方法是实现思路描述清楚>
+	 *
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/collectReport.do")
+	@ResponseBody
+  public Object  collectReport(HttpServletRequest request){
+	   Map<String, Object> result = new HashMap<String, Object>();
+		 try{
+			String operationUser = UserHolder.getId();
+			String reportId = request.getParameter("reportId");
+			String reportName = request.getParameter("reportName");
+			String topType = request.getParameter("topType");
+			PmReportCollect collect = new PmReportCollect();
+			collect.setReportId(reportId);
+			collect.setEmployeeId(operationUser);
+			collect.setReportName(reportName);
+			this.reportDataAnalysisService.addCollectInfo(collect);
+			result.put("success", true);
+		 }catch(Exception e){
+			 result.put("success", false);
+			 e.printStackTrace();
+		 }
+		 return result;
+  }
+	/***取消收藏
+	 * 
+	 * 方法描述：<描述方法的作用，注意：接口中只描述方法的作用，实现类中要将方法是实现思路描述清楚>
+	 *
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/cancelCollectReport.do")
+	@ResponseBody	
+public Object  cancelCollectReport(HttpServletRequest request){
+	   Map<String, Object> result = new HashMap<String, Object>();
+		 try{
+			String operationUser = UserHolder.getId();
+			String reportId = request.getParameter("reportId");
+			PmReportCollect collect = new PmReportCollect();
+			collect.setEmployeeId(operationUser);
+			collect.setReportId(reportId);
+			reportDataAnalysisService.deleteCollectInfo(collect);
+			result.put("success", true);
+		 }catch(Exception e){
+			 result.put("success", false);
+			 e.printStackTrace();
+		 }
+		 return result;
+} 
+	
+	
+	
+	/**
+	 * 判断当前登录人是否对该报表进行点赞行为
+	 * @return
+	 */
+	@RequestMapping(value = "/queryReport.do")
+	@ResponseBody
+	public Map<String, Object> queryReport(HttpServletRequest request) {
+		String operationUser = UserHolder.getId();
+		String reportId = request.getParameter("reportId");
+		String topType = request.getParameter("topType");
+		TypeTop typeTop = new TypeTop();
+		typeTop.setReportId(reportId);
+		typeTop.setTopType(Integer.parseInt(topType));
+		typeTop.setOperationUser(operationUser);
+
+		List<TypeTop> new_type = reportDataAnalysisService.isReportDo(typeTop);
+		if (new_type.size() > 0) {//点过赞
+			if (Constant.TOPOPERATION_TYPE_SC.equals(topType)) {
+				PmReportCollect collect = new PmReportCollect();
+				collect.setEmployeeId(operationUser);
+				collect.setReportId(reportId);
+				reportDataAnalysisService.deleteCollectInfo(collect);
+			}
+			resultMap.put("result", 1);
+			int count = reportDataAnalysisService.deleteReport(typeTop);
+			if (count > 0) {
+				//数据变化
+				List<TypeTop> labelAnalysis=null;
+				List<AuthRole> authRoles=reportDataAnalysisService.queryRoleById(operationUser);
+				if (authRoles.size()>0) {
+					String repLab = request.getParameter("repLab");
+					String repAtt = request.getParameter("repAtt");
+					
+					
+					if(repLab.equals("") && repAtt.equals("") ){
+						labelAnalysis = reportDataAnalysisService.queryAnalysis2(operationUser);//条件查询报表
+					}else{
+						labelAnalysis = reportDataAnalysisService.queryAnalysis(repLab,operationUser);//条件查询报表
+					}
+					
+					
+				}
+				resultMap.put("labelAnalysis", labelAnalysis);
+			}
+		} else {
+			resultMap.put("result", -1);
+		}
+
+		return resultMap;
+	}
+
+	
+	
+	
+	
+	/**
+	 * 对报表进行类型数据的增加
+	 * @return
+	 */
+	@RequestMapping(value = "/addReport.do")
+	@ResponseBody
+	public Map<String, Object> addReport(HttpServletRequest request) {
+		String reportId = request.getParameter("reportId");
+		String topType = request.getParameter("topType");
+		String operationUser = UserHolder.getId();
+
+		//根据报表id查询报表信息
+		TypeTop typeTop = new TypeTop();
+		typeTop.setReportId(reportId);
+		List<TypeTop> reportlist = reportDataAnalysisService.queryReportBy(typeTop);
+		typeTop.setOperationUser(operationUser);
+		typeTop.setReportName(reportlist.get(0).getReportName());
+		typeTop.setTopType(Integer.parseInt(topType));
+
+		//收藏
+		PmReportCollect collect = new PmReportCollect();
+		collect.setReportId(reportId);
+		collect.setEmployeeId(operationUser);
+		collect.setReportName(reportlist.get(0).getReportName());
+
+		if (Constant.TOPOPERATION_TYPE_SC.equals(topType)) {
+			reportDataAnalysisService.addCollectInfo(collect);
+		}
+
+		//查看  分享  答疑  收藏
+		int row = reportDataAnalysisService.addReportInfo(typeTop);
+		if (row > 0) {
+			resultMap.put("result", 1);
+		} else {
+			resultMap.put("result", -1);
+		}
+
+		return resultMap;
+	}
+
+	
+	//根据报表菜单查询报表
+	@RequestMapping(value = "/querylabelDataAnalysis.do")
+	@ResponseBody
+	public Map<String, Object> querylabelDataAnalysis(HttpServletRequest request) {
+		String repLab = request.getParameter("repLab");
+//		String repAtt = request.getParameter("repAtt");
+		List<TypeTop> labelAnalysis = null;
+		String operationUser=UserHolder.getId();
+		if (repLab.equals("")) {
+			labelAnalysis=reportDataAnalysisService.queryAnalysis2(operationUser);//条件查询报表
+		} else {
+			labelAnalysis=reportDataAnalysisService.queryAnalysis(repLab,operationUser);//条件查询报表
+		}
+		ReportHomepage reportHomepage = reportDataAnalysisService.getHomepage(operationUser);
+		String id="";
+		if(null!=reportHomepage){
+			id=reportHomepage.getReport_id();
+		}
+		resultMap.put("labelAnalysis", labelAnalysis);
+		resultMap.put("id",id);
+		return resultMap;
+	}
+
+	
+	//查看
+	@RequestMapping(value = "/queryTableReport")
+	@ResponseBody
+	public Object queryTableReport(HttpServletRequest request, HttpServletResponse response) {
+
+		String reportid = request.getParameter("reportid");
+		String params = ":embed=y&:tabs=no&:toolbar=top";
+		try {
+			//获取用户id
+			String userId = UserHolder.getId();
+			//获取报表信息
+			Report report = this.reportDataAnalysisService.getReportByIdAndType(reportid);
+            resultMap.put("reportName", report.getReportName());
+            resultMap.put("userid", userId);
+			//报表类型为1为tableau报表
+			if ("1".equals(report.getReportType().toString())) {
+				//获取所有机构
+				Map<String, Object> map = this.reportDataAnalysisService.getOrgInfo(userId);
+				String orgcode = "";//编码
+				String orglev = "";//层级
+				if (map != null) {
+					orgcode = (String) map.get("orgcode");
+					orglev = (String) map.get("orglev");
+				}
+				else {
+					resultMap.put("error", 3);
+					return resultMap;
+				}
+				//报表与角色关联关系
+				Report rr = this.reportDataAnalysisService.getRoleReport(reportid, userId);
+				//id 需要改为 code
+				if ("2".equals(orglev)) {
+					params += "&ORG_LVL_2_ID=" + orgcode;
+				} else if ("3".equals(orglev)) {
+					params += "&ORG_LVL_3_ID=" + orgcode;
+				} else if ("4".equals(orglev)) {
+					params += "&ORG_LVL_4_ID=" + orgcode;
+				}else if ("1".equals(orglev)) {
+					params += "&ORG_LVL_1_ID=" + orgcode;
+				}
+				//报表权限
+				PmTableauUser tableuser = this.reportDataAnalysisService.getTableauUser(rr.getOptype());
+				//获取站点url_namespace
+				String url_namespace = this.reportDataAnalysisService.getUrlNamespace(report.getSiteid());
+				String ticket = "";
+				try {
+					ticket = getTrustedTicket(TableauConfig.TABLEAU_TRUSTED_HOST, tableuser.getUsername(), request.getRemoteAddr(),url_namespace);
+				} catch (Exception e) {
+					resultMap.put("error", 4);
+					return resultMap;
+				}
+				if (!ticket.equals("-1")) {
+					
+					String url = "";
+					if (url_namespace.equals("")) {
+						url = "http://" + tableuser.getTableauip() + "/trusted/" + ticket + "/views/" + report.getUrl() + "?" + params;	
+					} else {
+						url = "http://" + tableuser.getTableauip() + "/trusted/" + ticket + "/t/" + url_namespace + "/views/" + report.getUrl() + "?" + params;
+					}
+					
+					resultMap.put("success", 1);
+					resultMap.put("width", report.getPanelWidth());
+					resultMap.put("height", report.getPanelHeight());
+					resultMap.put("url", url);
+					System.out.println(url);
+					resultMap.put("tableauUser", tableuser.getUsername());
+					
+					// 日志
+					
+					// 系统访问记录表实体类
+					SystemLogEntity systemLogEntity = new SystemLogEntity();
+					// 当前系统时间
+					Date date = new Date();
+					// 主键
+					systemLogEntity.setEventid(UUID.randomUUID().toString());
+					// 操作时间
+					systemLogEntity.setLogdate(date);
+					// 菜单id
+//					systemLogEntity.setMenuid("");
+					// 菜单名称
+					systemLogEntity.setMenu("数据分析");
+					// 页面URL
+					systemLogEntity.setUrl(report.getUrl());
+					// 用户id
+					systemLogEntity.setUserid(userId);
+					// 菜单类别（1：一级菜单，2：2级菜单，3：报表）
+					systemLogEntity.setType("3");
+					// 访问菜单的日期
+					SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					String date1 = sdf.format(date);
+					String days = date1.substring(0, 10);
+					systemLogEntity.setDays(days);
+					// 访问菜单的小时
+					String hours = date1.substring(11, 13);
+					systemLogEntity.setHours(hours);
+					//用户ip地址
+					systemLogEntity.setIpaddress(request.getRemoteAddr());
+					//操作类型
+					systemLogEntity.setOpertype("查看报表");
+					systemLogEntity.setOpercontent(report.getReportName());
+					insertSystemLogDao.insertSystemLog(systemLogEntity);
+					
+					//--------------------------
+					return resultMap;
+				} else {
+					resultMap.put("error", 2);
+					return resultMap;
+				}
+
+			} else {
+				String url = report.getUrl();
+				resultMap.put("success", 1);
+				resultMap.put("width", report.getPanelWidth());
+				resultMap.put("height", report.getPanelHeight());
+				resultMap.put("url", url + "?userId=" + userId);
+				return resultMap;
+
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			resultMap.put("error", 3);
+			return resultMap;
+		}
+	}
+
+	/**
+	 * 身份验证
+	 * 
+	 * @param wgserver
+	 * @param user
+	 * @param remoteAddr
+	 * @return
+	 * @throws ServletException
+	 */
+	@RequestMapping(value = "/getTrustedTicket")
+	@ResponseBody
+	public String getTrustedTicket(String wgserver, String user, String remoteAddr,String url_namespace) throws ServletException {
+		
+		return TableauHelper.getTrustedTicket(wgserver, user, remoteAddr,url_namespace);
+	}
+
+	
+	
+	//收藏的报表列表
+	@ResponseBody
+	@RequestMapping(value="/countCollections.do")
+	public 	Object countCollections(HttpServletRequest request){
+		Map<String, Object> result = new HashMap<String, Object>();
+		//获取当前登录用户
+		String loginid=UserHolder.getId();
+		try {
+			List<CollectBo> listCollects = this.reportDataAnalysisService.countCollections(loginid);
+			result.put("rows", listCollects);
+			result.put("changdu", listCollects.size());
+		} catch (Exception e) {
+			result.put("error", -1);
+			result.put("msg", "加载数据失败");
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+	
+	
+	//取消收藏
+	@RequestMapping(value="/collectDelete.do")
+	@ResponseBody
+	public Map<String, Object> collectDelete(HttpServletRequest request,CollectBo collectBo){
+		//把登陆用户信息推送到service
+		Map<String, Object> map = new HashMap<String, Object>();
+		String employeeid=UserHolder.getId();
+		collectBo.setEmployeeid(employeeid);
+		int i =this.reportDataAnalysisService.collectDelete(collectBo);
+		String msg = "取消收藏该报表失败！";
+		int result = 0;
+		if(i>0){
+			msg="取消收藏该报表成功！";
+			result = 1;
+		}
+		map.put("result", result);
+		map.put("msg", msg);
+		return map;
+	}
+	
+	
+	
+	//添加首页
+	@ResponseBody
+	@RequestMapping(value="/getHomepage.do")
+	public Map<String, Object> getHomepage(HttpServletRequest request){
+		Map<String, Object> result = new HashMap<String, Object>();
+		boolean flag = false;
+		String userid=UserHolder.getId();
+		ReportHomepage homepage = this.reportDataAnalysisService.getHomepage(userid);
+		
+		if(homepage!=null){
+			flag=true;
+		}
+		result.put("success", flag);
+		result.put("reportid", homepage.getReport_id());
+		return result;
+	}
+	
+	
+	//查询首页
+	@ResponseBody
+	@RequestMapping(value="/addHomepage.do")
+	public Map<String, Object> addHomepage(HttpServletRequest request,String reportid){
+		Map<String, Object> result = new HashMap<String, Object>();
+		boolean flag = false;
+		int i =this.reportDataAnalysisService.addHomepage(reportid);
+		String msg="添加首页报表失败！";
+		if(i>0){
+			msg="添加首页报表成功！";
+			flag=true;
+		}
+		result.put("success", flag);
+		result.put("msg", msg);
+		return result;
+	}
+	
+	
+	
+	//取消首页
+	@ResponseBody
+	@RequestMapping(value="/deleteHomepage.do")
+	public Map<String, Object> deleteHomepage(HttpServletRequest request){
+		Map<String, Object> result = new HashMap<String, Object>();
+		boolean flag = false;
+		int i =this.reportDataAnalysisService.deleteHomepage();
+		String msg="取消首页失败！";
+		if(i>0){
+			msg="取消首页成功！";
+			flag=true;
+		}
+		result.put("success", flag);
+		result.put("msg", msg);
+		return result;
+	}
+	
+	
+	//报表菜单树
+	@RequestMapping(value = "/menuTree")
+    @ResponseBody
+	public List<HashMap<String, Object>> getMenuTree(HttpServletRequest request){
+		
+		List<LabelInfo> listReportMenuBo=this.reportDataAnalysisService.queryReportMenuList();
+		List<HashMap<String, Object>> result = new ArrayList<HashMap<String, Object>>();
+		//int i = -1;
+		
+		//收藏  
+		HashMap<String, Object> hashmap1 = new HashMap<String, Object>();
+		hashmap1.put("id", "sc_id");
+		hashmap1.put("name", "收藏");
+		hashmap1.put("parentId","id");
+		hashmap1.put("icon", "&#xe602;");
+		hashmap1.put("childMenus", "");
+		result.add(hashmap1);
+		
+		for (LabelInfo menu : listReportMenuBo) {
+			HashMap<String, Object> map = new HashMap<String, Object>();
+			if("".equals(menu.getMenuparent()) || menu.getMenuparent()==null){
+				
+				List<HashMap<String, Object>> menuList = new ArrayList<HashMap<String, Object>>();
+				for (LabelInfo menu1 : listReportMenuBo) {
+					
+					HashMap<String, Object> menuMap = new HashMap<String, Object>();
+					if(menu1.getMenuparent()!=null && !"".equals(menu1.getMenuparent()) && menu1.getMenuparent().equals(menu.getMenuId())){
+						
+//						List<HashMap<String, Object>> priList1 = new ArrayList<HashMap<String, Object>>();
+//						for (LabelInfo menu2 : listReportMenuBo) {
+//							
+//							HashMap<String, Object> menuMap1 = new HashMap<String, Object>();
+//							if(menu2.getMenuparent()!=null && !"".equals(menu2.getMenuparent())){
+//								if(menu2.getMenuparent().equals(menu1.getMenuId())){
+//									menuMap1.put("id", menu2.getMenuId());
+//									menuMap1.put("name", menu2.getMenuname());
+//									menuMap1.put("parentId", menu2.getMenuparent());
+//									menuMap.put("icon", "&#xe602;");
+//									priList1.add(menuMap1);
+//									
+//									menuMap1 = null;
+//								}
+//							}
+//						}
+						menuMap.put("id", menu1.getMenuId());
+						menuMap.put("name", menu1.getMenuname());
+						menuMap.put("parentId", menu1.getMenuparent());
+						menuMap.put("icon", "&#xe602;");
+						menuMap.put("childMenus", "");
+						menuList.add(menuMap);
+						
+//						priList1 = null;
+						menuMap = null;
+					}
+				}
+//				map.put("id", menu.getMenuId());
+				map.put("id", menu.getMenuId());
+				map.put("name", menu.getMenuname());
+				map.put("childMenus", menuList);
+				map.put("parentId","cd_id");
+				map.put("icon", "&#xe604;");
+				result.add(map);
+				
+				menuList = null;
+				map = null;
+			}
+		}
+		listReportMenuBo = null;
+
+		return result;
+	}
+	
+	public Map<String, Object> getResultMap() {
+		return resultMap;
+	}
+
+	public void setResultMap(Map<String, Object> resultMap) {
+		this.resultMap = resultMap;
+	}
+
+}

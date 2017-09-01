@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+	
+	<!--分布式定时任务 适用于集群 -->
+	<!-- 启动触发器的配置开始 -->
+	<!-- 总管理类, 如果将lazy-init='false'那么容器启动就会执行调度程序  -->
+	<bean id="startQuertz" name="startQuertz" lazy-init="false" autowire="no"
+		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<!-- 定时任务列表 -->
+			<list>
+				<ref bean="sendEmailTaskTrigger" />
+				<!-- <ref bean="sendEmailTaskTowTrigger" /> -->
+				<ref bean="tableauRefreshCronTrigger" />
+				<ref bean="tableauTenRefreshCronTrigger" />		
+				<ref bean="tableauRefreshInitExecuteCronTrigger" />
+			</list>
+		</property>
+		<property name="applicationContextSchedulerContextKey" value="applicationContext" />
+		<property name="configLocation" value="classpath:quartz.properties" />
+			 <!-- 延时启动，这个很重要，必须要有足够长的时间让你的应用先启动完成后再让 Scheduler启动， 
+	   这里设置40秒,如果你的应用启动时间较长，要相应增加startupDelay的时间--> 
+	   <property name="startupDelay" value="40"/>
+	</bean>
+	
+	<!-- 每到指定时间则触发一次 -->
+	<bean id="sendEmailTaskTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail">
+			<ref bean="sendEmailTask" />
+		</property>
+		<!-- cron表达式 -->
+		<property name="cronExpression">
+			<value>0 */2 * * * ?</value>
+			<!-- 不管哪一周
+			任何月份
+			任何月份下的任何日期
+			任何月份下的任何日期的
+			7-11点
+			不管第几分钟开始，没间隔51分钟触发一次
+			秒为0，表示第几分钟整的时候触发 -->
+		</property>
+	</bean>
+	<!-- <bean id="sendEmailTaskTowTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail">
+			<ref bean="sendEmailTask" />
+		</property>
+		cron表达式
+		<property name="cronExpression">
+			<value>0 * 12,13,14,15,16,17,18,19,20,21,22,23,00,1,2,3,4,5,6 * * ?</value>
+			不管哪一周
+			任何月份
+			任何月份下的任何日期
+			任何月份下的任何日期的
+			12-06点
+			不管第几分钟开始，没间隔1分钟触发一次
+			秒为0，表示第几分钟整的时候触发
+		</property>
+	</bean> -->
+	<!-- 调度的配置结束 -->
+
+	<!-- job的配置开始, 定义调用对象和调用对象的方法 -->
+	<bean id="sendEmailTask" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+		<property name="jobClass">  
+            <value>byit.aladdin.workBook.entity.MyDetailQuartzJobBean</value>  
+        </property>
+        <property name="durability" value="true" />
+        <property name="jobDataAsMap">  
+            <map>  
+                <entry key="targetObject" value="emailTask" />  
+                <entry key="targetMethod" value="execute" />  
+                <entry key="concurrent" value="false"/>
+            </map>  
+        </property>
+	</bean>
+	<!-- job的配置结束 -->
+	
+	<bean id="schedulerJob" class="byit.aladdin.workBook.job.SchedulerJob"></bean>
+   <!-- 每隔1分钟调动job -->
+    <bean id="tableauRefreshJobTask" name="tableauRefreshJobTask" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+        <property name="jobClass">  
+            <value>byit.aladdin.workBook.entity.MyDetailQuartzJobBean</value>  
+        </property>
+        <property name="durability" value="true" />
+        <property name="jobDataAsMap">  
+            <map>  
+                <entry key="targetObject" value="schedulerJob" />  
+                <entry key="targetMethod" value="tableauRefreshExecute" />  
+                <entry key="concurrent" value="false"/>
+            </map>  
+        </property>
+    </bean>
+    <bean id="tableauRefreshCronTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">  
+        <property name="jobDetail">  
+            <ref bean="tableauRefreshJobTask" />  
+        </property>  
+        <property name="cronExpression">  
+            <value>0 */1 * * * ?</value>  
+        </property>  
+    </bean>
+    <!-- 每十分钟调动job -->
+    <bean id="tableauTenRefreshJobTask" name="tableauTenRefreshJobTask" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+        <property name="jobClass">  
+            <value>byit.aladdin.workBook.entity.MyDetailQuartzJobBean</value>  
+        </property>
+        <property name="durability" value="true" />
+        <property name="jobDataAsMap">  
+            <map>  
+                <entry key="targetObject" value="schedulerJob" />  
+                <entry key="targetMethod" value="tableauTenRefreshExecute" />  
+                <entry key="concurrent" value="false"/>
+            </map>  
+        </property>
+    </bean>
+    <bean id="tableauTenRefreshCronTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">  
+        <property name="jobDetail">  
+            <ref bean="tableauTenRefreshJobTask" />  
+        </property>  
+        <property name="cronExpression">  
+            <value>0 0/11 * * * ?</value>  
+        </property>  
+    </bean>
+    <!-- 每天23:59调动job -->
+    <bean id="tableauRefreshInitExecuteJobTask" name="tableauRefreshInitExecuteJobTask" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+        <property name="jobClass">  
+            <value>byit.aladdin.workBook.entity.MyDetailQuartzJobBean</value>  
+        </property>
+        <property name="durability" value="true" />
+        <property name="jobDataAsMap">  
+            <map>  
+                <entry key="targetObject" value="schedulerJob" />  
+                <entry key="targetMethod" value="tableauRefreshInitExecute" />  
+                <entry key="concurrent" value="false"/>
+            </map>  
+        </property>
+    </bean>
+    <bean id="tableauRefreshInitExecuteCronTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">  
+        <property name="jobDetail">  
+            <ref bean="tableauRefreshInitExecuteJobTask" />  
+        </property>  
+        <property name="cronExpression">  
+            <value>0 59 23 ? * *</value>  
+        </property>  
+    </bean>
+</beans>

@@ -1,0 +1,30 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.util.List"%>
+<%@include file="../_include/_taglib.jsp"%>
+<%@page import="org.apache.log4j.Logger"%>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<%@include file="../_include/_meta.jsp"%>
+<%@include file="../_include/_s0.jsp"%>
+
+<!-- TODO。生产环境需要使用 -->
+<%
+response.setHeader("_SESSION_TIMEOUT", "Y");
+
+Logger logger=Logger.getLogger("ssoindex.jsp");
+
+String ticket=(String)request.getAttribute("ticket");
+String sessionId=(String)request.getAttribute("sessionId");
+/* pageContext.setAttribute("ticket", ticket);
+pageContext.setAttribute("sessionId", sessionId); */
+%>
+<script type="text/javascript">
+	var ticket="<%=ticket%>";
+	var sessionId="<%=sessionId%>";
+</script>
+<script type="text/javascript" src="${ctx}/assets/_osdp/js/login/ssoindex.js"></script>
+</head>
+<body>
+</body>
+</html>

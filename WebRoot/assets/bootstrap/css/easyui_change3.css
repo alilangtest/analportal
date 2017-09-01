@@ -1,0 +1,27 @@
+.table_list{
+	width: 1200px;
+	margin:0 auto;
+	margin-top:20px;
+}
+.panel-heading{
+    background-color: #1d8b7e;
+    padding-bottom: 0;
+    border: none;
+}
+.nav-tabs li a{
+	color:#fff;
+	font-size:13px;
+}
+.nav-tabs li a:hover{
+	color:#555;
+}
+.popular2 .panel-heading{
+    padding-bottom: 15px;
+    background: #f0f0f0;
+    border-radius: 5px;
+}
+.label_rge{
+	color:#555;
+}
+.popular2 header{cursor:pointer;}
+.popular2 .alert{margin-bottom:10px;}

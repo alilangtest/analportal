@@ -1,0 +1,681 @@
+
+/**
+ * 添加table表名，
+ * 在文本域中显示，同时在待选字段中显示字段列表
+ */
+function addExcelTabName(){
+	var excelTabName = $("#excelTabName").val();
+	if(excelTabName!=null && excelTabName!=""){
+		var appendHtml="";
+		appendHtml+="<li><input type=\"checkbox\" value=\""+excelTabName+"\" name=\"excelTabName\" ><span>"+excelTabName+"</span></li>";
+		$(".excelTabName_ul").append(appendHtml);//将表名-中文名显示在文本域中
+		$("#excelTabName").val('');//清空输入格式项
+
+		var excelColumnList = excelTabName.split("-");//分别获取表名、中文名，放在list中
+		var excelTableId = excelColumnList[0];//list的第一个是表名
+		//查询字段(添加表)
+		queryColumnExcel(excelTableId);
+	}
+	count++;
+}
+
+/**
+ * 删除table表名
+ * 同时删除待选字段列表，已选字段列表
+ */
+function delExcelTabName(){
+	$("input[name=excelTabName]:checked").parent().remove();//情况文本域中表名
+	$(".columnAddExcel").empty();//清空字段配置（待选字段）
+	$(".columnChangeExcel").empty();//情况已选字段
+}
+
+/**
+ * excel-翻盘判定
+ * 依据table名查询字段，并显示在待选字段列表中
+ * */
+function queryColumnExcel(excelTableId){
+	$(".columnAddExcel").empty();//清空待选字段项
+	//动态显示表字段
+	$.ajax({
+		type:"post",
+		dataType : "json",
+		url :  _ctx+"/tab/pushExcel/addColumnExcelSubscribe.do",
+		//传入的参数
+		data : "tableId=" + excelTableId,
+		async : false,
+		success : function(data){
+			//拼接字段
+			for(var i=0;i<data.length;i++){
+				var appendColumnHtml="";
+				appendColumnHtml="<li style=\"float:left;width:100%; height:30px;font-size: 13px;\"><input  type=\"checkbox\" value=\""+data[i]+"\"  name=\"excelColumn\">"+data[i]+"</input></li>";
+				$(".columnAddExcel").append(appendColumnHtml);//将table的字段在字段配置项中显示
+			}
+		}
+	});
+	
+}
+
+/**
+ * 配置字段添加到已选字段
+ */
+function addColumn(){
+	var selectedCol=new Array();//已选字段
+	 var excelChkColval= $("input[name='excelColumn']");//获取字段配置中的元素
+	 var count=0;
+	 for(var i=0;i<excelChkColval.length;i++){//循环字段配置中的字段
+		 var ischkboxSel=excelChkColval[i].checked;//字段是否选中（选中：true，未选中：false）
+		 
+		 //如果字段选中，将其拼接到已选字段中
+		 if(ischkboxSel){
+			 tselectedCol=excelChkColval[i].value;
+			 selectedCol[count]=tselectedCol;
+			 count++;
+			 //TODO ，后面可能会有用不要删除这段代码
+			 //excelChkColval[i].checked=false;//设置待选字段为不选中
+		 }
+	 }
+	 if(selectedCol.length>0){
+		 setSelectedCol(selectedCol);//给已选字段赋值
+	 }
+	 
+	 
+}
+
+
+/**
+ * 将字段配置中选中的字段赋给已选字段列表
+ * @param selectedCol，选中的字段，一维数组
+ */
+function setSelectedCol(selectedCol){
+	$(".columnChangeExcel").empty();////清空已经存在的已选字段
+	 for(var i=0;i<selectedCol.length;i++){
+		if(typeof(selectedCol[i])!='undefined'){
+			 var appendAddColumnHtml="";
+			 //appendAddColumnHtml+="<li name=\"seledli\" class=\"seledcls\" style=\"float:left;width:100%; height:30px;font-size: 13px;\"><input  type=\"checkbox\"  value=\""+selectedCol[i]+"\" onclick=\"radioDelColumn(this.name,this.value)\" name=\"excelSelCol\">"+selectedCol[i]+"</input></li>";
+			 appendAddColumnHtml+="<li name=\"seledli\" id=\""+selectedCol[i]+"\" style=\"float:left;width:100%; height:30px;font-size: 13px;\"><input  type=\"checkbox\"  value=\""+selectedCol[i]+"\" name=\"excelSelCol\">"+selectedCol[i]+"</input></li>";
+			 $(".columnChangeExcel").append(appendAddColumnHtml);
+			 //$("#colchangeExcelDiv").append(appendAddColumnHtml);
+			 console.log("已选字段："+selectedCol[i]);
+		 }
+	 }
+}
+
+/**
+ * 删除已选字段列表中的选中的字段
+ */
+function delColumn(){
+	var selectedCol= $("input[name='excelSelCol']");//获取已选字段中的元素
+	//$("input[name='excelColumn']").empty();//清空字段配置项
+	//循环已选字段，获取选中的元素，将其remove
+	for(var j=0;j<selectedCol.length;j++){
+		var ischkboxSel=selectedCol[j].checked;
+		if(ischkboxSel){
+			 $("li[id='"+selectedCol[j].value+"']").remove();
+			 $("input[value='"+selectedCol[j].value+"']").prop("checked", false);
+			 //$("li[value='"+selectedCol[j].value+"']").remove();
+		}
+	}
+}
+
+//发送时间改变
+function changeSendTimeExcel(){
+	$("#yearLiExcel").val('');
+	$("#monthLiExcel").val('');
+	$("#weekLiExcel").val('');
+	$("#dayLiExcel").val('');
+	$("#hourLiExcel").val('');
+	$("#minuteLiExcel").val('');
+	
+	var type = $("#sendTimeSelectExcel").val();
+	//alert("这一步走到了yo");
+	switch(parseInt(type)){
+	case 2:
+		$("#yearLiExcel").hide();
+		$("#monthLiExcel").hide();
+		$("#dayLiExcel").hide();
+		$("#hourLiExcel").show();
+		$("#minuteLiExcel").show();
+		$("#weekLiExcel").hide();
+		break;
+	case 3:
+		$("#yearLiExcel").hide();
+		$("#monthLiExcel").hide();
+		$("#weekLiExcel").show();
+		$("#dayLiExcel").hide();
+		$("#hourLiExcel").show();
+		$("#minuteLiExcel").show();
+		break;
+	case 4:
+		$("#yearLiExcel").hide();
+		$("#monthLiExcel").hide();
+		$("#dayLiExcel").show();
+		$("#hourLiExcel").show();
+		$("#minuteLiExcel").show();
+		$("#weekLiExcel").hide();
+		break;
+	case 1:	
+		$("#yearLiExcel").show();
+		$("#monthLiExcel").show();
+		$("#dayLiExcel").show();
+		$("#hourLiExcel").show();
+		$("#minuteLiExcel").show();
+		$("#weekLiExcel").hide();
+		break;
+	case 5:
+		$("#yearLiExcel").hide();
+		$("#monthLiExcel").show();
+		$("#dayLiExcel").show();
+		$("#hourLiExcel").show();
+		$("#minuteLiExcel").show();
+		$("#weekLiExcel").hide();
+		break;
+	}
+}
+
+
+function changeTimeHtmlExcel(){
+	var typeExcel = $("#sendTimeSelectExcel").val();
+	var appendExcel = "";
+	var error = "";
+	//星期x的提示显示（用第x天的样式）
+	var appendDayxExcel="";
+	var dayxExcel = new Array();
+	var dayxExcellen = $("input[name=dayxExcel]:checked").length;
+	for(var i=0;i<dayxExcellen;i++){
+		//var dayx = $("input[name=dayx]:checked:eq("+i+")").val();
+		dayxExcel[i] = $("input[name=dayxExcel]:checked:eq("+i+")").val();
+		if(dayxExcel[i]!=null && dayxExcel[i]!=""){
+			if(dayxExcel[i]=="1"){
+				dayxExcel[i]="日";
+			}else if(dayxExcel[i]=="2"){
+				dayxExcel[i]="一";
+			}else if(dayxExcel[i]=="3"){
+				dayxExcel[i]="二";
+			}else if(dayxExcel[i]=="4"){
+				dayxExcel[i]="三";
+			}else if(dayxExcel[i]=="5"){
+				dayxExcel[i]="四";
+			}else if(dayxExcel[i]=="6"){
+				dayxExcel[i]="五";
+			}else if(dayxExcel[i]=="7"){
+				dayxExcel[i]="六";
+			}
+			appendDayxExcel+= "星期"+dayxExcel[i]+",";
+		}	
+	}
+	switch(parseInt(typeExcel)){
+	case 2:
+		var str = checkDate("excel", typeExcel);		
+		if(str != ""){
+			error = str;
+		}else{
+			appendExcel="本邮件将在每天"+$("#hourExcel").val()+"时"+$("#minuteExcel").val()+"分投递到对方邮箱a";
+		}
+		break;
+	case 3:
+		var str = checkDate("excel", typeExcel);		
+		if(str != ""){
+			error = str;
+		}else{
+			appendExcel="本邮件将在："+appendDayxExcel+""+$("#hourExcel").val()+"时"+$("#minuteExcel").val()+"分投递到对方邮箱";
+		}
+		break;
+	case 4:
+		var str = checkDate("excel", typeExcel);		
+		if(str != ""){
+			error = str;
+		}else{
+			appendExcel="本邮件将在每月"+$("#dayExcel").val()+"日"+$("#hourExcel").val()+"时"+$("#minuteExcel").val()+"分投递到对方邮箱";
+		}
+		break;
+	case 1:	
+		var str = checkDate("excel", typeExcel);		
+		if(str != ""){
+			error = str;
+		}else{
+			appendExcel="本邮件将在"+$("#yearExcel").val()+"年"+$("#monthExcel").val()+"月"+$("#dayExcel").val()+"日"+$("#hourExcel").val()+"时"+$("#minuteExcel").val()+"分投递到对方邮箱";
+		}
+		break;
+	case 5:
+		var str = checkDate("excel", typeExcel);		
+		if(str != ""){
+			error = str;
+		}else{
+			appendExcel="本邮件将在每年"+$("#monthExcel").val()+"月"+$("#dayExcel").val()+"日"+$("#hourExcel").val()+"时"+$("#minuteExcel").val()+"分投递到对方邮箱";
+		}
+		break;
+	}
+	if(error != ""){
+		$(".tanc_c_bottomExcel").html(error);
+		$(".tanc_c_bottomExcel").css("color","red");
+	}else{
+		$(".tanc_c_bottomExcel").html(appendExcel);
+		$(".tanc_c_bottomExcel").css("color","black");
+	}
+}
+
+
+function addMailExcel(){
+	var mailNameExcel = $("#mailNameExcel").val();
+	var regx = /^([0-9A-Za-z\-_\.]+)@([0-9a-z]+\.[a-z]{2,3}(\.[a-z]{2})?)$/;
+	if(!regx.test(mailNameExcel)){
+		//temp="0";
+		//alert('邮箱格式错误');
+		layer.confirm("邮箱格式错误", function(){
+			layer.closeAll('dialog');
+		});
+	}else{
+		if(mailNameExcel!=null && mailNameExcel!=""){
+			var appendHtmlExcel="";
+			appendHtmlExcel+="<li><input type=\"checkbox\" onChange=\"changeCheckedMailExcel(this)\" value=\""+mailNameExcel+"\" name=\"mailExcel\"><span>"+mailNameExcel+"</span></li>";
+			$(".mailExcel_ul").append(appendHtmlExcel);
+			$("#mailNameExcel").val('@hfbank.com.cn');
+			
+		}
+	}
+	
+}
+function delMailExcel(){
+	$("input[name=mailExcel]:checked").parent().remove();
+	$("input[name=mailListExcel]:checked").parent().remove();
+	var lengthExcel = $("input[name=mailListExcel]:checked").length;
+	$(".mailExcel_c").html("已选联系人("+lengthExcel+")");
+}
+function changeCheckedMailExcel(obj){
+	var lengthExcel = $("input[name=mailExcel]:checked").length;
+	//var lengthExcel = $("input[name=mailListExcel]:checked").length;
+	$(".mailExcel_c").html("已选联系人("+lengthExcel+")");
+}
+
+//预览信息
+function viewInforExcel(){
+	//星期x的提示显示（用第x天的样式）
+	var appendDayxExcel="";
+	var dayxExcel = new Array();
+	var dayxlenExcel = $("input[name=dayxExcel]:checked").length;
+	for(var i=0;i<dayxlenExcel;i++){
+		dayxExcel[i] = $("input[name=dayxExcel]:checked:eq("+i+")").val();
+		if(dayxExcel[i]!=null && dayxExcel[i]!=""){
+			if(dayxExcel[i]=="1"){
+				dayxExcel[i]="日";
+			}else if(dayxExcel[i]=="2"){
+				dayxExcel[i]="一";
+			}else if(dayxExcel[i]=="3"){
+				dayxExcel[i]="二";
+			}else if(dayxExcel[i]=="4"){
+				dayxExcel[i]="三";
+			}else if(dayxExcel[i]=="5"){
+				dayxExcel[i]="四";
+			}else if(dayxExcel[i]=="6"){
+				dayxExcel[i]="五";
+			}else if(dayxExcel[i]=="7"){
+				dayxExcel[i]="六";
+			}
+			appendDayxExcel+= "星期"+dayxExcel[i]+",";
+		}	
+	}
+	
+	var lenExcelTabName = $(".excelTabName_ul input").length;
+	var appendHtmlExcelTabName = "";
+	for(var i=0;i<lenExcelTabName;i++){
+		var valExcelTabName = $(".excelTabName_ul input:eq("+i+")").val();
+		appendHtmlExcelTabName+="<p>"+valExcelTabName+"</p><p></p>";
+	}
+	$("#view_excelTabName_sh").empty().append(appendHtmlExcelTabName);
+	
+	var lenExcel = $(".mailExcel_ul input").length;
+	var appendHtmlExcel = "";
+	for(var i=0;i<lenExcel;i++){
+		var valExcel = $(".mailExcel_ul input:eq("+i+")").val();
+		appendHtmlExcel+="<p>"+valExcel+"</p>";
+	}
+	$("#view_mailExcel_sh").empty().append(appendHtmlExcel);
+	
+	var yearExcel = $("#yearExcel").val()==""?"":$("#yearExcel").val()+"年";
+	var monthExcel = $("#monthExcel").val()==""?"":$("#monthExcel").val()+"月";
+	var dayExcel = $("#dayExcel").val()==""?"":$("#dayExcel").val()+"日 ";
+	var hourExcel = $("#hourExcel").val()==""?"":$("#hourExcel").val()+"时";
+	var minuteExcel = $("#minuteExcel").val()==""?"":$("#minuteExcel").val()+"分";
+	$("input[name=viewSendTimeExcel]").val(yearExcel+""+monthExcel+""+dayExcel+""+hourExcel+""+minuteExcel);	
+	
+	$("input[name=viewMailTitleExcel]").val($("input[name=mailTitleExcel]").val());
+	//$("input[name=viewAddDate]").val($("input[name=addDate]").val());
+	var typeExcel = $("#sendTimeSelectExcel").val();
+	switch(parseInt(typeExcel)){
+	case 2:
+		$("#viewsendTimeSelectExcel").val("每日发送");
+		break;
+	case 3:
+		$("#viewsendTimeSelectExcel").val("每周："+appendDayxExcel+"发送");
+		$("input[name=viewSendTimeExcel]").val(hourExcel+""+minuteExcel);
+		break;
+	case 4:
+		$("#viewsendTimeSelectExcel").val("每月发送");
+		break;
+	case 1:	
+		$("#viewsendTimeSelectExcel").val("仅发一次");
+		break;
+	case 5:
+		$("#viewsendTimeSelectExcel").val("每年发送");
+		break;
+	}
+}
+
+function saveInforExcel(saveType){
+	var excelTabName=$("input[name='excelTabName']").val();//获取表名-中文名
+	var excelColumnList = excelTabName.split("-");//分别获取表名、中文名，放在list中
+	var tableId = excelColumnList[0];//list的第一个是表名
+	var tableName = excelColumnList[1];//list的第二个是表名
+	
+	var addDate = $("#addDate").val();//筛选天数
+	var screening = $("#screeningExcel").val();//判定条件
+	var selCond=$("#selCond").val();//筛选条件
+	var checkedColumnId;//已选字段
+	
+	var tSelectedCol=$("input[name='excelSelCol']");//获取字段配置中的元素
+	for(var i=0;i<tSelectedCol.length;i++){
+		if(i==0){
+			checkedColumnId=tSelectedCol[i].value;
+		}else{
+			checkedColumnId=checkedColumnId+","+tSelectedCol[i].value;
+		}
+	}
+	console.log("已选字段："+checkedColumnId);
+	
+	//邮件发送类型
+	var sendTypeExcel = $("#sendTimeSelectExcel").val();
+	console.log("邮件发送类型："+sendTypeExcel);
+	
+	//星期x发送拼接
+	var appendDayxExcel="";
+	var dayxlenExcel = $("input[name=dayxExcel]:checked").length;
+	for(var i=0;i<dayxlenExcel;i++){
+		var dayxExcel = $("input[name=dayxExcel]:checked:eq("+i+")").val();
+		if(dayxExcel!=null && dayxExcel!=""){
+			appendDayxExcel+= ""+dayxExcel+",";
+		}	
+	}
+	//发送时间
+	var yearExcel = $("#yearExcel").val()==""?"":$("#yearExcel").val()+"-";
+	var monthExcel = $("#monthExcel").val()==""?"":$("#monthExcel").val()+"-";
+	var dayExcel = $("#dayExcel").val()==""?"":$("#dayExcel").val()+" ";
+	var hourExcel = $("#hourExcel").val()==""?"":$("#hourExcel").val()+":";
+	var minuteExcel = $("#minuteExcel").val();
+	var sendTimeExcel = yearExcel+""+monthExcel+""+dayExcel+""+hourExcel+""+minuteExcel;
+	if(sendTypeExcel=="2"){
+		sendTimeExcel=hourExcel+minuteExcel;
+	}else if(sendTypeExcel=="3"){
+		sendTimeExcel=appendDayxExcel+"_"+hourExcel+minuteExcel;
+	}else if(sendTypeExcel=="4"){
+		sendTimeExcel=dayExcel+""+hourExcel+""+minuteExcel;
+	}else if(sendTypeExcel=="5"){
+		sendTimeExcel=monthExcel+""+dayExcel+""+hourExcel+""+minuteExcel;
+	}
+	console.log("邮件发送时间："+sendTimeExcel);
+	
+	//邮件主题
+	var mailTitleExcel = $("input[name=viewMailTitleExcel]").val();
+	
+	//收件人
+	
+	var mailListExcel;
+	var mailLenExcel = $(".mailExcel_ul input").length;
+	for(var i=0;i<mailLenExcel;i++){
+		var valExcel = $(".mailExcel_ul input:eq("+i+")").val();
+		if(i==0){
+			mailListExcel=valExcel;
+		}else{
+			mailListExcel=mailListExcel+","+valExcel;
+		}
+	}
+	console.log("收件人："+mailListExcel);
+	
+	//非空校验
+	var temp="1";
+	if(tableId==""){
+		temp="0";
+		layer.msg("配置的表名不能为空!");
+	}
+	else if(tableName==""){
+		temp="0";
+		layer.msg("表的中文名不能为空!");
+	}
+	else if(sendTimeExcel==""){
+		temp="0";
+		layer.msg("推送时间不能为空!");
+	}
+	else if(mailListExcel==""){
+		temp="0";
+		layer.msg("收件人不能为空!");
+	}
+	
+	if(temp=="1"){
+		var url = "";
+		if(saveType==1){
+			url = _ctx+"/tab/pushExcel/addExcelAndColSubscribe.do";
+		}
+		else if(saveType==2){
+			//修改
+			url = _ctx+"/tab/pushExcel/updateExcelAndColSubscribe.do";
+		}
+		$.ajax({
+			type:"post",
+			dataType : "json",
+			url :  url,
+			data : {
+				addDate:addDate,
+				screening:screening,
+				selCond:selCond,
+				tableId:tableId,
+				tableName:tableName,
+				sendTypeExcel:sendTypeExcel,
+				sendTimeExcel:sendTimeExcel,
+				excelMails:mailListExcel,
+				checkedColumnId:checkedColumnId,
+				mailTitleExcel:mailTitleExcel,
+				isChecked:checkedColumnId
+			},
+			success : function(data){
+				layer.confirm(data.responseText+"!!", function(){
+					layer.closeAll('dialog');
+					window.location.reload();
+				});
+			},error:function(data){
+				layer.confirm(data.responseText+"!!", function(){
+					layer.closeAll('dialog');
+					window.location.reload();
+				});
+			}
+		});
+		
+		allClose();
+		$('.tanchuangExcel').stop(true).fadeOut(400);
+	}
+}
+
+
+/**
+ * 更新订阅规则
+ * 更新：查询tableId 字段在选择表ID后动态显示 
+ * @param tableId
+ */
+function updateExcelConfig(tableId){
+	clearTab();
+	var tanchucengExcel = $('.tanchuangExcel');
+	var tanchucengExcel1 = $('.tanchuangExcel0');
+	tanchucengExcel.stop(true).fadeIn(400);
+	tanchucengExcel1.stop(true).fadeIn(400);
+	
+	$(".columnAddExcel").empty();//清空待选字段项
+	$(".columnChangeExcel").empty();//清空已选字段项
+	
+	//清空内存
+	$.ajax({
+		type:"post",
+		dataType : "json",
+		url :  _ctx+"/tab/pushExcel/queryExcelSubscribe.do",
+		//传入的参数
+		data : "tableId=" + tableId,
+		success : function(data){
+			//从数据库取出tableId 和 tableName 进行拼接 在展示到界面
+			var tabId = data.tableId;
+			var tabName = data.tableName;
+			var tabIdList = tabId.split(",");
+			var tabNameList = tabName.split(",");
+			var tabExcelString = "";
+			for(var len = 0;len<tabIdList.length;len++){
+				tabExcelString = tabExcelString+","+tabIdList[len]+"-"+tabNameList[len];
+			}
+			tabExcelString = tabExcelString.substring(1, tabExcelString.length);
+			var excelTabName = tabExcelString.split(",");
+			
+			//将table的英文名-中文名显示在文本域中
+			for(var telist=0;telist<excelTabName.length;telist++){
+				//展示到界面
+				if(excelTabName[telist]!=null && excelTabName[telist]!=""){
+					var appendExcelHtml="";
+					appendExcelHtml+="<li><input type=\"checkbox\" onChange=\"changeCheckedExcelTabName(this)\"  value=\""+excelTabName[telist]+"\" name=\"excelTabName\"><span>"+excelTabName[telist]+"</span></li>";
+					$(".excelTabName_ul").append(appendExcelHtml);
+					$("#excelTabName").val('');
+				}
+			}
+			
+			//隐藏添加删除
+			$("#updateHide").hide();
+			//alert("隐藏成功");
+				$("input[name=mailTitleExcel]").val(data.mailTitleExcel);
+			$("#screeningExcel").val(data.screening);
+			$("#selCond").val(data._selCond);
+			$("#addDate").val(data._addDate);
+				//发送时间初始化
+				$("#sendTimeSelectExcel").val(data.sendTypeExcel);
+				changeSendTimeExcel();
+				var sendTimeExcel = data.sendTimeExcel;
+				if(parseInt(data.sendTypeExcel)==2){
+					//每日发送
+					var times1 = sendTimeExcel.split(":");
+					$("#hourExcel").val(times1[0]);
+					$("#minuteExcel").val(times1[1]);
+				}else{
+					var times = sendTimeExcel.split(" ");
+					var ymd="";
+					var hm ="";
+					if(times.length>1){
+						//年月日
+						ymd = times[0].split("-");
+						switch(ymd.length){
+						case 3:
+							$("#yearExcel").val(ymd[0]);
+							$("#monthExcel").val(ymd[1]);
+							$("#dayExcel").val(ymd[2]);
+							break;
+						case 2:
+							$("#monthExcel").val(ymd[0]);
+							$("#dayExcel").val(ymd[1]);
+							break;
+						case 1:
+							$("#dayExcel").val(ymd[0]);
+							break;
+						}
+						//小时分
+						hm = times[1].split(":");
+					}else{
+						//小时分
+						hm = times[0].split(":");
+					}
+					
+					switch(hm.length){
+					case 2:
+						var wk=hm[0].split("_");
+						if(wk.length==2){
+							//$("#week").val(wk[0]);
+							//appendDayx.val(wk[0]);
+							var xday = wk[0].split(",");
+							//循环
+						    for(var i =0;i<xday.length;i++){
+						    	if(xday[i]==1){
+						    		//$("input[name=name_input]").attr("disabled",false);
+						    		//星期日
+						    		$("input[value=1]:checkbox").attr("checked",true);
+						    	}else if(xday[i]==2){
+						    		//星期一
+						    		$("input[value=2]:checkbox").attr("checked",true);
+						    	}else if(xday[i]==3){
+						    		//星期二
+						    		$("input[value=3]:checkbox").attr("checked",true);
+						    	}else if(xday[i]==4){
+						    		//星期三
+						    		$("input[value=4]:checkbox").attr("checked",true);
+						    	}else if(xday[i]==5){
+						    		//星期四
+						    		$("input[value=5]:checkbox").attr("checked",true);
+						    	}else if(xday[i]==6){
+						    		//星期五
+						    		$("input[value=6]:checkbox").attr("checked",true);
+						    	}else if(xday[i]==7){
+						    		//星期六
+						    		$("input[value=7]:checkbox").attr("checked",true);
+						    	}
+						    }
+							$("#hourExcel").val(wk[1]);
+						}else{
+							$("#hourExcel").val(hm[0]);
+						}
+						$("#minuteExcel").val(hm[1]);
+						break;
+					case 1:
+						$("#minuteExcel").val(hm[0]);
+						break;
+					}
+				}
+				changeTimeHtmlExcel();
+				//邮件初始化
+				var mailListExcel = data.mailListExcel;
+				$.each(mailListExcel,function(i,mailListExcel){
+					var appendHtmlExcel="";
+					appendHtmlExcel+="<li><input type=\"checkbox\" onChange=\"changeCheckedMailExcel(this)\" value=\""+mailListExcel+"\" name=\"mailListExcel\"><span>"+mailListExcel+"</span></li>";
+					$(".mailExcel_ul").append(appendHtmlExcel);
+				});
+				updateTableIds = data.tableId;
+				$("#sure_closeExcel").attr("onclick", "saveInforExcel(2)");
+		}
+	});
+}
+
+
+/**
+ *修改报表订阅，显示字段配置和已选字段 
+ * @param obj
+ */
+function changeCheckedExcelTabName(obj){
+	var excelTabName=obj.value;
+	
+	//查询列表的已选字段
+	var excelColumnList = excelTabName.split("-");
+	var tableId = excelColumnList[0];
+	
+	queryColumnExcel(tableId);//查询列表的待选字段，或者叫“字段配置”
+	//查询已选字段，并显示在已选字段列中
+	$.ajax({
+		type:"post",
+		dataType : "json",
+		url :  _ctx+"/tab/pushExcel/queryExcelColumnIsChecked.do",
+		//传入的参数
+		data : "tableId=" + tableId,
+		async : false,
+		success : function(data){
+			setSelectedCol(data);//显示已选字段
+			var excelChkColval= $("input[name='excelColumn']");//获取字段配置中的元素
+			
+			for(var i=0;i<excelChkColval.length;i++){
+				var seledVal=$("input[name='excelSelCol']")[i].value;
+				console.log("已选字段："+seledVal);
+				$("input[value='"+seledVal+"']").prop("checked", true);
+				
+			}
+			
+			
+		}
+		
+	});
+}

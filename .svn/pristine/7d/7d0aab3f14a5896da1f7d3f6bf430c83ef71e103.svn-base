@@ -1,0 +1,70 @@
+package byit.osdp.portal.sso;
+
+import java.io.IOException;
+import java.util.Map;
+import javax.servlet.ServletException;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import byit.osdp.base.entity.AuthUserEntity;
+import byit.osdp.portal.sso.https.LoginHtttpsHelper;
+import byit.utils.Tools;
+
+/**
+ * 
+ * 项目名称：hfportal_05 类名称：Utils 类描述： 单点登录工具类 创建人：lisw 创建时间：2017年5月30日 下午8:20:11
+ * 修改人： 修改时间：2017年5月30日 下午8:20:11 修改备注：
+ * 
+ * @version
+ */
+public class Utils {
+
+	/**
+	 * 
+	 * @author lisw
+	 * @Description:校验登录
+	 * @creatTime:2017年5月30日 下午8:20:40
+	 * @return:@return AuthUserEntity
+	 * @modifier:
+	 * @modifTime:
+	 * @throws
+	 */
+	public static AuthUserEntity verifyLogin(UsernamePasswordToken token) {
+		// TODO sso使用，切换到生产需使用
+		AuthUserEntity _user=new AuthUserEntity();
+		AuthUserEntity user=null;
+		try {
+
+			_user.setUsername(token.getUsername());
+			_user.setPassword(String.valueOf(token.getPassword()));
+			String host=token.getHost();
+			if(host!=null){
+				String tTicket=host.substring(0, host.indexOf(Contants.DELIMITER));
+				String tSessionId=host.substring(host.indexOf(Contants.DELIMITER)+3);
+				_user.setTicket(tTicket);
+				_user.setSessionId(tSessionId);
+			}
+			
+			
+			Map<String, String> map = LoginHtttpsHelper.verifyLogin(_user, "");
+			String userStr = null;
+			String _ticket = null;
+			for (String key : map.keySet()) {
+				if (Contants.USER.equals(key)) {
+					userStr = map.get(key);
+					ObjectMapper mapper = new ObjectMapper();
+					map = mapper.readValue(userStr, Map.class);
+					user = Tools.convertMapToUser(map);
+					user.setTicket(_ticket);
+				}
+				if (Contants.TICKET_KEY.equals(key)) {
+					_ticket = map.get(key);
+				}
+				System.out.println(("key= " + key + " and value= " + map.get(key)));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return user;
+	}
+
+}

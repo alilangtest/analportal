@@ -1,0 +1,123 @@
+package byit.tableausubscribe.tab.service;
+
+
+import java.io.UnsupportedEncodingException;
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import byit.tableausubscribe.tab.bean.ExcelColumnSubscribe;
+import byit.tableausubscribe.tab.bean.SendExcelResult;
+import byit.tableausubscribe.tab.dao.PushExcelColumnDao;
+import byit.tableausubscribe.tab.init.InitExcelColumnSubscribeConfig;
+import byit.tableausubscribe.tab.init.InitExcelSubscribeConfig;
+
+
+
+
+/** 
+* Comments:操作XML文件---ok
+*/
+@Service
+@Transactional
+public class PushExcelColumnService extends EmailTask{
+	private static final Logger logger = Logger.getLogger(PushExcelColumnService.class);
+
+	//@Autowired
+	//private PushExcelColumnOper columnOper ;
+	
+	@Autowired
+	private PushExcelColumnDao columnDao;
+	/*
+	 * 添加
+	 */
+	public String addExcelColumnSubscribe(ExcelColumnSubscribe column) throws Exception {
+		////logger.info("----------------addExcelColumnSubscribe-begin-------------------------");
+		String result = "字段添加成功！";
+		String id = column.getTableId();
+		if(id.endsWith(",")){
+			column.setTableId(id.substring(0, id.length()-1));
+		}
+		
+		String checkeColumnId = column.getCheckedColumnId();
+		String isChecked = column.getIsChecked();
+		String addDate = column.getAddDate();
+		String[] checkeColumnIdArray = checkeColumnId.split(",");
+		String[] isCheckedArray = isChecked.split("-");
+		String[] addDateArray = addDate.split(",");
+		List<ExcelColumnSubscribe> excelColumnSubscribeList = new ArrayList<>();
+		
+		for (int i = 0; i < checkeColumnIdArray.length; i++) {
+			ExcelColumnSubscribe columnSubscribe= new ExcelColumnSubscribe();
+			columnSubscribe.setTableId(column.getTableId());
+			columnSubscribe.setCheckedColumnId(checkeColumnIdArray[i]);
+			columnSubscribe.setIsChecked(isCheckedArray[i]);
+			columnSubscribe.setAddDate(addDateArray[i]);
+			excelColumnSubscribeList.add(columnSubscribe);
+		}
+		boolean flag= columnDao.addExcelColumnSubscribe(excelColumnSubscribeList);
+		if(flag){
+			result = "字段添加成功！";
+		}else{
+			result = "字段添加失败！";
+		}
+		/*columnSubscribe = new ExcelColumnSubscribe();
+		columnSubscribe.setTableId(column.getTableId());
+		excelColumnSubscribeList.add(columnSubscribe);
+		
+		for (int i = 0; i < checkeColumnIdArray.length; i++) {
+			columnSubscribe = new ExcelColumnSubscribe();
+			
+			columnSubscribe.setCheckedColumnId(checkeColumnIdArray[i]);
+			columnSubscribe.setIsChecked(isCheckedArray[i]);
+			columnSubscribe.setAddDate(addDateArray[i]);
+			excelColumnSubscribeList.add(columnSubscribe);
+		}
+		
+		Map<String, List<ExcelColumnSubscribe>> excelColumnSubscribeMap = new HashMap<>();
+		excelColumnSubscribeMap.put(id, excelColumnSubscribeList);
+		columnOper.addExcelColumnSubscribe(excelColumnSubscribeMap);
+		logger.info("excelColumnSubscribeList："+excelColumnSubscribeList);*/
+	
+		
+		/*List<ExcelColumnSubscribe> excelColumnSubscribeListNew = new ArrayList<>();
+		ExcelColumnSubscribe columnSubscribeNew;
+		for(ExcelColumnSubscribe ecs : excelColumnSubscribeList){
+			columnSubscribeNew = new ExcelColumnSubscribe();
+			 if(ecs.getTableId()!=null && !"null".equals(ecs.getTableId())&& !"".equals(ecs.getTableId())){
+				 columnSubscribeNew.setTableId(ecs.getTableId()) ;
+			}
+			 if(ecs.getCheckedColumnId()!=null && !"null".equals(ecs.getCheckedColumnId())&& !"".equals(ecs.getCheckedColumnId())){
+				 columnSubscribeNew.setCheckedColumnId(ecs.getCheckedColumnId());
+			 }
+			 if(ecs.getIsChecked()!=null && !"null".equals(ecs.getIsChecked())&& !"".equals(ecs.getIsChecked())){
+				 columnSubscribeNew.setIsChecked(ecs.getIsChecked());
+			 }
+			 if(ecs.getAddDate()!=null && !"null".equals(ecs.getAddDate())&& !"".equals(ecs.getAddDate())){
+				 columnSubscribeNew.setAddDate(ecs.getAddDate());
+			 }
+			 excelColumnSubscribeListNew.add(columnSubscribeNew);
+		}
+		logger.info("excelColumnSubscribeListNew："+excelColumnSubscribeListNew);*/
+		//add
+		//InitExcelColumnSubscribeConfig.excelColumnSubscribe.put(column.getTableId(), excelColumnSubscribeList);
+		
+		return result;
+	}
+	
+	/*
+	 * 查看邮件发送结果
+	 */
+	public List<SendExcelResult> querySendExcelResult(String tableId){
+		////logger.info("------------ querySendExcelResult- ------------");
+		return InitExcelSubscribeConfig.sendExcelResultConfig.get(tableId);
+	}
+}

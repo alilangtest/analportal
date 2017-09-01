@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.aladdin.TableauConfigure.dao.PmTableauuserDao">
+	<!--分页table权限设置  -->
+	<select id="getPagedQuery" parameterType="java.util.Map" resultType="java.util.Map">
+	   <!-- select * from PM_TABLEAUUSER where 1=1 -->
+	   select a.userid,b.codename as optype,a.username,a.password,a.projectname,a.tableauip from PM_TABLEAUUSER a 
+       left join  SYSTEMDOMAIN b on a.optype = b.codeid
+       where b.domainid='optype'
+	      <if test= "projectname != null ">
+	        and a.projectname LIKE CONCAT(CONCAT('%',#{projectname,jdbcType=VARCHAR}),'%')   
+	      </if>
+	</select>
+	<!--新增table权限设置  -->
+	<insert id="saveTableauuser" parameterType="byit.aladdin.TableauConfigure.entity.PmTableauuserEntity">
+		INSERT INTO PM_TABLEAUUSER VALUES(
+			#{userid,jdbcType=VARCHAR},
+			#{optype,jdbcType=VARCHAR},
+			#{username,jdbcType=VARCHAR},
+			#{password,jdbcType=VARCHAR},
+			#{projectname,jdbcType=VARCHAR},
+			#{tableauip,jdbcType=VARCHAR}
+		)
+	</insert>
+	<!--修改table权限设置  -->
+	<update id="updateTableauuser"  parameterType="byit.aladdin.TableauConfigure.entity.PmTableauuserEntity">
+		UPDATE PM_TABLEAUUSER 
+		<set>
+			userid=#{userid},
+			optype=#{optype},
+			username=#{username},
+			password=#{password},
+			projectname=#{projectname},
+			tableauip=#{tableauip}
+		</set>
+		WHERE userid=#{userid}
+	</update>
+	<!--删除table权限设置  -->
+	<delete id="removeById" parameterType="java.lang.String">
+		DELETE FROM PM_TABLEAUUSER WHERE userid=#{userid}
+	</delete>
+	<!--根据id查询一条table权限设置的数据  -->
+	<select id="getById" resultType="byit.aladdin.TableauConfigure.entity.PmTableauuserEntity" parameterType="java.lang.String">
+		select * from PM_TABLEAUUSER where userid=#{userid}
+	</select>
+	<!-- 查询操作权限 -->
+	<select id="querySystemDomainByDomainid" resultType="byit.aladdin.TableauConfigure.bo.SystemDomainBo">
+		select * from SYSTEMDOMAIN where domainid='optype' order by codeid
+	</select>
+</mapper>

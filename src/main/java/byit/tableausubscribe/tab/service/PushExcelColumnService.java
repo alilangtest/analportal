@@ -1,0 +1,209 @@
+package byit.tableausubscribe.tab.service;
+
+
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import byit.osdp.base.security.UserHolder;
+import byit.tableausubscribe.tab.bean.ExcelColumnSubscribe;
+import byit.tableausubscribe.tab.dao.PushExcelColumnDao;
+import byit.tableausubscribe.tab.db.DbSql;
+
+
+/** 
+* Comments:操作XML文件---ok
+*/
+@Service
+@Transactional
+public class PushExcelColumnService extends EmailTask{
+	private static final Logger logger = Logger.getLogger(PushExcelColumnService.class);
+
+	//@Autowired
+	//private PushExcelColumnOper columnOper ;
+	
+	@Autowired
+	private PushExcelColumnDao columnDao;
+	/*
+	 * 添加字段，将字段数据转化为list并保存
+	 */
+	public String addExcelColumnSubscribe(ExcelColumnSubscribe column) throws Exception {
+		////logger.info("----------------addExcelColumnSubscribe-begin-------------------------");
+		String result = "字段添加成功！";
+		String id = column.getTableId();
+		if(id.endsWith(",")){
+			column.setTableId(id.substring(0, id.length()-1));
+		}
+		
+		String checkeColumnId = column.getCheckedColumnId();
+		String isChecked = column.getIsChecked();
+		String addDate = column.getAddDate();
+		String[] checkeColumnIdArray = checkeColumnId.split(",");
+		String[] isCheckedArray = isChecked.split("-");
+		String[] addDateArray = addDate.split(",");
+		List<ExcelColumnSubscribe> excelColumnSubscribeList = new ArrayList<>();
+		
+		for (int i = 0; i < checkeColumnIdArray.length; i++) {
+			ExcelColumnSubscribe columnSubscribe= new ExcelColumnSubscribe();
+			columnSubscribe.setTableId(column.getTableId());
+			columnSubscribe.setCheckedColumnId(checkeColumnIdArray[i]);
+			columnSubscribe.setIsChecked(isCheckedArray[i]);
+			columnSubscribe.setAddDate(addDateArray[i]);
+			columnSubscribe.setUserId(UserHolder.getId());
+			excelColumnSubscribeList.add(columnSubscribe);
+		}
+		boolean flag= columnDao.addExcelColumnSubscribe(excelColumnSubscribeList);
+		if(flag){
+			result = "字段添加成功！";
+		}else{
+			result = "字段添加失败！";
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 添加字段，
+		 *@creatTime:2017年6月16日 下午1:33:50 
+		 *@return:@param column
+		 *@return:@return
+		 *@return:@throws Exception String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public String addExcelCol(ExcelColumnSubscribe column) throws Exception {
+		////logger.info("----------------addExcelColumnSubscribe-begin-------------------------");
+		String result = "字段添加成功！";
+		
+		String checkeColumnId = column.getCheckedColumnId();
+		String isChecked = column.getIsChecked();
+		String addDate = column.getAddDate();
+		String[] checkeColumnIdArray = checkeColumnId.split(",");
+		String[] isCheckedArray = isChecked.split("-");
+		String[] addDateArray = addDate.split(",");
+		List<ExcelColumnSubscribe> excelColumnSubscribeList = new ArrayList<>();
+		
+		for (int i = 0; i < checkeColumnIdArray.length; i++) {
+			ExcelColumnSubscribe columnSubscribe= new ExcelColumnSubscribe();
+			columnSubscribe.setTableId(column.getTableId());
+			columnSubscribe.setCheckedColumnId(checkeColumnIdArray[i]);
+			columnSubscribe.setIsChecked(isCheckedArray[i]);
+			columnSubscribe.setAddDate(addDateArray[i]);
+			columnSubscribe.setUserId(UserHolder.getId());
+			excelColumnSubscribeList.add(columnSubscribe);
+		}
+		column.setUserId(UserHolder.getId());
+		boolean flag= columnDao.addExcelColumnSubscribe(column);
+		if(flag){
+			result = "字段添加成功！";
+		}else{
+			result = "字段添加失败！";
+		}
+		
+		return result;
+	}
+	
+	/*
+	 * 查看邮件发送结果
+	 */
+	/*public List<SendExcelResult> querySendExcelResult(String tableId){
+		////logger.info("------------ querySendExcelResult- ------------");
+		return InitExcelSubscribeConfig.sendExcelResultConfig.get(tableId);
+	}*/
+	
+	/*
+	 * 查看字段
+	 */
+	public List<ExcelColumnSubscribe> queryExcelColumnSubscribe(String tableId){
+		logger.info("------查看字段------ queryExcelColumnSubscribe- ------------"+tableId);
+		return columnDao.getExcelSubscribeById(tableId);
+		//return InitExcelColumnSubscribeConfig.excelColumnSubscribe.get(tableId);
+	}
+	
+	/*
+	 * 查询选择的字段
+	 */
+	public List<String> queryExcelColumnIsChecked(String tableId){
+		List<ExcelColumnSubscribe>  ColumnSubscribeList=columnDao.getExcelSubscribeById(tableId);
+		String isCheckedStr="";
+		for (int i = 0; i < ColumnSubscribeList.size(); i++) {
+			isCheckedStr=isCheckedStr+","+ColumnSubscribeList.get(i).getIsChecked();
+		}
+		isCheckedStr=isCheckedStr.substring(1);
+		String[] array=isCheckedStr.split(",");
+		List<String> list=new ArrayList<String>();
+		list=Arrays.asList(array);
+		return list;
+	}
+	
+	public  void  deleteExcelColumnSubscribe( String tableId) throws Exception  {
+		//columnOper.deleteExcelColumnSubscribe(tableId);
+		//InitExcelColumnSubscribeConfig.excelColumnSubscribe.remove(InitExcelColumnSubscribeConfig.excelColumnSubscribe.get(tableId));
+	    logger.info("删除完毕");
+	}
+	
+	/*
+	 * 
+	 */
+	public List<String> addColumnExcelSubscribe(Connection conn,String tableId){
+		////logger.info("----------------addColumnExcelSubscribe-begin-------------------------");
+		List<Map<String, String>> excelColumnList = new ArrayList<Map<String, String>>();
+		Map<String, String> excelColumnMap = new HashMap<String, String>();
+		List<String> columnList = new ArrayList<String>();
+		//表字段英文名：columnEnName
+		String excelColumnSql="SELECT A.COLUMN_NAME as columnEnName FROM USER_TAB_COLUMNS A WHERE A.TABLE_NAME = '"+tableId+"' order by column_id";
+		//System.out.println("-----------------excelColumnSql-----------------"+excelColumnSql);
+		try {
+			excelColumnList = DbSql.findNativeSQL(conn, excelColumnSql, null);
+		} catch (Exception e) {
+			logger.error("查询失败");
+			e.printStackTrace();
+		}
+		for(int i=0;i<excelColumnList.size();i++){
+			excelColumnMap= (Map<String, String>) excelColumnList.get(i);
+			columnList.add(String.valueOf(excelColumnMap.get("columnenname")));
+			//String.valueOf(excelColumnMap.get("columnCnName"));
+		}
+		////logger.info("----------------addColumnExcelSubscribe-end-------------------------");
+		return columnList;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 更新报表订阅的字段
+		 *@creatTime:2017年6月15日 下午6:53:26 
+		 *@return:@param excel
+		 *@return:@return String
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public  String updateExcelCol(ExcelColumnSubscribe excelCol){
+		////logger.info("----------------updateExcelSubscribe-begin-------------------------");
+		String result = "修改成功！";
+		try {
+			String id = excelCol.getTableId();
+			if(id.endsWith(",")){
+				excelCol.setTableId(id.substring(0, id.length()-1));
+			}
+			excelCol.setUserId(UserHolder.getId());
+			columnDao.updateExcelCol(excelCol);
+		} catch (Exception e) {
+			result="修改失败！";
+			e.printStackTrace();
+		}
+		return result;
+	}
+}

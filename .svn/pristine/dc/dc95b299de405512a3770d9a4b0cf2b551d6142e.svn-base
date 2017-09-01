@@ -1,0 +1,90 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@page import="byit.osdp.base.security.UserHolder" %>
+<%@include file="../_include/_taglib.jsp"%>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<%@include file="../_include/_meta.jsp"%>
+<%@include file="../_include/_s0.jsp"%>
+<script type="text/javascript" src="${ctx}/assets/_osdp/js/log/queryAdminLog.js"></script>
+<%-- 
+<script type="text/javascript" src="${ctx}/js/date/My97DatePicker/WdatePicker.js"></script> --%>
+<link rel="stylesheet" href="${ctx}/assets/bootstrap/css/easyui_change2.css">
+<link rel="stylesheet" href="${ctx}/assets/bootstrap/plugin/bootstrap-select/bootstrap-select.min.css">
+<script src="${ctx}/assets/bootstrap/js/advanced-form-components.js" ></script>
+<script src="${ctx}/assets/_osdp/js/logAnalysis/echarts.min.js"></script>
+<script src="${ctx}/assets/bootstrap/plugin/bootstrap-select/bootstrap-select.js"></script>
+<style type="text/css">
+	.panel-body{border:none;}
+	body,html{width:100%;height:100%;}
+	.btn-info {
+	    background-color: #58c9f3;
+	    border-color: #58c9f3;
+	    color: #FFFFFF;
+	}
+	.btn-group>.btn:last-child:not(:first-child), .btn-group>.dropdown-toggle:not(:first-child) {
+	    border-radius: 4px;
+	    margin-right: 10px;
+	}
+	.btn-info:hover {
+	    background-color: #53bee6;
+	    border: 1px solid #53bee6;
+	}
+</style>
+</head>
+<body class='table_css'>
+  <section class="panel">
+    <div class="panel-body">
+       <div class="adv-table editable-table ">
+          <div class="clearfix" id="questionPanel">
+            <div class="btn-group text-right float-right" style=''>
+                <div class='float-rightd'>
+                  </div>
+                  <div class='float-rightd'>
+                      <input onchange="searchs()" type="text" class="form-control form-control_new" id="username" name="username" placeholder="用户"  onkeypress="queryScheduleForEnter(event)"> 
+                  </div>
+                  <div class='float-rightd'>
+                      <input onchange="searchs()" type="text" class="form-control form-control_new" id="menu" name="menu" placeholder="菜单名称" onkeypress="queryScheduleForEnter(event)"> 
+                  </div>
+                  <!-- 
+                  <span>日期 : </span>
+								<div data-date-viewmode="date" data-date-format="yyyy-mm-dd" data-date="2016-12-29" class="input-append date dpYears" style="display:inline-block;width:160px;">
+		                          <input id="date1" class="form-control form-control-inline input-medium default-date-picker" size="16" type="text" value="2016-12-29">
+		                        </div>
+								<div data-date-viewmode="date" data-date-format="yyyy-mm-dd" data-date="2016-12-29" class="input-append date dpYears" style="display:inline-block;width:160px;">
+		                          <input id="date2" class="form-control form-control-inline input-medium default-date-picker" size="16" type="text" value="2016-12-29">
+		                        </div>
+                   -->
+                  
+                  <div class='float-rightd' data-date-viewmode="date" data-date-format="yyyy-mm-dd" data-date="2016-12-29" class="input-append date dpYears">
+                  
+                    <input onchange="searchs()" type="text" placeholder="开始时间" id="beginlogdate" name="beginlogdate"  class="form-control form-control_new default-date-picker" />
+                  </div>
+                  <div class='float-rightd' >
+                  -
+                  </div>
+                  <div class='float-rightd' data-date-viewmode="date" data-date-format="yyyy-mm-dd" data-date="2016-12-29" class="input-append date dpYears">
+                  <input onchange="searchs()" type="text" placeholder="结束时间"  id="endlogdate" name="endlogdate" class="form-control form-control_new default-date-picker"/>
+                  </div>
+                  <button class="btn btn-info green" id="searchBtn" onclick="searchs()" style="background-color: #58c9f3; border-color: #58c9f3; color: #FFFFFF;">
+                  		  搜索
+                  </button>
+                   <button class="btn btn-default green" id="clearBtn" onclick="empty()">
+                   		清空
+                  </button>
+             </div>
+          </div>
+          
+          <div class="space15" style="padding-top: 20px;"></div>
+          <div class='table_cell'>
+	          <table class="table table-striped table-hover table-bordered table-table1" id="table_log">
+	          </table>
+	      </div>
+       </div>
+    </div>
+ </section>
+ <script>
+ $('.table_cell').height($('body').height()-130);
+ </script>
+</body>
+</html>

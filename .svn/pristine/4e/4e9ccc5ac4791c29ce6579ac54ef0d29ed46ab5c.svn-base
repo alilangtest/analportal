@@ -1,0 +1,22 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%
+response.setHeader("_SESSION_TIMEOUT", "Y");
+response.setHeader("_REDIRECT", "login.html");
+%>
+<%@include file="../_include/_taglib.jsp"%>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<%@include file="../_include/_meta.jsp"%>
+<%@include file="../_include/_s0.jsp"%>
+<link href="${ctx}/assets/_osdp/css/index1.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="${ctx}/assets/_osdp/js/login/login.js"></script>
+</head>
+<body>
+<form action="">
+	<label class="">账号：</label><input id="username" type="text" class="pufa_ipt" placeholder="请输入账号"  value="admin"/>
+	<label class="">密码：</label><input id="password" type="password" class="pufa_ipt" value="admin" placeholder="请输入密码" />
+	<div class="pufa_lgbtn"><a href="#" id="submit">登&nbsp;录</a></div>
+</form>
+</body>
+</html>

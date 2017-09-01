@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.osdp.base.dao.SystemDoMainDao">
+
+	<!--列表table数据库配置  -->
+	<select id="getByDoMainId" parameterType="java.lang.String" resultType="byit.osdp.base.entity.SystemDoMainEntity">
+		select codeid,codename from SYSTEMDOMAIN where doMainId = #{doMainId}
+	</select>
+	<!--列表table数据库配置  -->
+	<select id="getByDoMainIdList" parameterType="java.lang.String" resultType="byit.osdp.base.entity.SystemDoMainEntity">
+		select * from SYSTEMDOMAIN where doMainId = #{doMainId} order by EVENTID asc
+	</select>
+</mapper>

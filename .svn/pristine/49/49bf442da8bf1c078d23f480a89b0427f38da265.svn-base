@@ -1,0 +1,296 @@
+package byit.aladdin.workBook.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Repository;
+
+import byit.aladdin.workBook.entity.Workbooks;
+import byit.aladdin.workBook.support.TableauJdbcDaoSupport;
+import byit.aladdin.workBook.util.Page;
+import byit.aladdin.workBook.util.Pagination;
+import byit.core.util.convert.ConvertUtil;
+import byit.osdp.base.security.UserHolder;
+import byit.osdp.tableau.TableauConfig;
+import cn.byitgroup.utils.tableau.TableauUtil;
+
+@Repository
+public class WorkBookJDBCDao extends TableauJdbcDaoSupport {
+	/**
+	* @Description: 查询需要下载的文件列表
+	* @author wangxingfei   
+	* @param @param param
+	* @param @return
+	* @date 2017年6月20日 下午5:58:28 
+	* @version V1.0
+	 */
+	public List<Workbooks> queryWorkBookByExtracts(String param) {
+		String sql = "select w.id,"
+					+ "w.site_id,"
+					+ "w.name,"
+					+ "w.created_at,"
+					+ "w.luid as wluid,"
+					+ "s.luid sluid,"
+					+ "s.url_namespace,"
+					+ "to_char(w.created_at+ interval '8 hours','YYYY-mm-dd'),"
+					+ "to_char(current_date - interval '1 day','YYYY-mm-dd')"
+					+ " from workbooks w "
+					+ " LEFT JOIN sites s on w.site_id=s.id "
+					+ " where w.refreshable_extracts = 't'"
+					+ " and to_char(w.created_at+ interval '8 hours','YYYY-mm-dd') = to_char(current_date - interval '1 day','YYYY-mm-dd') ";
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		List<Workbooks> records = new ArrayList<Workbooks>();
+		try {
+			conn = TableauUtil.getTableauConn(TableauConfig.TABLEUA_POSTGRESQL_IP,TableauConfig.TABLEUA_POSTGRESQL_USERNAME, TableauConfig.TABLEUA_POSTGRESQL_PASSWORD);
+			pstmt = conn.prepareStatement(sql);
+			
+			rs = pstmt.executeQuery();
+			while (rs.next()) {
+				Workbooks workbooks = new Workbooks();
+				workbooks.setId(rs.getLong("id"));
+				workbooks.setSiteId(rs.getString("site_id"));
+				workbooks.setWorkbookLuid(rs.getString("wluid"));
+				workbooks.setName(rs.getString("name"));
+				workbooks.setCreatedAt(rs.getDate("created_at"));
+				workbooks.setUserLuid(rs.getString("sluid"));
+				workbooks.setUrlNamespace(rs.getString("url_namespace"));
+				records.add(workbooks);
+			}
+		TableauUtil.closeTableauConn(conn, rs);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return records;
+	}
+	/**
+	* @Description:获取分页总条数 
+	* @author wangxingfei   
+	* @param @param pagination
+	* @param @return
+	* @date 2017年6月20日 上午10:36:27 
+	* @version V1.0
+	 */
+	public int pagedQueryTaskCount(Pagination pagination) {
+		Map<String, String> filters = pagination.getFilters();
+
+		Integer siteId = ConvertUtil.toInteger(filters.get("siteId"));
+		Integer projectId = ConvertUtil.toInteger(filters.get("projectId"));
+		String reportName = filters.get("reportName");
+		
+		String userName = UserHolder.getUsername();
+
+		//判断是否是站点
+		
+		
+		String sql = "select count(t.*) as count from (" + getDefaultSql() +" and refreshable_extracts = 't'" ;
+		List<Object> args = new ArrayList<>();
+		String userRole=filters.get("userRole");
+		if(!"1".equals(userRole)){
+			if("2".equals(userRole)){
+				String hasSites=filters.get("hasSites");
+				sql+=" and users.site_id in ( ";
+				boolean first = true;
+				for (String id : hasSites.split(",")) {
+					if (first) {
+						sql += " ? ";
+						first = false;
+					} else {
+						sql += " ,? ";
+					}
+					args.add(Integer.valueOf(id));
+				}
+				sql += " ) ";
+			}
+			if("3".equals(userRole)){
+				sql+=" and owner.name = ? ";
+				args.add(userName);
+			}
+			
+		}
+		
+		
+		//System.out.println("sql==============>"+sql);
+
+		if (siteId != null) {
+			sql += " and workbooks.site_id = ? ";
+			args.add(siteId);
+		}
+
+		if (projectId != null) {
+			sql += " and workbooks.project_id = ? ";
+			args.add(projectId);
+		}
+		if (StringUtils.isNoneBlank(reportName)) {
+			sql += " and workbooks.name like ? ";
+			args.add("%"+reportName+"%");
+		}
+		sql += "order by workbooks.updated_at desc,workbooks.name asc) as t";
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		try {
+			conn = TableauUtil.getTableauConn(TableauConfig.TABLEUA_POSTGRESQL_IP,TableauConfig.TABLEUA_POSTGRESQL_USERNAME, TableauConfig.TABLEUA_POSTGRESQL_PASSWORD);
+			pstmt = conn.prepareStatement(sql);
+			for (int i = 0; i < args.size(); i++) {
+				pstmt.setObject((i+1), args.get(i));
+			}
+			rs = pstmt.executeQuery();
+			rs.next();
+			int count = rs.getInt("count");
+			TableauUtil.closeTableauConn(conn, rs);
+			return count;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
+	}
+	public Page<Workbooks> pagedQueryTask(Pagination pagination) {
+
+		int start = pagination.getStart();
+		int limit = pagination.getLimit();
+		Map<String, String> filters = pagination.getFilters();
+
+		Integer siteId = ConvertUtil.toInteger(filters.get("siteId"));
+		Integer projectId = ConvertUtil.toInteger(filters.get("projectId"));
+		String reportName = filters.get("reportName");
+		
+		String userName = UserHolder.getUsername();
+
+		//判断是否是站点
+		
+		
+		String sql = getDefaultSql() +" and refreshable_extracts = 't'" ;
+		List<Object> args = new ArrayList<>();
+		String userRole=filters.get("userRole");
+		if(!"1".equals(userRole)){
+			if("2".equals(userRole)){
+				String hasSites=filters.get("hasSites");
+				sql+=" and users.site_id in ( ";
+				boolean first = true;
+				for (String id : hasSites.split(",")) {
+					if (first) {
+						sql += " ? ";
+						first = false;
+					} else {
+						sql += " ,? ";
+					}
+					args.add(Integer.valueOf(id));
+				}
+				sql += " ) ";
+			}
+			if("3".equals(userRole)){
+				sql+=" and owner.name = ? ";
+				args.add(userName);
+			}
+			
+		}
+		
+		
+		//System.out.println("sql==============>"+sql);
+
+		if (siteId != null) {
+			sql += " and workbooks.site_id = ? ";
+			args.add(siteId);
+		}
+
+		if (projectId != null) {
+			sql += " and workbooks.project_id = ? ";
+			args.add(projectId);
+		}
+		if (StringUtils.isNoneBlank(reportName)) {
+			sql += " and workbooks.name like ? ";
+			args.add("%"+reportName+"%");
+		}
+		sql += "order by workbooks.updated_at desc,workbooks.name asc limit ? offset ?";
+		args.add(limit);
+		args.add(start);
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		List<Workbooks> records = new ArrayList<Workbooks>();
+		try {
+			conn = TableauUtil.getTableauConn(TableauConfig.TABLEUA_POSTGRESQL_IP,TableauConfig.TABLEUA_POSTGRESQL_USERNAME, TableauConfig.TABLEUA_POSTGRESQL_PASSWORD);
+			pstmt = conn.prepareStatement(sql);
+			for (int i = 0; i < args.size(); i++) {
+				pstmt.setObject((i+1), args.get(i));
+			}
+			rs = pstmt.executeQuery();
+			while (rs.next()) {
+				Workbooks workbooks = new Workbooks();
+				workbooks.setId(rs.getLong("id"));
+				workbooks.setWorkbookLuid(rs.getString("workbookLuid"));
+				workbooks.setName(rs.getString("name"));
+				workbooks.setWorkbookUrl(rs.getString("workbook_url"));
+				workbooks.setCreatedAt(rs.getDate("created_at"));
+				workbooks.setUpdatedAt(rs.getDate("updated_at"));
+				workbooks.setOwnerId(rs.getString("owner_id"));
+				workbooks.setProjectId(rs.getString("project_id"));
+				workbooks.setSize(rs.getString("size"));
+				workbooks.setViewCount(rs.getString("view_count"));
+				workbooks.setOwnerName(rs.getString("owner_name"));
+				workbooks.setProjectName(rs.getString("project_name"));
+				workbooks.setProjectLuid(rs.getString("project_luid"));
+				workbooks.setSystemUserId(rs.getString("system_user_id"));
+				workbooks.setUserLuid(rs.getString("userLuid"));
+				workbooks.setSiteId(rs.getString("site_id"));
+				workbooks.setDomainId(rs.getString("domain_id"));
+				workbooks.setDomainName(rs.getString("domain_name"));
+				workbooks.setSiteName(rs.getString("sites_name"));
+				workbooks.setSiteLuid(rs.getString("site_luid"));
+				workbooks.setUrlNamespace(rs.getString("url_namespace"));
+				workbooks.setViewNum(rs.getString("view_num"));
+				records.add(workbooks);
+			}
+		TableauUtil.closeTableauConn(conn, rs);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		
+		Page<Workbooks> page = new Page<Workbooks>();
+		page.setRecords(records);
+		return page;
+	}
+	private String getDefaultSql() {
+		return " SELECT "//
+				+ " workbooks.id "
+				+ " ,workbooks.luid workbookLuid"//
+				+ "  ,workbooks.name "//
+				+ "  ,workbooks.repository_url AS workbook_url "//
+				+ "  ,workbooks.created_at "//
+				+ "  , (workbooks.updated_at + interval '8 hours') updated_at "//
+				+ "  ,workbooks.owner_id "//
+				+ "  ,workbooks.project_id "//
+				+ "  ,workbooks.size "//
+				+ "  ,workbooks.view_count "//
+				+ "  ,owner.name AS owner_name "//
+				+ "  ,projects.name AS project_name " //
+				+ "  ,projects.luid as project_luid"//
+				+ "  ,users.system_user_id "
+				+ " ,users.luid userLuid"//
+				+ "  ,workbooks.site_id "//
+				+ "  ,domains.id AS domain_id "//
+				+ "  ,domains.name AS domain_name "//
+				+ "  ,sites.name AS sites_name " //
+				+ "  ,sites.luid as site_luid" //
+				+ "  ,sites.url_namespace"//
+				+ " ,(SELECT sum(views_stats.nviews) FROM views_stats INNER JOIN views on views_stats.view_id = views.id where views.workbook_id=workbooks.id) as view_num" //
+				+ " FROM "//
+				+ "  workbooks "//
+				+ "  ,system_users owner "//
+				+ "  ,projects "//
+				+ "  ,users "//
+				+ "  ,domains "//
+				+ "  ,sites "//
+				+ "  WHERE (workbooks.owner_id = users.id) AND (workbooks.project_id = projects.id) AND (users.system_user_id = owner.id) AND (workbooks.site_id = users.site_id) AND (owner.domain_id = domains.id) AND (workbooks.site_id = sites.id) "//
+				+ "";
+	}
+}

@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.aladdin.dataAnalysis.dao.ReportDataAnalysisDao">
+	<resultMap type="byit.aladdin.dataAnalysis.entity.TypeTop"
+		id="TypeTopMap">
+		<id column="ID" property="id" />
+		<result column="REPORT_ID" property="reportId" />
+		<result column="REPORT_NAME" property="reportName" />
+		<result column="TOP_TYPE" property="topType" />
+		<result column="OPERATION_TIME" property="operationTime" />
+		<result column="OPERATION_USER" property="operationUser" />
+	</resultMap>
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.Dic"
+		id="DicMap">
+		<id column="EVENTID" property="eventId" />
+		<result column="DOMAINID" property="domainId" />
+		<result column="DOMAINNAME" property="domainName" />
+		<result column="CODEID" property="codeId" />
+		<result column="CODENAME" property="codeName" />
+	</resultMap>
+
+	<resultMap type="byit.aladdin.dataAnalysis.entity.LabelInfo"
+			id="LabelInfoMap">
+		<result column="MENUID" property="menuId"/>
+		<result column="MENUPARENT" property="menuparent"/>
+		<result column="MENUNAME" property="menuname"/>
+	</resultMap>
+	
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.Report"
+			id="ReportMap">
+		<id column="REPORTID" property="reportId"/>
+		<result column="REPORTNAME" property="reportName"/>
+		<result column="REPORTTYPE" property="reportType"/>
+		<result column="URL" property="url"/>
+		<result column="PANELHEIGHT" property="panelHeight"/>
+		<result column="PANELWIDTH" property="panelWidth"/>
+		<result column="PUBLISPER" property="publisper"/>
+		<result column="SITEID" property="siteid"/>
+	</resultMap>
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.Org"
+			id="OrgMap">
+		<id column="ID" property="id"/>
+		<result column="NAME" property="name"/>
+		<result column="CODE" property="code"/>
+		<result column="PANELHEIGHT" property="managerId"/>
+		<result column="STATE" property="state"/>
+		<result column="LEV" property="lev"/>
+	</resultMap>
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.Employee"
+			id="EmpMap">
+		<result column="ID" property="employeeId"/>
+		<result column="ORG_ID" property="orgId"/>
+		<result column="USERNAME" property="employeeName"/>
+	</resultMap>
+	
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.PmTableauUser"
+			id="PmTableauUserMap">
+		<result column="USERID" property="userId"/>
+		<result column="OPTYPE" property="optype"/>
+		<result column="USERNAME" property="username"/>
+		<result column="PASSWORD" property="password"/>
+		<result column="PROJECTNAME" property="projectname"/>
+		<result column="TABLEAUIP" property="tableauip"/>
+	</resultMap>
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.PmReportCollect"
+			id="PmReportCollectMap">
+		<result column="COLLECTID" property="collectId"/>
+		<result column="REPORTID" property="reportId"/>
+		<result column="EMPLOYEEID" property="employeeId"/>
+		<result column="SEQDATE" property="seqDate"/>
+		<result column="REPORTNAME" property="reportName"/>
+		<result column="ORDERDATE" property="ordeDate"/>
+	</resultMap>
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.AuthRole"
+			id="AuthRoleMap">
+		<result column="ID" property="id"/>
+		<result column="NAME" property="name"/>
+	</resultMap>
+		
+		
+	<resultMap type="byit.aladdin.dataAnalysis.entity.RepShare"
+			id="RepShareMap">
+		<result column="USERID" property="userId"/>
+		<result column="REPORTID" property="reportId"/>
+		<result column="STARTTIME" property="startTime"/>
+		<result column="SHARID" property="sharId"/>
+		<result column="VALIDTIME" property="valldTime"/>
+		<result column="CREATE_TIME" property="createTime"/>
+		<result column="CREATOR_ID" property="creatorId"/>
+	</resultMap>
+	
+	<resultMap type="byit.aladdin.dataAnalysis.entity.RepAttributeInfo"
+			id="RepAttributeMap">
+		<result column="ID" property="id"/>
+		<result column="NAME" property="name"/>
+		<result column="CREATOR" property="creator"/>
+	</resultMap>
+		
+		
+
+
+	<!--字典表-->
+	<select id="queryDic" parameterType="byit.aladdin.dataAnalysis.entity.TypeTop" resultMap="DicMap">
+		select EVENTID,DOMAINNAME,DOMAINID,CODEID,CODENAME FROM SYSTEMDOMAIN 
+		WHERE DOMAINID=#{domainId}   
+	</select>
+
+	
+	
+	<!--个人中心 当前登录人的活跃度-->
+	<select id="queryReportByUser"  resultMap="TypeTopMap">
+		SELECT report_id,report_name reportName,
+	       sum(case TOP_TYPE
+	             when 1 then 1
+	             when 2 then 2
+	             when 3 then 3
+				 when 4 then 1
+	             when 5 then 2
+	           end           
+	           ) as ranking
+	    FROM REP_OPERATION 
+		WHERE  OPERATION_USER=#{operationUser}
+		GROUP BY report_id,report_name
+		ORDER BY ranking DESC
+	</select>
+	
+	<!--个人中心 热门关注-->
+	<select id="getSCSort"  resultMap="TypeTopMap">
+		SELECT report_name reportName,count(1) ranking
+		FROM   rep_operation 
+		WHERE  top_type='2'
+		GROUP BY  report_name 
+		ORDER BY  count(1) DESC
+	</select>
+	
+	
+	<!--个人中心 我的收藏-->
+	<select id="getSCBSort"  resultMap="TypeTopMap">
+		SELECT report_name reportName,count(1) ranking
+		FROM   rep_operation 
+		WHERE  REPORT_ID IN(
+			SELECT  REPORT_ID
+			FROM   rep_operation 
+			WHERE  top_type='2' AND OPERATION_USER=#{operationUser})
+		GROUP BY  report_name 
+		ORDER BY  count(1) DESC
+	</select>
+	
+	<!--个人中心 我的分享-->
+	<select id="getFXBSort"  resultMap="TypeTopMap">
+		SELECT RE.REPORTID,count(1) ranking,RE.REPORTNAME reportName
+		FROM   REP_SHAR sh
+		LEFT JOIN PM_REPORT re ON RE.REPORTID=SH.REPORTID
+		WHERE  RE.REPORTID IN(	
+			SELECT REPORTID
+			FROM   REP_SHAR 
+			WHERE   USERID =#{operationUser})
+		GROUP BY  RE.REPORTID,RE.REPORTNAME
+		ORDER BY  count(1) DESC
+
+
+	</select>
+	
+
+	<!-- //////////////////////////////////// 以下是数据分析 sql ////////////////////////////////////////////////////////////-->
+	<!--获取当前员工所属角色 -->
+	<select id="queryRoleById" parameterType="String"  resultMap="AuthRoleMap">
+		SELECT
+			EMP."ID" EMPLOYEEID,rol.id
+		FROM
+			AUTH_USER emp
+		LEFT JOIN AUTH_USER_ROLE aur ON EMP."ID" = AUR.USER_ID
+		LEFT JOIN AUTH_ROLE rol ON rol.id=aur.ROLE_ID
+		WHERE EMP."ID"=#{operationUser}
+	</select>
+	
+	
+	<!--数据分析筛选子标签 -->
+	<select id="querylabelInfoList"  resultMap="LabelInfoMap" parameterType="java.util.List">
+		SELECT distinct REP.MENUID,REP.MENUPARENT,REP.MENUNAME 
+		FROM PM_REPORTMENU rep
+	    LEFT JOIN REP_MENU_ROLE_RELA rol ON ROL.MENUID=REP.MENUID
+	    WHERE MENUPARENT IS  NOT NULL  AND ROL.ROLEID IN 
+	    <foreach item="item" index="index" collection="list" open="("
+            separator="," close=")">
+            #{item.id}   
+        </foreach>
+	</select>
+	
+	<!--数据分析筛选父标签 -->
+	<select id="queryDataLabel"  resultMap="LabelInfoMap" parameterType="java.util.List">
+		SELECT distinct REP.MENUID,REP.MENUPARENT,REP.MENUNAME 
+		FROM PM_REPORTMENU rep
+	    LEFT JOIN REP_MENU_ROLE_RELA rol ON ROL.MENUID=REP.MENUID
+	    WHERE MENUPARENT IS  NULL  AND ROL.ROLEID IN 
+	    <foreach collection="list" item="item" index="index"  open="("
+            separator="," close=")">
+            #{item.id}  
+        </foreach>
+	</select>
+	
+	<!--根据标签分析数据 -->
+	<select id="queryAnalysis"  resultType="byit.aladdin.dataAnalysis.entity.TypeTop" parameterType="java.util.List">
+		select rep.*,prc.reportid sc from (
+
+			select r.reportid ,r.reportname from
+			 (select * from PM_REPORT r where r.datescreen is    null or sysdate  &lt;=  to_date(r.datescreen,'yyyy-mm-dd') ) r 
+			 
+			 right join  rep_menu_rela rm  on r.reportid = rm.reportid
+		
+				where r.reportid in(
+			
+					select t.reportid from ROLE_REPORT_RELA t where t.roleid in(
+			
+						select u.role_id from auth_user_role u where u.user_id = #{operationUser,jdbcType=VARCHAR}
+					)
+				)
+		
+			<if test="repLab!=null and repLab!=''">
+				AND rm.menuid=#{repLab,jdbcType=VARCHAR}  
+			</if>
+			
+		) rep 
+		 
+		left join 
+		 (select reportid from pm_reportcollect  where employeeid = #{operationUser,jdbcType=VARCHAR}) prc 
+		on rep.reportid = prc.reportid
+		
+	</select>
+	
+	
+	<!--根据标签分析数据 -->
+	<select id="queryAnalysis2"  resultMap="TypeTopMap" parameterType="java.util.List">
+		SELECT * FROM (
+			select rela.REPORTID,rela.MENUID,oper.TOP_TYPE,rep1.REPORTNAME,rep1.PUBLISPER from REP_MENU_RELA  rela,(
+			select REPORTID,REPORTNAME,PUBLISPER from PM_REPORT where reportid in(
+			select reportid from ROLE_REPORT_RELA where roleid in (
+			select roleid from ROLE_REPORT_RELA
+			where roleid in (select role_id from  auth_user_role  where user_id=#{operationUser,jdbcType=VARCHAR})))
+			OR reportid IN(
+				SELECT SHAR.reportid FROM REP_SHAR shar 
+	      		LEFT JOIN PM_REPORT pr ON pr.REPORTID=shar.REPORTID
+	     		WHERE shar.sharid=#{operationUser,jdbcType=VARCHAR})
+			) rep1
+			LEFT JOIN REP_OPERATION oper ON REP1.REPORTID=OPER.REPORT_ID AND oper.OPERATION_USER=#{operationUser,jdbcType=VARCHAR}
+			where rela.reportid=rep1.reportid  
+			  ORDER BY REPORTNAME ASC
+		) PIVOT (
+				COUNT (top_type) FOR top_type IN ('1' ck, '2' sc, '3' pl, '4' dz, '5' fx)
+		)
+	</select>
+	
+	<!-- 数据分析报表统计数据 -->
+	<select id="queryReportInfo"  resultMap="TypeTopMap" parameterType="java.util.List">
+		SELECT
+			*
+		FROM
+			(
+				SELECT
+					RE1.REPORTID reportId,
+					RE1.REPORTNAME reportName,
+		      		REP1.TOP_TYPE,
+		      		RE1.PUBLISPER publisper
+				FROM
+					PM_REPORT RE1
+        		LEFT JOIN ROLE_REPORT_RELA rol ON rol.REPORTID=RE1.REPORTID
+				LEFT JOIN REP_OPERATION rep1   ON RE1.REPORTID=REP1.REPORT_ID
+        		WHERE ROL.ROLEID IN
+        		<foreach item="item" index="index" collection="list" open="("
+	            separator="," close=")">
+	            	#{item.id}  
+	        	</foreach>
+	        	  ORDER BY REPORTNAME ASC
+			) PIVOT (
+				COUNT (top_type) FOR top_type IN ('1' ck, '2' sc, '3' pl, '4' dz, '5' fx)
+			)
+	</select>
+	
+	<!--添加报表  -->
+	<insert id="addReportInfo" keyProperty="id" parameterType="byit.aladdin.dataAnalysis.entity.TypeTop" >
+		INSERT INTO REP_OPERATION(id,report_id,report_name,top_type,operation_time,operation_user)
+		VALUES(
+			SEQ_REP_OPERATION.Nextval,#{reportId},#{reportName},#{topType},SYSDATE,#{operationUser}
+		)
+	</insert>
+	
+	<!-- 查询报表信息 -->
+	<select id="queryReportBy"  resultMap="TypeTopMap" parameterType="byit.aladdin.dataAnalysis.entity.TypeTop">
+		SELECT  REPORTID,REPORTNAME FROM PM_REPORT WHERE REPORTID=#{reportId}
+	</select>
+	
+	
+	<!-- 查询报表信息 根据条件-->
+	<select id="isReportDo"  resultMap="TypeTopMap" parameterType="byit.aladdin.dataAnalysis.entity.TypeTop">
+		SELECT "ID",REPORT_ID,REPORT_NAME,TOP_TYPE FROM REP_OPERATION  
+		WHERE REPORT_ID=#{reportId} AND operation_user=#{operationUser} AND top_type=#{topType}
+	</select>
+	
+	
+	<!-- 查询报表信息 根据条件-->
+	<delete id="deleteReport"  parameterType="byit.aladdin.dataAnalysis.entity.TypeTop">
+		DELETE FROM REP_OPERATION WHERE REPORT_ID=#{reportId} AND operation_user=#{operationUser} AND top_type=#{topType}
+	</delete>
+	
+	<!--根据id查询报表  -->
+	<select id="getReportByIdAndType"  resultMap="ReportMap" parameterType="byit.aladdin.dataAnalysis.entity.Report">
+		SELECT REPORTID,REPORTNAME,URL,REPORTTYPE,PANELHEIGHT,PANELWIDTH,SITEID FROM PM_REPORT 
+		WHERE REPORTID =#{reportId}
+	</select>
+	
+	<!--根据id查询员工信息  -->
+	<select id="queryEmpById"  resultMap="EmpMap" parameterType="String">
+		SELECT "ID",ORG_ID,USERNAME FROM AUTH_USER 
+		WHERE "ID"=#{employeeId}
+	</select>
+	
+	<!--根据id查询机构信息  -->
+	<select id="queryOrgById"  resultMap="OrgMap" parameterType="String">
+		SELECT "ID","NAME",CODE,LEV FROM AUTH_ORG WHERE code=#{id}
+	</select>
+	
+	
+	<!--角色和报表的关系  -->
+	<select id="getRoleReport"  resultMap="ReportMap" parameterType="String">
+		SELECT distinct(t.REPORTID),t.OPTYPE from ROLE_REPORT_RELA t 
+		WHERE t.OPTYPE in (select max(r.OPTYPE) from ROLE_REPORT_RELA r where r.REPORTID =#{reportid} 
+			 and r.ROLEID in
+			 (select t."ID" from AUTH_ROLE t where t."ID" in(select rs.ROLE_ID from AUTH_USER_ROLE rs where rs.USER_ID =#{userId}
+				) and t.STATE=1)) 
+			AND t.ROLEID in(select t."ID" from AUTH_ROLE t where t."ID" in(select rs.ROLE_ID from AUTH_USER_ROLE rs where rs.USER_ID =#{userId}) and t.STATE=1) 
+			AND t.REPORTID =#{reportid}
+	</select>
+	
+	
+	<!-- 报表信息 -->
+	<select id="getTableauUser"  resultMap="PmTableauUserMap" parameterType="String">
+		SELECT USERID,OPTYPE,USERNAME,"PASSWORD",PROJECTNAME,TABLEAUIP 
+		FROM PM_TABLEAUUSER 
+		WHERE OPTYPE=#{optype}
+	</select>
+	
+	<!--添加收藏报表 -->
+	<insert id="addCollectInfo" keyProperty="id" parameterType="byit.aladdin.dataAnalysis.entity.PmReportCollect" >
+		INSERT INTO PM_REPORTCOLLECT(COLLECTID,REPORTID,REPORTNAME,EMPLOYEEID,SEQDATE,ORDERDATE)
+		VALUES(
+			SEQ_REP_OPERATION.Nextval,#{reportId},#{reportName},#{employeeId},SYSDATE,SYSDATE
+		)
+	</insert>
+	
+	
+	<!-- 查询报表信息 根据条件-->
+	<delete id="deleteCollectInfo"  parameterType="byit.aladdin.dataAnalysis.entity.PmReportCollect">
+		DELETE FROM PM_REPORTCOLLECT WHERE REPORTID=#{reportId} AND EMPLOYEEID=#{employeeId} 
+	</delete>
+	
+	
+	<!-- 查询当前登录人所拥有的报表属性 -->
+	<select id="queryrepAttributeInfo" resultMap="RepAttributeMap" parameterType="String">
+		SELECT  "ID", "NAME",CREATOR FROM REP_ATTRIBUTE_INFO WHERE CREATOR=#{operationUser}
+	</select>
+	
+	
+	
+	<!--根据登录用户id查询收藏列表  -->
+	<select id="countCollections" resultType="java.util.Map" parameterType="java.lang.String">
+	select c.COLLECTID,
+       c.SEQDATE,
+       c.REPORTID,
+       r.REPORTNAME,
+       s.username as EMPLOYEENAME,
+       s.id as employeeid
+  from PM_REPORTCOLLECT c
+  LEFT JOIN PM_REPORT r ON c.REPORTID = r.REPORTID
+  LEFT JOIN AUTH_USER s ON c.EMPLOYEEID = s.id
+ where c.EMPLOYEEID = #{loginid}
+ order by c.orderdate desc
+		<!-- select c.COLLECTID,c.SEQDATE,c.REPORTID,r.REPORTNAME,s.EMPLOYEENAME,s.employeeid from PM_REPORTCOLLECT c 
+        LEFT JOIN PM_REPORT r ON c.REPORTID=r.REPORTID
+        LEFT JOIN PM_EMPLOYEE s ON c.EMPLOYEEID=s.EMPLOYEEID 
+        where c.EMPLOYEEID=#{loginid} order by c.orderdate desc -->
+	</select>
+	<!--取消收藏报表  -->
+	<delete id="collectDelete" parameterType="byit.aladdin.TableauConfigure.bo.CollectBo">
+		delete from PM_REPORTCOLLECT where reportid=#{reportid} and employeeid=#{employeeid}
+	</delete>
+	<delete id="collectDeleteRetOperation" parameterType="byit.aladdin.TableauConfigure.bo.CollectBo">
+		delete from REP_OPERATION where top_type='2' and report_id=#{reportid} and operation_user=#{employeeid} 
+	</delete>
+	<!-- 报表收藏置顶  -->
+	<update id="collectToTop"  parameterType="byit.aladdin.TableauConfigure.bo.CollectBo">
+		update PM_REPORTCOLLECT set orderdate=sysdate where reportid=#{reportid} and employeeid=#{employeeid}
+	</update>
+	
+	
+	<!-- 删除首页 -->
+	<delete id="deleteHomepage" parameterType="string">
+		delete from PM_REPORT_HOMEPAGE where  USER_ID=#{userid}
+	</delete>
+	
+	
+	<!-- 添加首页 -->
+ 	<insert id="addHomepage"  parameterType="byit.aladdin.dataAnalysis.entity.ReportHomepage" >
+		INSERT INTO PM_REPORT_HOMEPAGE(ID,USER_ID,REPORT_ID)
+		VALUES(
+			#{id,jdbcType=VARCHAR},
+			#{user_id,jdbcType=VARCHAR} , 
+			#{report_id,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+
+	
+	<!-- 查询首页 -->
+	<select id="getHomepage" resultType="byit.aladdin.dataAnalysis.entity.ReportHomepage" parameterType="string">
+		SELECT *  FROM PM_REPORT_HOMEPAGE WHERE USER_ID=#{userid}
+	</select>
+	
+	<!-- 报表菜单树 -->
+	<select id="queryReportMenuList" resultType="byit.aladdin.dataAnalysis.entity.LabelInfo" >
+		SELECT menuId,menuparent,menuname  FROM  PM_REPORTMENU 
+	</select>
+</mapper>

@@ -1,0 +1,302 @@
+package byit.tableausubscribe.tab.web;
+
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import byit.tableausubscribe.tab.bean.ExcelSubscribe;
+import byit.tableausubscribe.tab.bean.SendExcelResult;
+import byit.tableausubscribe.tab.bean.ExcelColumnSubscribe;
+import byit.tableausubscribe.tab.db.DBConnection;
+import byit.tableausubscribe.tab.service.PushExcelColumnService;
+import byit.tableausubscribe.tab.service.PushExcelService;
+
+/**
+ * 报表订阅
+ * 
+ * @author 
+ */
+@Controller
+@RequestMapping("tab/pushExcel")
+public class PushExcelController {
+
+	private static final Logger logger = Logger.getLogger(PushExcelController.class);
+	
+	@Autowired
+	private PushExcelService pushService;
+	@Autowired
+	private PushExcelColumnService pushColumnService;
+	/**
+	 * 添加excel主表
+	 * 
+	 * @param request
+	 * @param response
+	 * @param excel 
+	 */
+	@RequestMapping(value = "/addExcelSubscribe")
+	@ResponseBody
+	public String addExcelSubscribe(HttpServletRequest request, HttpServletResponse response,ExcelSubscribe excel,ExcelColumnSubscribe column) {
+		String str ="添加失败";
+		String strColumn ="字段添加失败";
+		try {
+			//添加excel附件
+			str =  pushService.addExcelSubscribe(excel);
+			if("添加成功！".equals(str)){
+				
+				//excel xml 配置成功后配置字段 column xml
+				strColumn =  pushColumnService.addExcelColumnSubscribe(column);
+				if("字段添加成功！".equals(strColumn)){
+					//配置字段 column xml 成功
+					str = strColumn;
+				}else{
+					//配置字段 column xml 失败
+					str = "字段添加失败";
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return str;
+	}
+	
+	@RequestMapping(value = "/addExcelAndColSubscribe")
+	@ResponseBody
+	public String addExcelAndColSubscribe(HttpServletRequest request, HttpServletResponse response,ExcelSubscribe excel,ExcelColumnSubscribe column) {
+		String str ="";
+		try {
+			//添加excel附件
+			str =  pushService.addExcelAndColSubscribe(excel,column);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return str;
+	}
+
+	
+	/**
+	 * 报表订阅列表--首页列表
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping(value = "/querySubscribeListExcel")
+	@ResponseBody
+	public List<ExcelSubscribe> querySubscribeListExcel(HttpServletRequest request, HttpServletResponse response) {
+		////logger.info("------------------------------进入querySubscribeListExcel-----------------------------------------");
+		String searchValue = request.getParameter("searchValue");
+		List<ExcelSubscribe> resultListExcel = new ArrayList<>();
+		try {
+			resultListExcel = pushService.getExcelSubscribeList(searchValue);
+			logger.info("resultListExcel------------"+resultListExcel);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		logger.info("return resultListExcel------------"+resultListExcel);
+		return resultListExcel;
+	}
+
+	/**
+	 * 发送邮件
+	 * 
+	 * @param request
+	 * @param response
+	 * @author 
+	 */
+	@RequestMapping(value = "/sendExcelEmail")
+	@ResponseBody
+	public String sendEmail(HttpServletRequest request, HttpServletResponse response,ExcelSubscribe excel) {
+		////logger.info("-----------手动发送--------------------------------");
+		////logger.info("-----------传入excel：--------------------------------"+excel);
+		String str ="发送失败";
+		//获取选中的仪表板
+		String tableId = request.getParameter("tableId");
+		////logger.info("-----------手动发送-----------tableId-----------------"+tableId);
+		str = pushService.sendExcelEmail(tableId);
+		////logger.info("-----------手动发送-----------str--------------------"+str);
+		return str;
+	}
+	
+	/**
+	 * 查看订阅配置--查看
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping(value = "/queryExcelSubscribe")
+	@ResponseBody
+	public ExcelSubscribe queryExcelSubscribe(HttpServletRequest request, HttpServletResponse response) {
+		////logger.info("--------------queryExcelSubscribe-----------"+ request.getParameter("tableId"));
+		String tableId = request.getParameter("tableId");
+		ExcelSubscribe excelResult = new ExcelSubscribe();
+		try {
+			////logger.info("--------------进入pushService.queryExcelSubscribe-----------");
+			excelResult = pushService.queryExcelSubscribe(tableId);
+			////logger.info("--------------结束pushService.queryExcelSubscribe-----------"+excelResult);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		////logger.info("--------------excelResult-----------"+ excelResult);
+		
+		return excelResult;
+	}
+	
+	
+	
+	/**
+	 * 添加excel字段
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping(value = "/addColumnExcelSubscribe")
+	@ResponseBody
+	public List<String> addColumnExcelSubscribe(HttpServletRequest request, HttpServletResponse response) {
+		////logger.info("--------------addColumnExcelSubscribe-----------"+ request.getParameter("tableId"));
+		String tableId = request.getParameter("tableId");
+		List<String> excelColumnList = new ArrayList<String>();
+		//建立连接
+		Connection conn = null;
+		if (conn == null) {
+			try {
+				conn = DBConnection.getConnection();
+			} catch (Exception e) {
+				System.out.println("无法正确建立连接……");
+				e.printStackTrace();
+			}
+		}
+		try {
+			// 查表字段
+			////logger.info("--------------进入pushService.addColumnExcelSubscribe-----------");
+			excelColumnList = pushColumnService.addColumnExcelSubscribe(conn,tableId);
+			////logger.info("--------------结束pushService.addColumnExcelSubscribe-----------"+excelColumnList);
+		} catch (Exception e) {
+			System.out.println("失败，原因如下：");
+			e.printStackTrace();
+		}
+		////logger.info("--------------excelColumnList-----------"+ excelColumnList);
+		return excelColumnList;
+	}
+	
+	
+	
+	
+	/**
+	 * 修改excel主表
+	 * 
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping(value = "/updateExcelSubscribe")
+	@ResponseBody
+	public String updateExcelSubscribe(HttpServletRequest request, HttpServletResponse response, ExcelSubscribe excel,ExcelColumnSubscribe column) {
+		String str ="修改失败！";
+		List<ExcelColumnSubscribe>  colList=pushColumnService.queryExcelColumnSubscribe(excel.getTableId());
+		
+		try {
+			str = pushService.updateExcelSubscribe(excel);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return str;
+	}
+	
+	@RequestMapping(value = "/updateExcelAndColSubscribe")
+	@ResponseBody
+	public String updateExcelAndColSubscribe(HttpServletRequest request, HttpServletResponse response, ExcelSubscribe excel,ExcelColumnSubscribe column) {
+		String str ="修改失败！";
+		try {
+			str = pushService.updateExcelAndColSubscribe(excel,column);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return str;
+	}
+	
+	/**
+	 * 删除
+	 * 
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping(value = "/deleteExcelSubscribe")
+	@ResponseBody
+	public boolean deleteExcelSubscribe(HttpServletRequest request, HttpServletResponse response) {
+		String tableId = request.getParameter("tableId");
+		boolean result = false;
+		try {
+			result = pushService.deleteExcelAndCol(tableId);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+	/**
+	 * 查看推送结果--查看
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping(value = "/querySendExcelResult")
+	@ResponseBody
+	public List<SendExcelResult> querySendExcelResult(HttpServletRequest request, HttpServletResponse response) {
+		String tableId = request.getParameter("tableId");
+		////logger.info("-------------------querySendExcelResult----------------------"+tableId);
+		List<SendExcelResult> resultExcelList = new ArrayList<>();
+		try {
+			resultExcelList = pushService.querySendExcelResult(tableId);
+			////logger.info("-------------------pushService.querySendExcelResult----------------------"+resultExcelList);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return resultExcelList;
+	}
+	
+	/**
+	 * 查看订阅配置--查看 
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping(value = "/queryExcelColumnSubscribe")
+	@ResponseBody
+	public List<ExcelColumnSubscribe> queryExcelColumnSubscribe(HttpServletRequest request, HttpServletResponse response) {
+		String tableId = request.getParameter("tableId");
+		////logger.info("---------获取的ID----------queryExcelColumnSubscribe----------------------"+tableId);
+		List<ExcelColumnSubscribe> resultExcelList = new ArrayList<>();
+		try {
+			resultExcelList = pushColumnService.queryExcelColumnSubscribe(tableId);
+			logger.info("------返回值-------------pushService.queryExcelColumnSubscribe----------------------"+resultExcelList);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return resultExcelList;
+	}
+	
+	@RequestMapping(value = "/queryExcelColumnIsChecked")
+	@ResponseBody
+	public List<String> queryExcelColumnIsChecked(HttpServletRequest request, HttpServletResponse response) {
+		String tableId = request.getParameter("tableId");
+		////logger.info("---------获取的ID----------queryExcelColumnSubscribe----------------------"+tableId);
+		List<String> isCheckedList = new ArrayList<String>();
+		try {
+			isCheckedList = pushColumnService.queryExcelColumnIsChecked(tableId);
+			//logger.info("------返回值-------------pushService.queryExcelColumnSubscribe----------------------"+resultExcelList);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return isCheckedList;
+	}
+	
+
+}

@@ -1,0 +1,429 @@
+package byit.aladdin.dataIndex.util;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.hssf.util.HSSFColor;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import byit.aladdin.dataIndex.entity.Ind_rela;
+
+public class ExcelOperator {
+	static Log log = LogFactory.getLog(ExcelOperator.class);
+	public static Workbook createExcel(List<Ind_rela> list, List<String> cells, String fileType){
+		//创建workbook
+		Workbook wb = null;
+		if("xls".equals(fileType)){
+			wb = new HSSFWorkbook();
+		}else if("xlsx".equals(fileType)){
+			wb = new XSSFWorkbook();
+		}else{
+			return null;
+		}
+		//创建sheet
+		Sheet sheet = wb.createSheet("指标维度");
+		CellStyle setBorder = wb.createCellStyle();
+		setBorder.setFillForegroundColor(HSSFColor.CORNFLOWER_BLUE.index);// 设置背景色
+		setBorder.setFillPattern(CellStyle.SOLID_FOREGROUND);
+		//创建行
+		Row row1=sheet.createRow(0);
+		//生成标题
+		Cell cell = null;
+		for (int i = 0; i < cells.size(); i++) {
+			cell = row1.createCell(i);
+			cell.setCellStyle(setBorder);
+			cell.setCellValue(cells.get(i));
+			sheet.setColumnWidth(i, 7000);
+		}
+		for (int i = 0; i < list.size(); i++) {
+			Ind_rela ind_rela = list.get(i);
+			//创建行
+			Row row=sheet.createRow((i + 1));
+			row.createCell(0).setCellValue(ind_rela.getFunctionClass());
+			row.createCell(1).setCellValue(ind_rela.getReportClass());
+			row.createCell(2).setCellValue(ind_rela.getReportSubclass());
+			row.createCell(3).setCellValue(ind_rela.getReportName());
+			row.createCell(4).setCellValue(ind_rela.getIndexClass());
+			row.createCell(5).setCellValue(ind_rela.getIndexName());
+			row.createCell(6).setCellValue(ind_rela.getDataSource());
+			row.createCell(7).setCellValue(ind_rela.getTableChineseName());
+			row.createCell(8).setCellValue(ind_rela.getTableName());
+			row.createCell(9).setCellValue(ind_rela.getTableRemarks());
+			row.createCell(10).setCellValue(ind_rela.getIsShow());
+			row.createCell(11).setCellValue(ind_rela.getFieldsChineseName());
+			row.createCell(12).setCellValue(ind_rela.getFieldsName());
+			row.createCell(13).setCellValue(ind_rela.getFieldsRemarks());
+			row.createCell(14).setCellValue(ind_rela.getCalculate());
+			row.createCell(15).setCellValue(ind_rela.getFieldsValue());
+			row.createCell(16).setCellValue(ind_rela.getState());
+		}
+		 return wb;
+	}
+	/**
+	 * 读取指标关系文档
+	 * 
+	 * @param fileDir
+	 * @return
+	 * @throws SQLException
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public static Map<String, Object> readExcel(String fileDir, String fileName) throws SQLException, FileNotFoundException, IOException, ParseException {
+		List<Ind_rela> listTs = new ArrayList<Ind_rela>();
+		Map<String, Object> result = new HashMap<String, Object>();
+		List<String> list = new ArrayList<String>();
+		InputStream in = new FileInputStream(fileDir);
+		String version = initType(fileName);
+		StringBuffer header = new StringBuffer();
+		if (version.equals("2007")) {// 后缀为.xlsx文件
+			XSSFWorkbook workbook = new XSSFWorkbook(in);// 根据上传的file获取excel表格的工作空间
+			if (workbook.getNumberOfSheets() > 0) {
+				XSSFSheet sheet = workbook.getSheetAt(0);// 获得默认的sheet的页面
+				if(sheet.getLastRowNum() == 1){
+					result.put("sucess", listTs);
+					result.put("error", "0");
+					return result;
+				}
+				// 值建对应
+				for (int i = 0; i <= sheet.getLastRowNum(); i++) {
+					StringBuilder builder = new StringBuilder();
+					// 行为标题
+					XSSFRow row = sheet.getRow(i);// 得到每一行
+					Ind_rela indrela = new Ind_rela();
+					for (int j = 0; j < row.getLastCellNum(); j++) {// 得到每一行的每一列
+						String data = "";
+						XSSFCell cell = row.getCell(j);// 得到每一行的每一列
+						data = checkNullCell(j, cell);
+						//获取列标题信息
+						if(i == 0){
+							header.append(cell.getStringCellValue()).append(",");
+							continue;
+						}
+						if (cell != null) {
+							String cellValue = "";
+							switch (cell.getCellType()) {
+							case HSSFCell.CELL_TYPE_NUMERIC:
+								Double number = cell.getNumericCellValue();
+								cellValue = String.valueOf(number.intValue());
+								break;
+							case HSSFCell.CELL_TYPE_STRING:
+								cellValue = cell.getStringCellValue();
+								break;
+							case HSSFCell.CELL_TYPE_BLANK:
+								cellValue = "";
+								break;
+							}
+							data = assembleFields(j, indrela, cellValue);
+						}
+						if(!"".equals(data)){
+							builder.append(data).append(",");
+						}
+					}
+					if(i != 0){
+						listTs.add(indrela);
+						if(!builder.toString().isEmpty()){
+							list.add("第" + i + "行:" + builder.toString());
+						}
+					}
+				}
+			}
+		} else if (version.equals("2003")) {// 后缀为.xls文件
+			POIFSFileSystem fs = new POIFSFileSystem(in);
+			HSSFWorkbook workbook = new HSSFWorkbook(fs);
+			if (workbook.getNumberOfSheets() > 0) {
+				HSSFSheet sheet = workbook.getSheetAt(0);// 获得默认的sheet的页面
+				if(sheet.getLastRowNum() == 1){
+					result.put("sucess", listTs);
+					result.put("error", "0");
+					return result;
+				}
+				// 值建对应
+				for (int i = 0; i <= sheet.getLastRowNum(); i++) {
+					StringBuilder builder = new StringBuilder();
+					// 行为标题
+					HSSFRow row = sheet.getRow(i);// 得到每一行
+					Ind_rela indrela = new Ind_rela();
+					for (int j = 0; j < row.getLastCellNum(); j++) {// 得到每一行的每一列
+						String data = "";
+						HSSFCell cell = row.getCell(j);// 得到每一行的每一列
+						data = checkNullCell(j, cell);
+						//获取列标题信息
+						if(i == 0){
+							header.append(cell.getStringCellValue()).append(",");
+							continue;
+						}
+						if (cell != null) {
+							String cellValue = "";
+							switch (cell.getCellType()) {
+							case HSSFCell.CELL_TYPE_NUMERIC:
+								Double number = cell.getNumericCellValue();
+								cellValue = String.valueOf(number.intValue());
+								break;
+							case HSSFCell.CELL_TYPE_STRING:
+								cellValue = cell.getStringCellValue();
+								break;
+							case HSSFCell.CELL_TYPE_BLANK:
+								cellValue = "";
+								break;
+							}
+							data = assembleFields(j, indrela, cellValue);
+						}
+						if(!"".equals(data)){
+							builder.append(data).append(",");
+						}
+					}
+					if(i != 0){
+						listTs.add(indrela);
+						if(!builder.toString().isEmpty()){
+							list.add("第" + i + "行:" + builder.toString());
+						}
+					}
+				}
+			}
+		}
+		if(list.size() > 0){
+			createErrorFile(list);
+			result.put("error", "1");
+		}else{
+			result.put("sucess", listTs);
+			result.put("error", "0");
+		}
+		if(!header.toString().isEmpty()){
+			result.put("header", header.substring(0, header.length() - 1 ));
+		}
+		return result;
+	}
+	/**
+	* @Description: 列null校验 ，错误信息拼写
+	* @author wangxingfei
+	* @param @param index
+	* @param @param cell
+	* @param @return
+	* @return String
+	* @date 2017年5月19日 下午4:38:57
+	 */
+	private static String checkNullCell(int index, Object cell){
+		String result = "";
+		switch (index) {
+		case 0:
+			if(cell == null){
+				result = "功能分类为空";
+			}
+			break;
+		case 1:
+			if(cell == null){
+				result = "报表分类为空";
+			}
+			break;
+		case 2:
+			if(cell == null){
+				result = "报表子类为空";
+			}
+			break;
+		case 3:
+			if(cell == null){
+				result = "报表名称为空";
+			}
+			break;
+		case 4:
+			if(cell == null){
+				result = "分类为空";
+			}
+			break;
+		case 5:
+			if(cell == null){
+				result = "指标名称为空";
+			}
+			break;
+		case 10:
+			if(cell == null){
+				result = "是否展示为空";
+			}
+			break;
+		case 16:
+			if(cell == null){
+				result = "状态为空";
+			}
+			break;
+		}
+		return result;
+	}
+	/**
+	* @Description: 创建错误列表文件 
+	* @author wangxingfei
+	* @param @param list
+	* @return void
+	* @date 2017年5月19日 下午4:38:21
+	 */
+	private static void createErrorFile(List<String> list ){
+		//获取文件保存路径
+		String path = ByitConfig.FILE_ERROR_PATH;
+		File saveDirFile = new File(path);
+		if (!saveDirFile.exists()) {
+			saveDirFile.mkdirs();
+		}
+		File targetFile = new File(path, "error.txt");
+		FileWriter fw = null;
+        BufferedWriter writer = null;
+		try {
+			fw = new FileWriter(targetFile);
+            writer = new BufferedWriter(fw);
+            for (String string : list) {
+            	writer.write(string);
+				writer.newLine();
+			}
+			writer.flush();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}finally{
+			try {
+				writer.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			try {
+				fw.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	/**
+	 * 按照读取位置进行属性组装
+	 * @param index
+	 * @param indrela
+	 * @param cellValue
+	 */
+	private static String assembleFields(int index, Ind_rela indrela, String cellValue){
+		String result = "";
+			switch (index) {
+			case 0:
+				if("".equals(cellValue.trim())){
+					result = "功能分类为空";
+				}else{
+					indrela.setFunctionClass(cellValue);
+				}
+				break;
+			case 1:
+				if("".equals(cellValue.trim())){
+					result = "报表分类为空";
+				}else{
+					indrela.setReportClass(cellValue);
+				}
+				break;
+			case 2:
+				if("".equals(cellValue.trim())){
+					result = "报表子类为空";
+				}else{
+					indrela.setReportSubclass(cellValue);
+				}
+				break;
+			case 3:
+				if("".equals(cellValue.trim())){
+					result = "报表名称为空";
+				}else{
+					indrela.setReportName(cellValue);
+				}
+				break;
+			case 4:
+				if("".equals(cellValue.trim())){
+					result = "分类为空";
+				}else{
+					indrela.setIndexClass(cellValue);
+				}
+				break;
+			case 5:
+				if("".equals(cellValue.trim())){
+					result = "指标名称为空";
+				}else{
+					indrela.setIndexName(cellValue);
+				}
+				break;
+			case 6:
+				indrela.setDataSource(cellValue);
+				break;
+			case 7:
+				indrela.setTableChineseName(cellValue);
+				break;
+			case 8:
+				indrela.setTableName(cellValue);
+				break;
+			case 9:
+				indrela.setTableRemarks(cellValue);
+				break;
+			case 10:
+				if("".equals(cellValue.trim())){
+					result = "是否展示为空";
+				}else{
+					indrela.setIsShow(Integer.valueOf(cellValue));
+				}
+				break;
+			case 11:
+				indrela.setFieldsChineseName(cellValue);
+				break;
+			case 12:
+				indrela.setFieldsName(cellValue);
+				break;
+			case 13:
+				indrela.setFieldsRemarks(cellValue);
+				break;
+			case 14:
+				indrela.setCalculate(cellValue);
+				break;
+			case 15:
+				indrela.setFieldsValue(cellValue);
+				break;
+			case 16:
+				if("".equals(cellValue.trim())){
+					result = "状态为空";
+				}else{
+					indrela.setState(Integer.valueOf(cellValue));
+				}
+				break;
+		}
+			return result;
+	}
+	// 判别Excel2003和Excel2007
+	public static String initType(String fileName) {
+		String version = null;
+		if (fileName != null) {
+			int index = fileName.lastIndexOf(".") + 1;
+			String suffex = fileName.substring(index);
+			if ("xls".equals(suffex)) {
+				version = "2003";
+			} else if ("xlsx".equals(suffex) || "xlsm".equals(suffex)) {
+				version = "2007";
+			}
+		}
+		return version;
+	}
+}

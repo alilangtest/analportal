@@ -1,0 +1,586 @@
+package byit.aladdin.workBook.util;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.net.ssl.SSLContext;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
+import org.apache.http.HeaderElement;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.TrustStrategy;
+import org.apache.http.util.EntityUtils;
+
+import byit.aladdin.dataIndex.util.ByitConfig;
+
+public class HttpClientUtils {
+
+	public static final String CHARSET = "UTF-8";
+	private static ThreadLocal<Map<String, String>> httpHeader = new ThreadLocal<Map<String, String>>();
+	private static ThreadLocal<Map<String, Object>> httpClientConfig = new ThreadLocal<Map<String, Object>>();
+	public static final String CONNECT_TIMEOUT = "connect_timeout"; //连接超时时间
+	public static final String SOCKET_TIMEOUT = "socket_timeout"; //socket超时时间
+	public static final Integer DEFAULT_CONNECT_TIMEOUT = 600000;
+	public static final Integer DEFAULT_SOCKET_TIMEOUT = 600000;
+	public static Properties pro ;
+	static {
+		pro = new Properties();
+		InputStream input = null;
+		try {
+			pro.load(input = ByitConfig.class.getResourceAsStream("/workBook.properties"));
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			IOUtils.closeQuietly(input);
+		}
+	}
+	public static CloseableHttpClient createSSLClientDefault() {
+		try {
+			SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy() {
+				//信任所有
+				public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+					return true;
+				}
+			}).build();
+			SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext);
+			return HttpClients.custom().setSSLSocketFactory(sslsf).build();
+		} catch (KeyManagementException e) {
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (KeyStoreException e) {
+			e.printStackTrace();
+		}
+		return HttpClients.createDefault();
+	}
+
+	private static void handlerHeader(HttpRequestBase requestBase) {
+		if (httpHeader != null && httpHeader.get() != null) {
+			Map<String, String> map = httpHeader.get();
+			for (String key : map.keySet()) {
+				requestBase.addHeader(key, map.get(key));
+			}
+		}
+	}
+
+	public static String sendXMLDataByPut(String url, String xmlData, String accessToken) throws IOException {
+		if (StringUtils.isBlank(url)) {
+			return null;
+		}
+		CloseableHttpClient httpClient = null;
+		CloseableHttpResponse response = null;
+		HttpPut httpPut = null;
+		try {
+			httpPut = new HttpPut(url);
+			handlerHeader(httpPut);
+			if (StringUtils.isNotBlank(xmlData)) {
+				// 建立一个NameValuePair数组，用于存储欲传送的参数  
+				httpPut.addHeader("Content-type", "application/xml; charset=utf-8");
+				httpPut.setHeader("Accept", "*/*");
+				httpPut.setEntity(new StringEntity(xmlData, Charset.forName("UTF-8")));
+				if (StringUtils.isNotBlank(accessToken))
+					httpPut.setHeader("X-Tableau-Auth", accessToken);
+			}
+			httpClient = createSSLClientDefault();
+			response = httpClient.execute(httpPut);
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode != 200) {
+				httpPut.abort();
+				//return String.valueOf(statusCode);
+				if (statusCode != 201) {
+					throw new RuntimeException("HttpClient,error status code :" + statusCode);
+				}
+			}
+			HttpEntity entity = response.getEntity();
+			String result = null;
+			if (entity != null) {
+				result = EntityUtils.toString(entity, "utf-8");
+			}
+			EntityUtils.consume(entity);
+			return result;
+		} catch (IOException e) {
+			throw e;
+		} finally {
+			if (response != null) {
+				response.close();
+			}
+			if (httpPut != null) {
+				httpPut.releaseConnection();
+			}
+			if (httpClient != null) {
+				httpClient.close();
+			}
+		}
+	}
+
+	public static String sendXMLDataByPost(String url, String xmlData, String accessToken) throws IOException {
+		if (StringUtils.isBlank(url)) {
+			return null;
+		}
+		CloseableHttpClient httpClient = null;
+		CloseableHttpResponse response = null;
+		HttpPost httpPost = null;
+		try {
+			httpPost = new HttpPost(url);
+			handlerHeader(httpPost);
+			if (StringUtils.isNotBlank(xmlData)) {
+				/*
+				 * List<BasicNameValuePair> parameters = new ArrayList<>(); parameters.add(new BasicNameValuePair("xml", xmlData));
+				 * httpPost.setEntity(new UrlEncodedFormEntity(parameters,"UTF-8"));
+				 */
+				StringEntity entity = new StringEntity(xmlData);
+				httpPost.setEntity(entity);
+				httpPost.setHeader("Content-Type", "text/xml;charset=UTF-8");
+				if (StringUtils.isNotBlank(accessToken))
+					httpPost.setHeader("X-Tableau-Auth", accessToken);
+			}
+			httpClient = createSSLClientDefault();
+			response = httpClient.execute(httpPost);
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode != 200) {
+				httpPost.abort();
+				//return String.valueOf(statusCode);
+				if (statusCode != 201) {
+					throw new RuntimeException("HttpClient,error status code :" + statusCode);
+				}else if(statusCode == 201){
+					return "";
+				}
+			}
+			HttpEntity entity = response.getEntity();
+			String result = null;
+			if (entity != null) {
+				result = EntityUtils.toString(entity, "utf-8");
+			}
+			EntityUtils.consume(entity);
+			return result;
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			if (response != null) {
+				response.close();
+			}
+			if (httpPost != null) {
+				httpPost.releaseConnection();
+			}
+			if (httpClient != null) {
+				httpClient.close();
+			}
+		}
+	}
+	public static String sendXMLDataByDelete(String url, String accessToken) throws IOException {
+		if (StringUtils.isBlank(url)) {
+			return null;
+		}
+		CloseableHttpClient httpClient = null;
+		CloseableHttpResponse response = null;
+		HttpDelete httpDelete = null;
+		try {
+			httpDelete = new HttpDelete(url);
+			handlerHeader(httpDelete);
+				// 建立一个NameValuePair数组，用于存储欲传送的参数  
+				httpDelete.addHeader("Content-type", "application/xml; charset=utf-8");
+				httpDelete.setHeader("Accept", "*/*");
+				httpDelete.setHeader("X-Tableau-Auth", accessToken);
+					
+			httpClient = createSSLClientDefault();
+			response = httpClient.execute(httpDelete);
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode != 204) {
+				httpDelete.abort();
+				throw new RuntimeException("HttpClient,error status code :" + statusCode);
+			}
+			HttpEntity entity = response.getEntity();
+			String result = null;
+			if (entity != null) {
+				result = EntityUtils.toString(entity, "utf-8");
+			}
+			EntityUtils.consume(entity);
+			return result;
+		} catch (IOException e) {
+			throw e;
+		} finally {
+			if (response != null) {
+				response.close();
+			}
+			if (httpDelete != null) {
+				httpDelete.releaseConnection();
+			}
+			if (httpClient != null) {
+				httpClient.close();
+			}
+		}
+	}
+	public static String doPost(String url, Map<String, String> params, String charset) throws IOException {
+		if (StringUtils.isBlank(url)) {
+			return null;
+		}
+		CloseableHttpClient httpClient = null;
+		CloseableHttpResponse response = null;
+		HttpPost httpPost = null;
+		try {
+			List<NameValuePair> pairs = null;
+			if (params != null && !params.isEmpty()) {
+				pairs = new ArrayList<NameValuePair>(params.size());
+				for (Map.Entry<String, String> entry : params.entrySet()) {
+					String value = entry.getValue();
+					if (value != null) {
+						pairs.add(new BasicNameValuePair(entry.getKey(), value));
+					}
+				}
+			}
+			httpPost = new HttpPost(url);
+			handlerHeader(httpPost);
+			if (pairs != null && pairs.size() > 0) {
+				httpPost.setEntity(new UrlEncodedFormEntity(pairs, CHARSET));
+			}
+			httpClient = createSSLClientDefault();
+			response = httpClient.execute(httpPost);
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode != 200) {
+				httpPost.abort();
+				throw new RuntimeException("HttpClient,error status code :" + statusCode);
+			}
+			HttpEntity entity = response.getEntity();
+			String result = null;
+			if (entity != null) {
+				result = EntityUtils.toString(entity, "utf-8");
+			}
+			EntityUtils.consume(entity);
+			return result;
+		} catch (IOException e) {
+			throw e;
+		} finally {
+			if (response != null) {
+				response.close();
+			}
+			if (httpPost != null) {
+				httpPost.releaseConnection();
+			}
+			if (httpClient != null) {
+				httpClient.close();
+			}
+		}
+	}
+
+	public static String doPost(String url, String jsonParam) throws IOException {
+		if (StringUtils.isBlank(url)) {
+			return null;
+		}
+		CloseableHttpClient httpClient = null;
+		CloseableHttpResponse response = null;
+		HttpPost httpPost = null;
+		try {
+			httpPost = new HttpPost(url);
+			handlerHeader(httpPost);
+			if (StringUtils.isNotBlank(jsonParam)) {
+				StringEntity entity = new StringEntity(jsonParam, "UTF-8");
+				//entity.setContentEncoding("UTF-8");
+				entity.setContentType("application/json");
+				httpPost.setEntity(entity);
+			}
+			httpClient = createSSLClientDefault();
+			response = httpClient.execute(httpPost);
+			//            System.out.println("response---"+response);
+			int statusCode = response.getStatusLine().getStatusCode();
+			/*
+			 * if (statusCode != 200) { httpPost.abort(); throw new RuntimeException("HttpClient,error status code :" + statusCode); }
+			 * 
+			 */ HttpEntity entity = response.getEntity();
+			String result = null;
+			if (entity != null) {
+				result = EntityUtils.toString(entity, "utf-8");
+			}
+			EntityUtils.consume(entity);
+			return result;
+		} catch (IOException e) {
+			throw e;
+		} finally {
+			if (response != null) {
+				response.close();
+			}
+			if (httpPost != null) {
+				httpPost.releaseConnection();
+			}
+			if (httpClient != null) {
+				httpClient.close();
+			}
+		}
+	}
+
+	public static String doPut(String url, String jsonParam) throws IOException {
+		if (StringUtils.isBlank(url)) {
+			return null;
+		}
+		CloseableHttpClient httpClient = null;
+		CloseableHttpResponse response = null;
+		HttpPut httpPut = null;
+		try {
+			httpPut = new HttpPut(url);
+			handlerHeader(httpPut);
+			if (StringUtils.isNotBlank(jsonParam)) {
+				StringEntity entity = new StringEntity(jsonParam, "UTF-8");
+				//entity.setContentEncoding("UTF-8");
+				entity.setContentType("application/json");
+				httpPut.setEntity(entity);
+			}
+			httpClient = createSSLClientDefault();
+			response = httpClient.execute(httpPut);
+			int statusCode = response.getStatusLine().getStatusCode();
+			/*
+			 * if (statusCode != 200) { httpPost.abort(); throw new RuntimeException("HttpClient,error status code :" + statusCode); }
+			 */ HttpEntity entity = response.getEntity();
+			String result = null;
+			if (entity != null) {
+				result = EntityUtils.toString(entity, "utf-8");
+			}
+			EntityUtils.consume(entity);
+			return result;
+		} catch (IOException e) {
+			throw e;
+		} finally {
+			if (response != null) {
+				response.close();
+			}
+			if (httpPut != null) {
+				httpPut.releaseConnection();
+			}
+			if (httpClient != null) {
+				httpClient.close();
+			}
+		}
+	}
+
+	public static void setHeader(Map<String, String> header) {
+		if (header != null) {
+			httpHeader.set(header);
+		}
+	}
+
+	public static void setConfig(Map<String, Object> config) {
+		if (config != null) {
+			httpClientConfig.set(config);
+		}
+	}
+
+	public static String doGetUrl(String api) {
+		String address = pro.getProperty("tableau.server.ip");
+		String version = pro.getProperty("tableau.version");
+		api = "http://".concat(address.concat(api));
+		if (api.indexOf("api-version") != -1) {
+			api = api.replace("api-version", version);
+		}
+		return api;
+	}
+
+	public static String doGet(String url, Map<String, String> params, String charset, String accessToken, Long workbookId) throws IOException {
+		if (StringUtils.isBlank(url)) {
+			return null;
+		}
+		CloseableHttpClient httpClient = null;
+		CloseableHttpResponse response = null;
+		HttpGet httpGet = null;
+		try {
+			if (params != null && !params.isEmpty()) {
+				List<NameValuePair> pairs = new ArrayList<NameValuePair>(params.size());
+				for (Map.Entry<String, String> entry : params.entrySet()) {
+					String value = entry.getValue();
+					if (value != null) {
+						pairs.add(new BasicNameValuePair(entry.getKey(), value));
+					}
+				}
+				url += "?" + EntityUtils.toString(new UrlEncodedFormEntity(pairs, charset));
+			}
+			httpGet = new HttpGet(url);
+			handlerHeader(httpGet);
+			httpGet.setHeader("X-Tableau-Auth", accessToken);
+			httpGet.setHeader("Content-Type", "application/xml");
+			httpClient = createSSLClientDefault();
+			response = httpClient.execute(httpGet);
+
+			int statusCode = response.getStatusLine().getStatusCode();
+			//System.out.println("state:"+statusCode + "------------code");
+			if (statusCode == 200) {
+				// httpGet.abort();
+				//throw new RuntimeException("HttpClient,error status code :" + statusCode);
+				HttpEntity entity = response.getEntity();
+				InputStream is = entity.getContent();
+				String filepath = getFilePath(response, workbookId);
+				File file = new File(filepath);
+				file.getParentFile().mkdirs();
+				FileOutputStream fileout = new FileOutputStream(file);
+				/**
+				 * 根据实际运行效果 设置缓冲区大小
+				 */
+				byte[] buffer = new byte[1024 * 10];
+				int ch = 0;
+				while ((ch = is.read(buffer)) != -1) {
+					fileout.write(buffer, 0, ch);
+				}
+				is.close();
+				fileout.flush();
+				fileout.close();
+			}
+			return "";
+		} catch (IOException e) {
+			throw e;
+		} finally {
+			if (response != null) {
+				response.close();
+			}
+			if (httpGet != null) {
+				httpGet.releaseConnection();
+			}
+			if (httpClient != null) {
+				httpClient.close();
+			}
+		}
+	}
+
+	/**
+	 * 获取response要下载的文件的默认路径
+	 * @param response
+	 * @return
+	 */
+	public static String getFilePath(HttpResponse response, Long id) {
+		String filepath = pro.getProperty("scheduler.rootPath");
+		String currentDateStr = getDate();
+		filepath += "\\" + currentDateStr + "\\";
+		String filename = getFileName(response, id);
+		if (filename != null) {
+			filepath += filename;
+		} else {
+			filepath += getRandomFileName();
+		}
+		return filepath;
+	}
+
+	/**
+	 * 获取response要下载的文件目录路径
+	 * @param response
+	 * @return
+	 */
+	public static String getSaveFilePath() {
+		String filepath = pro.getProperty("scheduler.rootPath");
+		String currentDateStr = getDate();
+		filepath += "\\" + currentDateStr + "\\";
+		return filepath;
+	}
+
+	public static String getDate() {
+		SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
+		String date = format.format(new Date());
+		return date;
+	}
+
+	/**
+	 * 获取response header中Content-Disposition中的filename值
+	 * @param response
+	 * @return
+	 */
+	public static String getFileName(HttpResponse response, Long name) {
+		Header contentHeader = response.getFirstHeader("Content-Disposition");
+		String filename = null;
+		if (contentHeader != null) {
+			HeaderElement[] values = contentHeader.getElements();
+			if (values.length == 1) {
+				NameValuePair param = values[0].getParameterByName("filename");
+				if (param != null) {
+					try {
+						filename = param.getValue();
+//						System.out.println(filename + "---------------");
+						//截取文件后缀名
+						int dot = filename.lastIndexOf('.');
+						String suffix = filename.substring(dot + 1);
+						if ("twbx".endsWith(suffix)) {
+							filename = name + ".zip";
+						} else {
+							filename = name + "." + suffix;
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+		return filename;
+	}
+
+	/**
+	 * 获取随机文件名
+	 * @return
+	 */
+	public static String getRandomFileName() {
+		return String.valueOf(System.currentTimeMillis());
+	}
+
+	public static void main(String[] args) {
+		Map<String, String> params = new HashMap<String, String>();
+		String siteId = "5b77c595-c14a-4d46-9fd0-e16e15c32ade";
+		String workbookId = "c7e7a76e-c83c-4017-b64e-30f72929b070";
+		String url = HttpClientUtils.doGetUrl("/api/api-version/sites/" + siteId + "/workbooks/" + workbookId + "/content");
+		try {
+			String token = TableauRestAPIUtils.doGetUserToken("faststream");
+			Long id = (long) 2;
+			String result2 = doGet(url, null, "UTF-8", token, id);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+		}
+		String filepath = getSaveFilePath();
+		File file = new File(filepath);
+		List<String> list = CopyOfMyzipDecompressing.getFileList(file, "zip");
+		String tofilepath = filepath + "temp\\";
+		for (String filename : list) {
+			File pfilepath = new File(filename);
+			String workbookid = pfilepath.getName().substring(0, pfilepath.getName().lastIndexOf("."));
+			//解压文件
+			CopyOfMyzipDecompressing.unzip(filename, tofilepath);
+
+			String path = HttpClientUtils.getSaveFilePath();
+			String path1 = path + "temp";
+			File copyfile = new File(path1);
+			List<String> copyFileList = CopyOfMyzipDecompressing.getFileList(copyfile, "twb");
+			for (int i = 0; i < copyFileList.size(); i++) {
+				//将文件复制到制定文件夹
+				CopyOfMyzipDecompressing.copyFile(copyFileList.get(i), path + "\\1.twb");
+				File delfile = new File(path1);
+				//删除temp文件夹
+				CopyOfMyzipDecompressing.deleteDir(delfile);
+			}
+		}
+		CopyOfMyzipDecompressing.deleteZip(filepath, "zip");
+	}
+}

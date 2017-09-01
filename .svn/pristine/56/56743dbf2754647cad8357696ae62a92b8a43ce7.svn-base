@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="byit.aladdin.dataIndex.dao.DataIndexDao">
+	<resultMap type="byit.aladdin.dataIndex.entity.DataIndex" id="DataIndex">
+		<id column="ID" property="id" />
+		<result column="FILE_NAME" property="file_name" />
+		<result column="STORE_NAME" property="storeName" />
+		<result column="OPERATION_NAME" property="operation_name" />
+		<result column="OPERATION_DATE" property="operation_date" />
+		<result column="REMARKS" property="remarks" />
+		<result column="VERSION_NUMBER" property="versionNumber" />
+	</resultMap>
+
+	<resultMap type="byit.aladdin.dataIndex.entity.Ind_rela" id="Ind_rela">
+		<id column="ID" property="id" />
+		<result column="FUNCTION_CLASS" property="functionClass" />
+		<result column="REPORT_CLASS" property="reportClass" />
+		<result column="REPORT_SUBCLASS" property="reportSubclass" />
+		<result column="REPORT_NAME" property="reportName" />
+		<result column="INDEX_CLASS" property="indexClass" />
+		<result column="INDEX_NAME" property="indexName" />
+		<result column="DATA_SOURCE" property="dataSource" />
+		<result column="TABLES_CHINESE_NAME" property="tableChineseName" />
+		<result column="TABLES_NAME" property="tableName" />
+		<result column="TABLES_REMARKS" property="tableRemarks" />
+		<result column="IS_SHOW" property="isShow" />
+		<result column="FIELDS_CHINESE_NAME" property="fieldsChineseName" />
+		<result column="FIELDS_NAME" property="fieldsName" />
+		<result column="FIELDS_REMARKS" property="fieldsRemarks" />
+		<result column="CALCULATE" property="calculate" />
+		<result column="FIELDS_VALUE" property="fieldsValue" />
+		<result column="STATE" property="state" />
+	</resultMap>
+	<sql id="indRelaColumns">
+		ID,
+		FUNCTION_CLASS,
+		REPORT_CLASS,
+		REPORT_SUBCLASS,
+		REPORT_NAME,
+		INDEX_CLASS,
+		INDEX_NAME,
+		DATA_SOURCE,
+		TABLES_CHINESE_NAME,
+		TABLES_NAME,
+		TABLES_REMARKS,
+		IS_SHOW,
+		FIELDS_CHINESE_NAME,
+		FIELDS_NAME,
+		FIELDS_REMARKS,
+		CALCULATE,
+		FIELDS_VALUE,
+		STATE,
+		VERSION_NUMBER
+	</sql>
+	<insert id="addUpload" keyProperty="id" parameterType="byit.aladdin.dataIndex.entity.DataIndex">
+		INSERT INTO IND_UPLOAD_FILE (ID,FILE_NAME,STORE_NAME,OPERATION_NAME,OPERATION_DATE,VERSION_NUMBER)VALUES(
+		#{id, jdbcType=VARCHAR},
+		#{file_name, jdbcType=VARCHAR},
+		#{storeName, jdbcType=VARCHAR},
+		#{operation_name, jdbcType=VARCHAR},
+		#{operation_date, jdbcType=VARCHAR},
+		#{versionNumber}
+		)
+	</insert>
+	<!-- 数据指标 -->
+	<select id="queryDataIndex" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT ID,FILE_NAME,OPERATION_NAME,OPERATION_DATE,REMARKS FROM IND_UPLOAD_FILE where 1=1
+		<if test="file_name != null and file_name != ''">
+			AND FILE_NAME like '%'||#{file_name}||'%'
+		</if>
+		<if test="operation_name != null and operation_name != ''">
+			AND OPERATION_NAME like '%'||#{operation_name}||'%'
+		</if>
+		<if test="file_name != null and file_name != '' and operation_name != null and operation_name != ''">
+			AND FILE_NAME like '%'||#{file_name}||'%' AND OPERATION_NAME like '%'||#{operation_name}||'%'
+		</if>
+		ORDER BY OPERATION_DATE DESC
+	</select>
+	<!-- 数据总条数 -->
+	<select id="queryDataIndexCount" resultType="java.lang.Integer">
+		SELECT count(ID) FROM IND_UPLOAD_FILE
+	</select>
+	<insert id="addInd" keyProperty="id" parameterType="byit.aladdin.dataIndex.entity.Ind_rela">
+		INSERT INTO IND_RELA (
+		<include refid="indRelaColumns"></include>
+		)VALUES(
+		#{id,jdbcType=VARCHAR},
+		#{functionClass,jdbcType=VARCHAR},
+		#{reportClass,jdbcType=VARCHAR},
+		#{reportSubclass,jdbcType=VARCHAR},
+		#{reportName,jdbcType=VARCHAR},
+		#{indexClass,jdbcType=VARCHAR},
+		#{indexName,jdbcType=VARCHAR},
+		#{dataSource,jdbcType=VARCHAR},
+		#{tableChineseName,jdbcType=VARCHAR},
+		#{tableName,jdbcType=VARCHAR},
+		#{tableRemarks,jdbcType=VARCHAR},
+		#{isShow},
+		#{fieldsChineseName,jdbcType=VARCHAR},
+		#{fieldsName,jdbcType=VARCHAR},
+		#{fieldsRemarks,jdbcType=VARCHAR},
+		#{calculate,jdbcType=VARCHAR},
+		#{fieldsValue,jdbcType=VARCHAR},
+		#{state},
+		#{versionNumber}
+		)
+	</insert>
+	<select id="SearchDataIndex" resultMap="DataIndex" parameterType="byit.aladdin.dataIndex.entity.DataIndex">
+		SELECT ID,FILE_NAME,OPERATION_NAME,OPERATION_DATE,REMARKS FROM IND_UPLOAD_FILE
+		<if test="file_name != null and file_name != ''">
+			WHERE FILE_NAME like '%'||#{file_name}||'%'
+		</if>
+		<if test="operation_name != null and operation_name != ''">
+			WHERE OPERATION_NAME like '%'||#{operation_name}||'%'
+		</if>
+		<if test="file_name != null and file_name != '' and operation_name != null and operation_name != ''">
+			WHERE FILE_NAME like '%'||#{file_name}||'%' OR OPERATION_NAME like '%'||#{operation_name}||'%'
+		</if>
+	</select>
+
+	<select id="queryIndCode" parameterType="String" resultType="Integer">
+		SELECT count(1) FROM IND_RELA WHERE IND_CODE=#{ind_code}
+	</select>
+	<select id="queryDataIndexById" parameterType="String" resultMap="DataIndex">
+		SELECT ID,FILE_NAME,OPERATION_NAME,OPERATION_DATE,REMARKS,STORE_NAME,VERSION_NUMBER FROM IND_UPLOAD_FILE WHERE ID=#{id,jdbcType=VARCHAR}
+	</select>
+	<select id="queryIndRelaByGroup" resultMap="Ind_rela">
+		select a.FUNCTION_CLASS,a.REPORT_CLASS,a.REPORT_SUBCLASS from IND_RELA a group by a.FUNCTION_CLASS,a.REPORT_SUBCLASS,a.REPORT_CLASS
+	</select>
+	<select id="queryIndRela" resultType="java.lang.String" parameterType="byit.aladdin.dataIndex.entity.Ind_rela">
+		select REPORT_NAME from IND_RELA where FUNCTION_CLASS=#{functionClass,jdbcType=VARCHAR} and  REPORT_CLASS=#{reportClass,jdbcType=VARCHAR} and REPORT_SUBCLASS=#{reportSubclass,jdbcType=VARCHAR} group by REPORT_NAME
+	</select>
+	<select id="queryReportName" resultType="java.lang.String" parameterType="byit.aladdin.dataIndex.entity.Ind_rela">
+		select REPORT_NAME from IND_RELA where FUNCTION_CLASS=#{functionClass,jdbcType=VARCHAR} and  REPORT_CLASS=#{reportClass,jdbcType=VARCHAR} and REPORT_SUBCLASS=#{reportSubclass,jdbcType=VARCHAR} and REPORT_NAME like CONCAT(CONCAT('%',#{reportName,jdbcType=VARCHAR}),'%') group by REPORT_NAME
+	</select>
+	<select id="queryIndrelaData" resultMap="Ind_rela" parameterType="byit.aladdin.dataIndex.entity.Ind_rela">
+		select <include refid="indRelaColumns"></include> from(
+			select ROWNUM r,<include refid="indRelaColumns"></include> from IND_RELA where INDEX_CLASS='指标' and IS_SHOW = '1'
+			<if test="reportName !=null and reportName != ''">
+				and REPORT_NAME = #{reportName,jdbcType=VARCHAR} 
+			</if>
+			<if test="functionClass !=null and functionClass != ''">
+				and FUNCTION_CLASS=#{functionClass,jdbcType=VARCHAR} 
+			</if>
+			<if test="reportClass !=null and reportClass != ''">
+				and REPORT_CLASS=#{reportClass,jdbcType=VARCHAR} 
+			</if>
+			<if test="reportSubclass !=null and reportSubclass != ''">
+				and REPORT_SUBCLASS=#{reportSubclass,jdbcType=VARCHAR} 
+			</if>
+			<if test="vagueReportName !=null and vagueReportName != ''">
+				and REPORT_NAME like CONCAT(CONCAT('%',#{vagueReportName,jdbcType=VARCHAR}),'%')
+			</if>
+		) b
+		where <![CDATA[b.r > #{stratRow}]]> and <![CDATA[b.r <= #{endRow}]]> 
+	</select>
+	<select id="queryIndrelaDataTotleNumbers" resultType="java.lang.Integer" parameterType="byit.aladdin.dataIndex.entity.Ind_rela">
+		select count(id) from IND_RELA where INDEX_CLASS='指标' and IS_SHOW = '1'
+			<if test="reportName !=null and reportName != ''">
+				and REPORT_NAME = #{reportName,jdbcType=VARCHAR} 
+			</if>
+			<if test="functionClass !=null and functionClass != ''">
+				and FUNCTION_CLASS=#{functionClass,jdbcType=VARCHAR} 
+			</if>
+			<if test="reportClass !=null and reportClass != ''">
+				and REPORT_CLASS=#{reportClass,jdbcType=VARCHAR} 
+			</if>
+			<if test="reportSubclass !=null and reportSubclass != ''">
+				and REPORT_SUBCLASS=#{reportSubclass,jdbcType=VARCHAR} 
+			</if>
+			<if test="indexName !=null and indexName != ''">
+				and INDEX_NAME like CONCAT(CONCAT('%',#{indexName,jdbcType=VARCHAR}),'%')
+			</if>
+			<if test="vagueReportName !=null and vagueReportName != ''">
+				and REPORT_NAME like CONCAT(CONCAT('%',#{vagueReportName,jdbcType=VARCHAR}),'%')
+			</if>
+	</select>
+	<select id="queryIndrelaDataByIndexName" resultMap="Ind_rela" parameterType="byit.aladdin.dataIndex.entity.Ind_rela">
+		select <include refid="indRelaColumns"></include> from(
+			select ROWNUM r,<include refid="indRelaColumns"></include> from IND_RELA where INDEX_CLASS='指标' and IS_SHOW = '1'
+			<if test="reportName !=null and reportName != ''">
+				and REPORT_NAME = #{reportName,jdbcType=VARCHAR} 
+			</if>
+			<if test="functionClass !=null and functionClass != ''">
+				and FUNCTION_CLASS=#{functionClass,jdbcType=VARCHAR} 
+			</if>
+			<if test="reportClass !=null and reportClass != ''">
+				and REPORT_CLASS=#{reportClass,jdbcType=VARCHAR}
+			</if>
+			<if test="reportSubclass !=null and reportSubclass != ''">
+				 and REPORT_SUBCLASS=#{reportSubclass,jdbcType=VARCHAR} 
+			</if>
+			<if test="vagueReportName !=null and vagueReportName != ''">
+				and REPORT_NAME like CONCAT(CONCAT('%',#{vagueReportName,jdbcType=VARCHAR}),'%')
+			</if>
+			and INDEX_NAME like CONCAT(CONCAT('%',#{indexName,jdbcType=VARCHAR}),'%')
+		) b
+		where <![CDATA[b.r > #{stratRow}]]> and <![CDATA[b.r <= #{endRow}]]> 
+	</select>
+	<select id="queryIndrelaDataWeiDu" resultMap="Ind_rela" parameterType="byit.aladdin.dataIndex.entity.Ind_rela">
+		select <include refid="indRelaColumns"></include> from(
+			select ROWNUM r,<include refid="indRelaColumns"></include> from IND_RELA where INDEX_CLASS='维度' and IS_SHOW = '1'
+			<if test="reportName !=null and reportName != ''">
+				and REPORT_NAME = #{reportName,jdbcType=VARCHAR} 
+			</if>
+			<if test="functionClass !=null and functionClass != ''">
+				and FUNCTION_CLASS=#{functionClass,jdbcType=VARCHAR} 
+			</if>
+			<if test="reportClass !=null and reportClass != ''">
+				and REPORT_CLASS=#{reportClass,jdbcType=VARCHAR}
+			</if>
+			<if test="reportSubclass !=null and reportSubclass != ''">
+				 and REPORT_SUBCLASS=#{reportSubclass,jdbcType=VARCHAR} 
+			</if>
+			<if test="vagueReportName !=null and vagueReportName != ''">
+				and REPORT_NAME like CONCAT(CONCAT('%',#{vagueReportName,jdbcType=VARCHAR}),'%')
+			</if>
+		) b
+		where <![CDATA[b.r > #{stratRow}]]> and <![CDATA[b.r <= #{endRow}]]> 
+	</select>
+	<select id="queryIndrelaDataWeiDuTotleNumbers" resultType="java.lang.Integer" parameterType="byit.aladdin.dataIndex.entity.Ind_rela">
+		select count(id) from IND_RELA where INDEX_CLASS='维度' and IS_SHOW = '1'
+			<if test="reportName !=null and reportName != ''">
+				and REPORT_NAME = #{reportName,jdbcType=VARCHAR} 
+			</if>
+			<if test="functionClass !=null and functionClass != ''">
+				and FUNCTION_CLASS=#{functionClass,jdbcType=VARCHAR} 
+			</if>
+			<if test="reportClass !=null and reportClass != ''">
+				and REPORT_CLASS=#{reportClass,jdbcType=VARCHAR} 
+			</if>
+			<if test="reportSubclass !=null and reportSubclass != ''">
+				and REPORT_SUBCLASS=#{reportSubclass,jdbcType=VARCHAR} 
+			</if>
+			<if test="vagueReportName !=null and vagueReportName != ''">
+				and REPORT_NAME like CONCAT(CONCAT('%',#{vagueReportName,jdbcType=VARCHAR}),'%')
+			</if>
+	</select>
+	<delete id="deleteIndRelaold">
+		DELETE  FROM IND_RELA_OLD
+	</delete>
+	<delete id="deleteIndRela">
+		DELETE  FROM IND_RELA
+	</delete>
+	<insert id="insertIndRelaold">
+		INSERT INTO IND_RELA_OLD SELECT * FROM IND_RELA
+	</insert>
+	<select id="findSystemDomainByType" resultType="java.lang.String" parameterType="java.lang.String">
+		SELECT CODENAME FROM SYSTEMDOMAIN WHERE DOMAINID=#{type,jdbcType=VARCHAR} 
+	</select>
+	<select id="queryVersionNumber" resultType="java.lang.Integer" parameterType="java.lang.String">
+		SELECT MAX(VERSION_NUMBER) FROM IND_RELA 
+	</select>
+	<select id="queryIndrelaOldAllData" resultMap="Ind_rela" parameterType="java.lang.Integer">
+		select <include refid="indRelaColumns"></include> from IND_RELA_OLD WHERE VERSION_NUMBER=#{versionNumber}
+	</select>
+	<select id="queryIndrelaAllData" resultMap="Ind_rela" parameterType="java.lang.Integer">
+		select <include refid="indRelaColumns"></include> from IND_RELA WHERE VERSION_NUMBER=#{versionNumber}
+	</select>
+	<!-- <update id="updateInd" parameterType="byit.aladdin.dataIndex.entity.Ind_rela">
+		UPDATE IND_RELA SET
+		<if test="file_id != null and file_id != ''">
+			FILE_ID=#{file_id},
+		</if>
+		<if test="ind_rela_Describe != null and ind_rela_Describe != ''">
+			IND_RELA_DESCRIBE=#{ind_rela_Describe},
+		</if>
+		<if test="rela_ind != null and rela_ind != ''">
+			RELA_IND=#{rela_ind},
+		</if>
+		<if test="operation_name != null and operation_name !=''">
+			OPERATION_NAME=#{operation_name},
+		</if>
+		<if test="operation_date != null and operation_date != ''">
+			OPERATION_DATE=#{operation_date}
+		</if>
+		WHERE IND_CODE=#{ind_code}
+	</update> -->
+</mapper>

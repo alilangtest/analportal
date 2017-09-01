@@ -1,0 +1,169 @@
+package byit.tableausubscribe.common.util.mail;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Vector;
+
+import javax.mail.MessagingException;
+
+import org.apache.log4j.Logger;
+
+import byit.osdp.base.entity.EmailEntity;
+import byit.tableausubscribe.tab.service.EmailService;
+
+/**
+ * 
+	 * 项目名称：hfportal
+	 * 类名称：MailSendPack   
+	 * 类描述：  将发送邮件的信息包装起来，准备发送
+	 * 创建人：lisw
+	 * 创建时间：2017年6月8日 上午10:40:35   
+	 * 修改人：
+	 * 修改时间：2017年6月8日 上午10:40:35   
+	 * 修改备注：   
+	 * @version
+ */
+public class MailSendPack {
+	private static final Logger logger = Logger.getLogger(MailSendPack.class);
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 从数据库中查询邮件配置信息
+		 *@creatTime:2017年6月30日 下午7:26:27 
+		 *@return:@return EmailEntity
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static EmailEntity getEmailInfoFromDataBase(){
+		EmailService emailService=new EmailService();
+		EmailEntity emailEntity=emailService.getEmail();
+		
+		return emailEntity;
+	}
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 发送工作簿封装的工具类，主要将固定值赋值，变量如目标邮箱、内容、附件等在调用该方法的地方
+		 *@creatTime:2017年6月8日 上午10:40:47 
+		 *@return:@param mailUtil邮件实体类,
+		 *@return:@return workBookType：发送类型，1-发送附件，2-发送内容
+		 *@return:@return filePath：附件的路径地址
+		 *@return:@return reportName：报表名称
+		 *@return:@return boolean，发送成功返回true，发送失败返回false。
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static void main(String[] args) {
+		MailUtils tMailUtils=new MailUtils();
+		tMailUtils.setTo("lishaowei@byitgroup.com");
+		tMailUtils.setSubject("测试");
+		tMailUtils.attachfile("D:\\msdia80.dll");
+		tMailUtils.setContent("测试");
+		//sendWorkBookEmailPack(tMailUtils,"1",null,"测试");
+	}
+	
+	public static boolean sendWorkBookEmailPack(MailUtils mailUtil,String workBookType,Vector<String> filePath,String reportName,EmailEntity emailEntity){
+		boolean isSendSucc =false;
+		/*EmailService emailService=new EmailService();
+		EmailEntity emailEntity=emailService.getEmail();*/
+		try {
+			//MailConstants tMailConstants=new MailConstants();
+			mailUtil.setHost(emailEntity.getHost());//设置邮箱服务器
+			mailUtil.setUserName(emailEntity.getUsername());//设置发件箱用户名
+			mailUtil.setPassWord(emailEntity.getPassword());//设置发件箱密码
+			
+			mailUtil.setValidate(emailEntity.getValidate());
+			mailUtil.setHost(emailEntity.getHost());
+			mailUtil.setPort(emailEntity.getPort());
+			mailUtil.setSubject(mailUtil.getSubject());
+			//设置发件人的名称：移动金融部<yidongjinrongbu@hfbank.com.cn>
+			String nick = "";
+			try {
+				//nick = javax.mail.internet.MimeUtility.encodeText("移动金融部");
+				nick = javax.mail.internet.MimeUtility.encodeText(emailEntity.getSubject());
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+			mailUtil.setFrom(nick + "<" + emailEntity.getAddress() + ">");
+			mailUtil.setSubject(javax.mail.internet.MimeUtility.encodeText(mailUtil.subject));
+				//发送工作簿
+			isSendSucc=mailUtil.sendMail(workBookType, filePath, reportName,mailUtil);
+			
+			
+			//isSendSucc=true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return isSendSucc;
+	}
+	
+
+	
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 发送excel封装的工具类,主要将固定值赋值，变量如目标邮箱、内容、附件等在调用该方法的地方
+		 *@creatTime:2017年6月8日 上午11:49:09 
+		 *@return:@param mailUtil邮件实体类,
+		 *@return:@return boolean
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static boolean sendExcelEmailPack(MailUtils mailUtil,EmailEntity emailEntity){
+		boolean isSendSucc =false;
+		try {
+			mailUtil.setHost(emailEntity.getHost());//设置邮箱服务器
+			mailUtil.setUserName(emailEntity.getUsername());//设置发件箱用户名
+			mailUtil.setPassWord(emailEntity.getPassword());//设置发件箱密码
+			
+			mailUtil.setValidate(emailEntity.getValidate());
+			mailUtil.setHost(emailEntity.getHost());
+			mailUtil.setPort(emailEntity.getPort());
+			mailUtil.setSubject(mailUtil.getSubject());
+			
+			//设置发件人的名称：移动金融部<yidongjinrongbu@hfbank.com.cn>
+			String nick = "";
+			try {
+				//nick = javax.mail.internet.MimeUtility.encodeText("移动金融部");
+				nick = javax.mail.internet.MimeUtility.encodeText(emailEntity.getSubject());
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+			mailUtil.setFrom(nick + "<" + emailEntity.getAddress() + ">");
+			mailUtil.setSubject(javax.mail.internet.MimeUtility.encodeText(mailUtil.subject));
+			
+			isSendSucc=mailUtil.sendExcel(mailUtil);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return isSendSucc;
+	}
+	
+	
+	public static boolean sendContentEmailPack(MailSenderInfo mailSenderInfo,EmailEntity emailEntity){
+		boolean isSendSucc =false;
+		
+		mailSenderInfo.setFromAddress(emailEntity.getAddress());
+		mailSenderInfo.setUserName(emailEntity.getUsername());
+		mailSenderInfo.setPassword(emailEntity.getPassword());
+		mailSenderInfo.setValidate(emailEntity.getValidate());
+		mailSenderInfo.setMailServerHost(emailEntity.getHost());
+		mailSenderInfo.setMailServerPort(emailEntity.getPort());
+		mailSenderInfo.setSubject(mailSenderInfo.getSubject());//邮件主题
+		
+		try {
+			SimpleMailSender.sendHtmlMailImge(mailSenderInfo,emailEntity.getSubject());
+			logger.debug("提示邮件发送成功");
+		} catch (MessagingException e) {
+			logger.error("提示邮件发送失败",e);
+			e.printStackTrace();
+		}
+		return isSendSucc;
+	}
+	
+
+}

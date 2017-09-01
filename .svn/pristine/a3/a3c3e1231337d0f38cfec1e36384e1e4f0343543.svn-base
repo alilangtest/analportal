@@ -1,0 +1,227 @@
+package byit.aladdin.dataIndex.entity;
+
+import java.io.Serializable;
+
+public class Ind_rela implements Serializable{
+	private static final long serialVersionUID = 1L;
+
+	private String id;
+	/**
+	 * 功能分类
+	 */
+	private String functionClass;
+	/**
+	 * 报表分类
+	 */
+	private String reportClass;
+	/**
+	 * 报表子类
+	 */
+	private String reportSubclass;
+	/**
+	 * 报表名称
+	 */
+	private String reportName;
+	/**
+	 * 分类（指标/维度）
+	 */
+	private String indexClass;
+	/**
+	 * 名称(指标/维度名称)
+	 */
+	private String indexName;
+	/**
+	 * 数据元
+	 */
+	private String dataSource;
+	/**
+	 * 表中文名称
+	 */
+	private String tableChineseName;
+	/**
+	 * 表英文名称
+	 */
+	private String tableName;
+	/**
+	 * 表含义描述
+	 */
+	private String tableRemarks;
+	/**
+	 * 是否展示(0不展示1展示)
+	 */
+	private Integer isShow;
+	/**
+	 * 字段中文名称
+	 */
+	private String fieldsChineseName;
+	/**
+	 * 字段英文名称
+	 */
+	private String fieldsName;
+	/**
+	 * 字段含义描述
+	 */
+	private String fieldsRemarks;
+	/**
+	 * 计算公式
+	 */
+	private String calculate;
+	/**
+	 * 字段值
+	 */
+	private String fieldsValue;
+	/**
+	 * 状态(0无效1有效)
+	 */
+	private Integer state;
+	/**
+	 * 开始条数
+	 */
+	private Integer stratRow;
+	/**
+	 * 结束条数
+	 */
+	private Integer endRow;
+	/**
+	 * 模糊查询报表名称字段
+	 */
+	private String vagueReportName;
+	/**
+	 * 版本号
+	 */
+	private Integer versionNumber;
+	
+	public Integer getVersionNumber() {
+		return versionNumber;
+	}
+	public void setVersionNumber(Integer versionNumber) {
+		this.versionNumber = versionNumber;
+	}
+	public String getVagueReportName() {
+		return vagueReportName;
+	}
+	public void setVagueReportName(String vagueReportName) {
+		this.vagueReportName = vagueReportName;
+	}
+	public Integer getStratRow() {
+		return stratRow;
+	}
+	public void setStratRow(Integer stratRow) {
+		this.stratRow = stratRow;
+	}
+	public Integer getEndRow() {
+		return endRow;
+	}
+	public void setEndRow(Integer endRow) {
+		this.endRow = endRow;
+	}
+	public String getId() {
+		return id;
+	}
+	public void setId(String id) {
+		this.id = id;
+	}
+	public String getFunctionClass() {
+		return functionClass;
+	}
+	public void setFunctionClass(String functionClass) {
+		this.functionClass = functionClass;
+	}
+	public String getReportClass() {
+		return reportClass;
+	}
+	public void setReportClass(String reportClass) {
+		this.reportClass = reportClass;
+	}
+	public String getReportSubclass() {
+		return reportSubclass;
+	}
+	public void setReportSubclass(String reportSubclass) {
+		this.reportSubclass = reportSubclass;
+	}
+	public String getReportName() {
+		return reportName;
+	}
+	public void setReportName(String reportName) {
+		this.reportName = reportName;
+	}
+	public String getIndexClass() {
+		return indexClass;
+	}
+	public void setIndexClass(String indexClass) {
+		this.indexClass = indexClass;
+	}
+	public String getIndexName() {
+		return indexName;
+	}
+	public void setIndexName(String indexName) {
+		this.indexName = indexName;
+	}
+	public String getDataSource() {
+		return dataSource;
+	}
+	public void setDataSource(String dataSource) {
+		this.dataSource = dataSource;
+	}
+	public String getTableChineseName() {
+		return tableChineseName;
+	}
+	public void setTableChineseName(String tableChineseName) {
+		this.tableChineseName = tableChineseName;
+	}
+	public String getTableName() {
+		return tableName;
+	}
+	public void setTableName(String tableName) {
+		this.tableName = tableName;
+	}
+	public String getTableRemarks() {
+		return tableRemarks;
+	}
+	public void setTableRemarks(String tableRemarks) {
+		this.tableRemarks = tableRemarks;
+	}
+	public Integer getIsShow() {
+		return isShow;
+	}
+	public void setIsShow(Integer isShow) {
+		this.isShow = isShow;
+	}
+	public String getFieldsChineseName() {
+		return fieldsChineseName;
+	}
+	public void setFieldsChineseName(String fieldsChineseName) {
+		this.fieldsChineseName = fieldsChineseName;
+	}
+	public String getFieldsName() {
+		return fieldsName;
+	}
+	public void setFieldsName(String fieldsName) {
+		this.fieldsName = fieldsName;
+	}
+	public String getFieldsRemarks() {
+		return fieldsRemarks;
+	}
+	public void setFieldsRemarks(String fieldsRemarks) {
+		this.fieldsRemarks = fieldsRemarks;
+	}
+	public String getCalculate() {
+		return calculate;
+	}
+	public void setCalculate(String calculate) {
+		this.calculate = calculate;
+	}
+	public String getFieldsValue() {
+		return fieldsValue;
+	}
+	public void setFieldsValue(String fieldsValue) {
+		this.fieldsValue = fieldsValue;
+	}
+	public Integer getState() {
+		return state;
+	}
+	public void setState(Integer state) {
+		this.state = state;
+	}
+	
+}

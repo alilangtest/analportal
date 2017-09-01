@@ -1,0 +1,28 @@
+send.type.workbook = workbook
+send.type.excel = excel
+
+#sso\u6821\u9a8csession\u662f\u5426\u5b58\u5728
+#sso.session.verify.url = http://10.232.138.127:8202/sessionVerify
+sso.session.verify.url = http://dcsso.yiguanjinrong.yg/sessionVerify
+
+#sso\u767b\u51fa
+sso.loginout_url = http://10.232.138.127:8202/loginOutVerify
+#sso.session.verify.url = http://dcsso.yiguanjinrong.yg/loginOutVerify
+
+#\u767b\u5f55\u6821\u9a8c
+sso.login.verify.url = http://10.232.138.127:8202/loginVerify
+#sso.login.verify.url = http://dcsso.yiguanjinrong.yg/loginVerify
+
+#\u83b7\u53d6sso\u6240\u6709\u5ba2\u6237\u7aef
+sso.obtaim.allclient.url=http://10.232.138.127:8202/client
+#sso.obtaim.allclient.url=http://dcsso.yiguanjinrong.yg/client
+
+#\u6d4b\u8bd5\u73af\u5883
+#file.upload.path=D:\\mms\\excelfile\\
+
+#\u751f\u4ea7\u73af\u5883
+file.upload.path =/data1/files/tomcat_analportal_8201/
+file.error.path =/data1/files/tomcat_analportal_8201/
+
+#\u62a5\u8868\u8ba2\u9605\u4e2d\u5bfc\u51faexcel\u65f6\u5199\u5165excel\u7684\u6570\u636e\u91cf\u6700\u5927\u503c\uff08excel\u7684\u884c\u6570\uff09
+tableauscbscribe.excel.maxsize=60000

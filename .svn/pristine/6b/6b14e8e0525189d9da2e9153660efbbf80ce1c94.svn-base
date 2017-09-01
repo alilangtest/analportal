@@ -1,0 +1,37 @@
+package byit.osdp.portal.https;
+
+import java.io.InputStream;
+import java.util.Properties;
+
+import org.apache.commons.io.IOUtils;
+
+import byit.aladdin.dataIndex.util.ByitConfig;
+
+public class HttpsUrl {
+	/**sso服务端url地址*/
+	//验证session是否存在
+	public static String SESSION_VERIFY_URL;
+	
+	//登出
+	public static String LOGINOUT_URL;
+	
+	//登录校验用户名密码是否正确
+	public static String LOGIN_VERIFY_URL;
+	
+	public static final String status;
+	static {
+		Properties properties = new Properties();
+		InputStream input = null;
+		try {
+			properties.load(input = ByitConfig.class.getResourceAsStream("/byit.properties"));
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			IOUtils.closeQuietly(input);
+		}
+		SESSION_VERIFY_URL = properties.getProperty("session.verify.url");
+		LOGINOUT_URL = properties.getProperty("loginout_url");
+		LOGIN_VERIFY_URL = properties.getProperty("login.verify.url");
+		status = properties.getProperty("status");
+	}
+}

@@ -1,0 +1,27 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%
+response.setHeader("_SESSION_TIMEOUT", "Y");
+response.setHeader("_REDIRECT", "login.html");
+%>
+<%@include file="../_include/_taglib.jsp"%>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<%@include file="../_include/_meta.jsp"%>
+<%@include file="../_include/_s0.jsp"%>
+<link href="${ctx}/assets/_osdp/css/index1.css" rel="stylesheet" type="text/css" />
+<%-- <script type="text/javascript" src="${ctx}/assets/_osdp/js/login/login.js"></script> --%>
+<script type="text/javascript">
+window.onload = function () {
+    //alert('onload');
+};
+</script>
+</head>
+<body>
+<form action="/login.do">
+	<input id="username" type="text" value="${username}"/>
+	<input id="password" type="password" value="${password}" />
+	<input type="button" id="submit" />
+</form>
+</body>
+</html>

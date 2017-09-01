@@ -1,0 +1,37 @@
+# \u7968\u636e
+#tableau.trusted.host=10.0.10.65
+tableau.trusted.host=25.0.89.91
+#tableau.embed.url=10.0.10.91
+#tableau.embed.11.198.157.32+8081
+#tableau.embed.url~localhost=localhost
+#tableau.embed.url~127.0.0.1=127.0.0.1
+#tableua.postgresql.url=jdbc:postgresql://10.0.10.91:8060/workgroup
+
+
+
+
+#tableau.trusted.rmi.url=rmi://10.0.10.91:10990/trusted
+
+#### postgresql connection configuration ####
+#hibernate.dialect2=org.hibernate.dialect.PostgreSQLDialect
+tableau.jdbc.driver=org.postgresql.Driver
+tableau.postgresql.ip=25.0.89.91:8060
+#tableau.postgresql.ip=111.198.157.32:8083
+#tableau.postgresql.url=jdbc:postgresql://10.0.10.65:8060/workgroup
+tableau.postgresql.url=jdbc:postgresql://25.0.89.91:8060/workgroup
+#tableau.postgresql.url=jdbc:postgresql://111.198.157.32:4000/workgroup
+tableau.postgresql.username=readonly
+tableau.postgresql.password=p@ssword
+
+
+# \u4ee3\u7406
+#tableau.trusted.rmi.url=rmi://10.0.10.91:10990/trusted
+#tableau.embed.rmi-mode=false
+#tableau.embed.rmi-service-url=rmi://10.94.66.186:1099/embed
+
+application.tmpdir=C:/_tableau_temp
+
+# \u7968\u636e
+#tableau.server.ip=10.0.10.91:80
+#tableau.server.admin.username=tableau
+

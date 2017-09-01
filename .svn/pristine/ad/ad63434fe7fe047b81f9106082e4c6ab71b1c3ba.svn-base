@@ -1,0 +1,37 @@
+package byit.osdp.base.service;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import byit.osdp.base.dao.SystemDoMainDao;
+import byit.osdp.base.entity.SystemDoMainEntity;
+
+/**
+ * 查询字典表数据
+ * @author Mr.tang
+ */
+@Service("systemDoMainService")
+public class SystemDoMainService {
+	
+	@Autowired
+	private SystemDoMainDao systemDoMainDao;
+	
+	/**
+	 * 根据domainid查询字典表数据
+	 * @return
+	 */
+	public Map<String ,Object> getByDoMainId(String doMainId){
+		Map<String,Object> map = new HashMap<String,Object>();
+		List<SystemDoMainEntity> list = systemDoMainDao.getByDoMainId(doMainId);
+		if(list.size()>0){
+			for (SystemDoMainEntity systemDoMainEntity : list) {
+				map.put(systemDoMainEntity.getCodeid(),systemDoMainEntity.getCodename());
+			}
+		}
+		return map;
+	}
+}

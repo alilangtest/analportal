@@ -1,0 +1,153 @@
+package byit.utils;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+
+public class FileOperation {
+
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 创建文件夹，默认文件夹创建在C盘下
+		 *@creatTime:2017年5月23日 上午11:26:01 
+		 *@return:@param fileName
+		 *@return:@return
+		 *@return:@throws Exception boolean
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static boolean createFile() throws Exception {
+		//拼接目录层级:C:\sso_cache\20170501111111
+		String currDate=Tools.getCurrFormatTime();
+		File fileName=new File("C:\\sso_cache\\"+currDate);
+		
+		boolean flag = false;
+		try {
+			if (!fileName.exists()) {
+				fileName.mkdirs();//没有文件夹会自动创建
+				//fileName.createNewFile();
+				flag = true;
+			}
+		} catch (Exception e) {
+			flag=false;
+			e.printStackTrace();
+		}
+		return flag;
+	}
+
+	/**
+	 * 读TXT文件内容
+	 * 
+	 * @param fileName
+	 * @return
+	 */
+	public static String readTxtFile(File fileName) throws Exception {
+		String result = null;
+		FileReader fileReader = null;
+		BufferedReader bufferedReader = null;
+		try {
+			fileReader = new FileReader(fileName);
+			bufferedReader = new BufferedReader(fileReader);
+			try {
+				String read = null;
+				while ((read = bufferedReader.readLine()) != null) {
+					result = result + read + "\r\n";
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (bufferedReader != null) {
+				bufferedReader.close();
+			}
+			if (fileReader != null) {
+				fileReader.close();
+			}
+		}
+		System.out.println("读取出来的文件内容是：" + "\r\n" + result);
+		return result;
+	}
+
+	/**
+	 * 
+		 *@author lisw
+		 *@Description: 给指定的文件写入内容
+		 *@creatTime:2017年5月23日 上午11:46:15 
+		 *@return:@param content，写入的文件内容
+		 *@return:@param fileName，路径及文件名（C:\\sso_cache\\20170523114042\\cache.txt）
+		 *@return:@return
+		 *@return:@throws Exception boolean
+		 *@modifier:
+		 *@modifTime:
+		 *@throws
+	 */
+	public static boolean writeTxtFile(String content, File fileName)
+			throws Exception {
+		//RandomAccessFile mm = null;
+		boolean flag = false;
+		FileOutputStream o = null;
+		try {
+			o = new FileOutputStream(fileName);
+			o.write(content.getBytes("UTF-8"));
+			o.close();
+			// mm=new RandomAccessFile(fileName,"rw");
+			// mm.writeBytes(content);
+			flag = true;
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		} finally {
+			/*if (mm != null) {
+				mm.close();
+			}*/
+		}
+		return flag;
+	}
+
+	public static void contentToTxt(String filePath, String content) {
+		String str = new String(); // 原有txt内容
+		String s1 = new String();// 内容更新
+		try {
+			File f = new File(filePath);
+			if (f.exists()) {
+				System.out.print("文件存在");
+			} else {
+				System.out.print("文件不存在");
+				f.createNewFile();// 不存在则创建
+			}
+			BufferedReader input = new BufferedReader(new FileReader(f));
+
+			while ((str = input.readLine()) != null) {
+				s1 += str + "\n";
+			}
+			System.out.println(s1);
+			input.close();
+			s1 += content;
+
+			BufferedWriter output = new BufferedWriter(new FileWriter(f));
+			output.write(s1);
+			output.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+
+		}
+	}
+	
+	
+	public static void dropFile(String path){
+        File file = new File(path);
+        file.delete();
+    }
+
+	
+	public static void main(String[] args) throws Exception {
+		dropFile("D:\\mms\\excelfile\\测试_周-12");
+	}
+}

@@ -1,0 +1,152 @@
+package byit.tableausubscribe.tab.init;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
+
+import byit.tableausubscribe.common.util.Constants;
+import byit.tableausubscribe.tab.bean.ReportSubscribe;
+import byit.tableausubscribe.tab.bean.SendResult;
+
+public class InitReportSubscribeConfig {
+	
+	private final static Logger logger = Logger.getLogger(InitReportSubscribeConfig.class);
+	private static InitReportSubscribeConfig messageConfig = new InitReportSubscribeConfig();
+	
+	private InitReportSubscribeConfig(){
+	}
+	public static InitReportSubscribeConfig getInstance(){
+		return messageConfig;
+	}
+	
+	public void initConfigData(){
+		//note by lisw
+		/*reportSubscribeConfig  = getReportConfig(Constants.subscribXML);
+		sendResultConfig = getSendResult(Constants.resultXML);*/
+	}
+	
+	public static List<ReportSubscribe>  reportSubscribeConfig = new ArrayList<ReportSubscribe>() ;
+	public static Map<String,List<SendResult>>  sendResultConfig = new HashMap<>() ;
+	
+	/**
+	 * 读取订阅配置文件
+	 * @param fileName
+	 * @param rootNode
+	 * @return
+	 */
+	private  List<ReportSubscribe> getReportConfig(String fileName)  {
+		////logger.info("------------start getReportConfig-------------");
+		try { 
+			SAXReader reader = new SAXReader();
+			String xmlFile = Constants.CLASSPATH+"/"+fileName;
+			Document doc = reader.read(new File(xmlFile));
+			//Document doc = reader.read(new File(fileName));
+			Element root = doc.getRootElement();
+			List<Element> elementList = root.elements("report");
+			
+			for (Element e : elementList) {
+				ReportSubscribe report = new ReportSubscribe();
+				report.setWorkbookId((String)e.element("workbookId").getData());
+				report.setReportId((String)e.element("reportId").getData());
+				report.setSendType((String)e.element("sendType").getData());
+				//logger.info("------------e.element(sendTime).getData():"+e.element("sendTime").getData());
+				report.setSendTime((String)e.element("sendTime").getData());		
+			    //获取发送结果 				
+				report.setSendState((String)e.element("sendState").getData());
+				report.setReportName((String)e.element("reportName").getData());
+				report.setCondition((String)e.element("condition").getData());
+				//report.setDataSources(dataSources);
+				report.setMailTitle((String)e.element("mailTitle").getData());
+				
+				List<String> mailList = new ArrayList<String>();
+				List<Element> mailElments = e.element("mails").elements("mail");
+				for(Element data:mailElments){
+					mailList.add((String) data.getData());
+				}
+				report.setMailList(mailList);
+				
+				Map<String,String> dataSources = new HashMap<String,String>();
+				List<Element> dataSourceElement = e.element("dataSources").elements("dataSource");
+				for(Element ds:dataSourceElement){
+					Map<String,String> dsMap = new HashMap<String,String>();
+					//System.out.println(ds.elementText("name")+"----"+ds.attributeValue("name"));
+					dataSources.put(ds.attributeValue("name"),(String) ds.getData());
+				}
+				report.setDataSources(dataSources);
+				
+				//发送类型
+				report.setSendDetails((String)e.element("sendDetails").getData());
+				//正文内容
+				report.setSendInfo((String)e.element("sendInfo").getData());
+				
+				reportSubscribeConfig.add(report);
+			}
+			
+		} catch (DocumentException e) {
+			e.printStackTrace();
+		}
+		////logger.info("------------end getReportConfig-------------");
+		System.out.println("^^^^^^^^^^^^^^^^InitReportSubscribeConfig.getReportConfig()^^^^^^^^^^^"+reportSubscribeConfig);
+		return reportSubscribeConfig;
+	}
+	/**
+	 * 读取发送结果
+	 * @param fileName
+	 * @param rootNode
+	 * @return
+	 */
+	private Map<String,List<SendResult>> getSendResult(String fileName)  {
+		////logger.info("------------start getSendResult-------------");
+		Map<String,List<SendResult>>  sendResultMap =new HashMap<String,List<SendResult>>() ;
+		try { 
+			SAXReader reader = new SAXReader();
+			String xmlFile = Constants.CLASSPATH+"/"+fileName;
+			Document doc = reader.read(new File(xmlFile));
+			//Document doc = reader.read(new File(fileName));
+			Element root = doc.getRootElement();
+			List<Element> elementList = root.elements("result");
+			
+			for (Element e : elementList) {
+				
+				String reportId=(String)e.element("reportId").getData();
+				List<SendResult> sendList=sendResultMap.get(reportId);
+				if(sendList==null){
+					sendList = new ArrayList<>();
+					sendResultMap.put(reportId, sendList);
+				}
+				List<Element> mails = e.elements("mail");
+				for(Element ma:mails){
+					SendResult sendResult = new SendResult();
+					sendResult.setReportId(reportId);
+					sendResult.setEmailId((String)ma.attributeValue("id"));
+					sendResult.setSendTime((String)ma.element("sendtime").getData());
+					sendResult.setSendState((String)ma.element("sendState").getData());
+					sendList.add(sendResult);
+				}
+			}
+			
+		} catch (DocumentException e) {
+			e.printStackTrace();
+		}
+		////logger.info("------------end getSendResult-------------");
+		return sendResultMap;
+	}
+	
+	public static void main(String arg[]){
+		//String path="E:\\reportSubscribe.xml";
+		String path="D:\\mms\\workspace\\tableauSubscribe\\src\\reportSubscribe.xml";
+		List<ReportSubscribe> list = InitReportSubscribeConfig.getInstance().getReportConfig(path);
+		for(ReportSubscribe rp:list){
+			System.out.println(rp);
+		}
+	}
+	 
+}

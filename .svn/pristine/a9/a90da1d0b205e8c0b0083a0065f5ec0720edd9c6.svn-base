@@ -1,0 +1,21 @@
+package byit.aladdin.workBook.support;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import byit.aladdin.workBook.util.jdbc.Dialect;
+import byit.aladdin.workBook.util.jdbc.impl.PostgreSqlDialect;
+
+
+public abstract class TableauJdbcDaoSupport {
+	@Autowired
+	@Qualifier("tableauJdbcTemplate")
+	protected JdbcTemplate jdbcTemplate;
+
+	protected Dialect dialect = PostgreSqlDialect.INSTANCE;
+
+	protected JdbcTemplate getJdbcTemplate() {
+		return jdbcTemplate;
+	}
+}

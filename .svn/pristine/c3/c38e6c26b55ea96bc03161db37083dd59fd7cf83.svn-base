@@ -1,0 +1,45 @@
+#### \u529b\u5bfc\u56fe\u6570\u636e\u6e90 ####
+doc_url=E:/doc
+
+
+open_office_home_url=C:\\Program Files (x86)\\OpenOffice 4
+
+#ftp.host = 10.0.10.52
+ftp.host = localhost
+ftp.port = 21
+ftp.username = wangyongchao
+ftp.password = wangyongchao
+
+
+
+###email###########
+
+application.tmpdir=C:/_tableau_temp
+
+email.username =yidongjinrongbu@hfbank.com.cn
+email.password=yidong2016
+email.mailaddress=yidongjinrongbu@hfbank.com.cn
+email.mailhost=mail.hfbank.com.cn
+email.mailport=25
+email.starttls =false
+email.validate =true
+
+send.type.workbook = workbook
+send.type.excel = excel
+
+#sso\u6821\u9a8csession\u662f\u5426\u5b58\u5728
+sso.session.verify.url = https://192.168.1.3:8444/sso/sessionVerify.do
+
+#sso\u767b\u51fa
+sso.loginout_url = https://192.168.1.3:8444/sso/loginOut.do
+
+#\u767b\u5f55\u6821\u9a8c
+sso.login.verify.url = https://192.168.1.3:8444/sso/loginVerify.do
+
+#\u83b7\u53d6sso\u6240\u6709\u5ba2\u6237\u7aef
+sso.obtaim.allclient.url=http://localhost:8080/dcsso/client
+
+#status = status
+#
+file.upload.path =/files/dataIndex/
+file.error.path =/files/dataIndex/error/

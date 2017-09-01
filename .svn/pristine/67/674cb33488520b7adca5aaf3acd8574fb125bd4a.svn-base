@@ -1,0 +1,35 @@
+package byit.osdp.tableau;
+
+import java.io.InputStream;
+import java.util.Properties;
+
+import org.apache.commons.io.IOUtils;
+
+public class TableauConfig {
+
+	public static final String TABLEAU_TRUSTED_HOST;
+	public static final String TABLEUA_POSTGRESQL_IP;
+	public static final String TABLEUA_POSTGRESQL_URL;
+	public static final String TABLEUA_POSTGRESQL_USERNAME;
+	public static final String TABLEUA_POSTGRESQL_PASSWORD;
+	public static final String TABLEUA_EMBED_URL;
+	static {
+		Properties properties = new Properties();
+		InputStream input = null;
+		try {
+			properties.load(input = TableauConfig.class.getResourceAsStream("/tableau.properties"));
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			IOUtils.closeQuietly(input);
+		}
+		TABLEAU_TRUSTED_HOST = properties.getProperty("tableau.trusted.host");
+		TABLEUA_POSTGRESQL_IP = properties.getProperty("tableau.postgresql.ip");
+		TABLEUA_POSTGRESQL_URL = properties.getProperty("tableau.postgresql.url");
+		TABLEUA_POSTGRESQL_USERNAME = properties.getProperty("tableau.postgresql.username");
+		TABLEUA_POSTGRESQL_PASSWORD = properties.getProperty("tableau.postgresql.password");
+		TABLEUA_EMBED_URL = properties.getProperty("tableau.embed.url");
+	}
+
+	//public static final String getEmbedMappingUrl() {}
+}

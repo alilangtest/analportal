@@ -1,0 +1,445 @@
+package byit.aladdin.report.controller;
+
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import byit.aladdin.report.bo.IdaPmReportBo;
+import byit.aladdin.report.bo.IdaPmReportMenuBo;
+import byit.aladdin.report.bo.IdaPmRoleBo;
+import byit.aladdin.report.bo.RepAttributeRelaBo;
+import byit.aladdin.report.bo.ReportMenuReportBo;
+import byit.aladdin.report.bo.RoleReportBo;
+import byit.aladdin.report.bo.RoleReportMenuBo;
+import byit.aladdin.report.bo.TableauProjectBo;
+import byit.aladdin.report.service.IdaPmReportMenuServiceImp;
+import byit.aladdin.report.service.IdaPmReportServiceImpl;
+import byit.core.util.page.Page;
+import byit.core.util.page.Pagination;
+import byit.osdp.base.common.easyui.DataGridAdapter;
+import byit.osdp.base.security.UserHolder;
+
+
+
+
+
+@Controller
+@RequestMapping("/report")
+public class ReportController {
+	private static final Logger log = LoggerFactory.getLogger(ReportController.class);
+	
+	@Autowired
+	private IdaPmReportServiceImpl idaPmReportServiceImpl;
+	@Autowired
+	private IdaPmReportMenuServiceImp idaPmReportMenuServiceImp;
+	@Autowired
+	private DataGridAdapter dataGridAdapter;
+	
+	//报表页面
+	@RequestMapping(value = "/report.html")
+	public String toreport(){
+		return "/report/report/queryReport";
+	}
+	
+	//授权页面
+	@RequestMapping(value = "/reportRole.html")
+	public String toreportRole(){
+		return "/report/report/reportRole";
+	}
+	
+	@RequestMapping(value = "/viewReport.html")
+	public String toviewReport(){
+		return "/report/report/viewReport";
+	}
+	
+	@RequestMapping(value = "/selectReport.html")
+	public String toselectReport(HttpServletRequest request){
+		return "/report/report/selectReport";
+	}
+	
+	//获取报表页面
+	@RequestMapping(value = "/getReport.html")
+	public String togetReport(HttpServletRequest request){
+		return "/report/report/getReport";
+	}
+	
+	@RequestMapping(value = "/updateReport.html")
+	public String toupdateReport(HttpServletRequest request,String reportid){
+		String useid=UserHolder.getId();
+		request.setAttribute("reportid", reportid);
+		request.setAttribute("useid", useid);
+		return "/report/report/updateReport";
+	}
+	
+	
+	//报表菜单树
+	@RequestMapping(value = "/menuTree")
+    @ResponseBody
+	public List<HashMap<String, Object>> getMenuTree(HttpServletRequest request,IdaPmReportMenuBo idaPmReportMenuBo){
+		List<IdaPmReportMenuBo> listReportMenuBo=this.idaPmReportMenuServiceImp.queryReportMenuList(idaPmReportMenuBo);
+		List<HashMap<String, Object>> result = new ArrayList<HashMap<String, Object>>();
+		//int i = -1;
+		for (IdaPmReportMenuBo menu : listReportMenuBo) {
+			HashMap<String, Object> map = new HashMap<String, Object>();
+			if("".equals(menu.getMenuparent()) || menu.getMenuparent()==null){
+				
+				List<HashMap<String, Object>> menuList = new ArrayList<HashMap<String, Object>>();
+				for (IdaPmReportMenuBo menu1 : listReportMenuBo) {
+					
+					HashMap<String, Object> menuMap = new HashMap<String, Object>();
+					if(menu1.getMenuparent()!=null && !"".equals(menu1.getMenuparent()) && menu1.getMenuparent().equals(menu.getMenuid())){
+						
+						List<HashMap<String, Object>> priList1 = new ArrayList<HashMap<String, Object>>();
+						for (IdaPmReportMenuBo menu2 : listReportMenuBo) {
+							
+							HashMap<String, Object> menuMap1 = new HashMap<String, Object>();
+							if(menu2.getMenuparent()!=null && !"".equals(menu2.getMenuparent())){
+								if(menu2.getMenuparent().equals(menu1.getMenuid())){
+									menuMap1.put("id", menu2.getMenuid());
+									menuMap1.put("text", menu2.getMenuname());
+									priList1.add(menuMap1);
+									
+									menuMap1 = null;
+								}
+							}
+						}
+						menuMap.put("id", menu1.getMenuid());
+						menuMap.put("text", menu1.getMenuname());
+						//i--;
+						menuMap.put("children", priList1);
+						menuList.add(menuMap);
+						
+						priList1 = null;
+						menuMap = null;
+					}
+				}
+				map.put("id", menu.getMenuid());
+				//i--;
+				map.put("text", menu.getMenuname());
+				map.put("children", menuList);
+				result.add(map);
+				
+				menuList = null;
+				map = null;
+			}
+		}
+		listReportMenuBo = null;
+		return result;
+	}
+	
+	
+	//列表   查询 
+	
+	@RequestMapping(value = "/reportPage")
+    @ResponseBody
+	private Map<String, Object> reportPage(HttpServletRequest request,IdaPmReportBo reportBo, ReportMenuReportBo menuReportBo){
+		Pagination pagination = dataGridAdapter.getPagination();
+		
+		Map<String, Object> result = new HashMap<String, Object>();
+		try{
+			Page<Map<String, Object>> page = (Page<Map<String, Object>>) this.idaPmReportServiceImpl.queryReprotPage(pagination);
+			result.put("rows", page.getRecords());
+    		result.put("total", page.getTotal());
+    		result.put("success",1);
+    	}catch(Exception e){
+    		result.put("error", -1);
+            result.put("msg", "加载数据失败");
+            e.printStackTrace();
+            e = null;
+    	}
+		return result;
+	}
+	
+	
+	//根据id查询
+	@RequestMapping(value = "/reportById")
+    @ResponseBody
+	public IdaPmReportBo getReportById(HttpServletRequest request,String reportid){
+		IdaPmReportBo report = this.idaPmReportServiceImpl.getReportById(reportid);
+		return report;
+	}
+	
+	
+	
+	// 报表挂菜单
+	@RequestMapping(value = "/reportSetMenuid")
+    @ResponseBody
+	public Map<String, Object> reportSetMenuid(HttpServletRequest request, ReportMenuReportBo menuReportBo){
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		map = idaPmReportServiceImpl.reportSetMenuid(request, menuReportBo);
+		return map;
+	}
+	
+	
+	//tableau项目列表
+	@RequestMapping(value = "/tableauProjectPage")
+    @ResponseBody
+	public List<TableauProjectBo> tableauProjectPage(String site_id){
+		List<TableauProjectBo> list = idaPmReportServiceImpl.tableauProjectPage(site_id);
+		return list;
+	}
+	
+	//tableau站点列表
+	@RequestMapping(value = "/tableauSitePage")
+    @ResponseBody
+	public List<TableauProjectBo> tableauSitePage(){
+		List<TableauProjectBo> list = idaPmReportServiceImpl.tableauSitePage();
+		return list;
+	}
+	
+	
+	// 从tableau获取报表
+	@RequestMapping(value = "/getReportFromTableau")
+    @ResponseBody
+	public Map<String, Object> getReportFromTableau(String ids,String sids){
+		Map<String, Object> map = new HashMap<String, Object>();
+		String[] wids = ids.split(",");
+		try {
+			for (String id : wids) {
+				idaPmReportServiceImpl.getReportFromTableau(id);
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			map.put("success", false);
+		}
+		map.put("success", true);
+		return map;
+	}
+
+	
+	// 卸载报表
+	@RequestMapping(value = "/cutReport")
+    @ResponseBody
+	public Map<String, Object> cutReportById(HttpServletRequest request,String ids, ReportMenuReportBo menuReportBo){
+		Map<String, Object> map = new HashMap<String, Object>();
+		String[] reportids = ids.split(",");
+		boolean result = false;
+		String msg = "";
+		for(int i=0; i<reportids.length; i++){
+			menuReportBo.setReportid(reportids[i]);
+			
+			List<RoleReportBo> roleReports = this.idaPmReportServiceImpl.getRoleReportByReportid(reportids[i]);
+			if(roleReports!=null && !"".equals(roleReports) && roleReports.size()>0){
+				result = false;
+				msg = "此报表已分配角色，不能卸载！";
+			}else{
+				result = this.idaPmReportServiceImpl.deleteMenuReportByReportId(menuReportBo);
+				if(result){
+					msg = "卸载报表成功！";
+				}else{
+					msg = "卸载报表失败！";
+				}
+			}
+		}
+		map.put("success", result);
+		map.put("msg", msg);
+	
+		return map;
+	}
+
+	
+	//查询所要删除报表是否已挂载
+	@RequestMapping(value="/findIsReportMenu")
+	@ResponseBody
+	public Map<String,Object> findIsReportMenu(HttpServletRequest request,String reportid){
+		Map<String,Object> map=new HashMap<String,Object>();
+//		String ids=request.getParameter("ids");
+//		String[] reportids = ids.split(",");
+		int count=0;
+		boolean result=true;
+		String msg="";
+		//将得到的多个报表id拆分开一条一条判断，若有一条关联，则回滚，删除失败
+//		for(int i=0; i<reportids.length; i++){
+		
+			//判断该报表是否挂载
+			count=this.idaPmReportServiceImpl.findIsReportMenu(reportid);
+			//得到该报表对应的报表对象
+			IdaPmReportBo reportBo=this.idaPmReportServiceImpl.getReportById(reportid);
+			if(count>0){
+				msg="报表: "+'"'+reportBo.getReportname()+ '"'+"已挂载，不能删除";
+				result=false;
+			}
+//		}		
+		map.put("success", result);
+		map.put("msg", msg);
+		return map;
+	}
+		
+	//删除报表
+	@RequestMapping(value = "/deleteReport")
+    @ResponseBody
+	public Map<String, Object> deleteReportById(HttpServletRequest request,String reportid,String menuid){
+		Map<String, Object> map = new HashMap<String, Object>();
+
+		boolean result = false;
+		if(menuid!=""&&menuid!=null){
+			//已挂载报表直接删除
+			result = this.idaPmReportServiceImpl.deleteReport(reportid,menuid);
+		}else{
+			//未挂载报表报表删除
+			result = this.idaPmReportServiceImpl.deleteReportById(reportid);
+		}
+		
+		String msg = "删除报表失败！";
+		if(result){
+			msg = "删除报表成功！";
+		}
+		map.put("success", result);
+		map.put("msg", msg);
+		return map;
+	}
+
+	//角色树      模糊查询角色
+	@RequestMapping(value = "/queryLikeRoleTreeList")
+    @ResponseBody
+	public Object queryLikeRoleTreeList(HttpServletRequest request){
+		String roleid = request.getParameter("roleid");
+		String rolename = request.getParameter("rolename");
+		String menuparentId = request.getParameter("menuparentId");
+		String name;
+		HashMap<String, String> hashMap = new HashMap<String,String>();
+		hashMap.put("id", roleid);
+		hashMap.put("menuparentId", menuparentId);
+		try {
+			if(rolename!=null){
+				name = java.net.URLDecoder.decode(rolename,"UTF-8");
+				hashMap.put("name", name);
+			}
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		
+		List<Map<String, Object>> items = new ArrayList<Map<String, Object>>();
+		//得到角色列表
+		List<IdaPmRoleBo> treebo=this.idaPmReportServiceImpl.queryLikeRoleTreeList(hashMap);
+		//循环角色列表
+		for (IdaPmRoleBo roleBo : treebo) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("id", roleBo.getId());
+			item.put("text",roleBo.getName());	
+			items.add(item);			
+		}
+    	return items;
+		
+	}
+	
+	
+	// 保存角色与菜单，角色与报表的关系
+	 
+	@RequestMapping(value = "/saveRoleMenuReport", method = RequestMethod.POST)
+    @ResponseBody
+    public Map<String, Object> saveRoleMenuReport(HttpServletRequest request,RoleReportBo roleReportBo) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		String roleids = request.getParameter("roleid");//获取角色拼接的id字符串
+		String reportid = request.getParameter("reportid");//获取报表id拼接的字符串
+		String menuids = request.getParameter("menuid");//获取菜单id
+		String msg="";		
+		boolean result = false;
+		//String reportids =reportid.substring(0,reportid.length()-2);
+		//result = idaPmReportServiceImpl.removeRoleReport(reportids);//解除角色与报表的关系
+		result = idaPmReportServiceImpl.removeRoleReport(reportid,roleids);
+		if(roleids!=null && !"".equals(roleids)){
+			result = idaPmReportServiceImpl.saveReportRole(roleReportBo,menuids);
+		}
+		if (result) {
+			 msg = "操作成功！";
+		}else{
+			 msg = "操作失败！";
+		}
+		map.put("success", result);
+		map.put("msg", msg);
+		return map;
+	}
+
+	// 回显角色与菜单、报表的关系
+	@RequestMapping(value = "/queryRoleMenu")
+	@ResponseBody
+	public Object tree(HttpServletRequest request,RoleReportMenuBo idaRoleMenu){
+		
+		List<String> items = new ArrayList<String>();
+		String menuid = request.getParameter("menuid");
+		
+		if(menuid.indexOf("_")>-1){//判断获取的menuid是报表操作类型id还是报表的id，有"_"则是报表的操作类型id
+			String optype =  menuid.substring(menuid.length()-1,menuid.length());
+			String reportid = menuid.substring(0,menuid.length()-2);
+			List<RoleReportBo> rReportBo = idaPmReportServiceImpl.queryMenuRoleList(reportid, optype);
+			for (RoleReportBo roleReportBo : rReportBo) {
+				Map<String, Object> item = new HashMap<String, Object>();
+				item.put("id", roleReportBo.getRoleid());
+				items.add(roleReportBo.getRoleid());
+			}
+		 }else {
+			//菜单的id
+			//List<RoleReportMenuBo> treebo = this.idaPmReportServiceImpl.queryRoleReportMenuList(menuid);		
+			//报表id
+			 List<RoleReportBo> treebo = this.idaPmReportServiceImpl.queryRoleReportMenuList(menuid);		
+			 for (RoleReportBo roleMenu : treebo) {
+				Map<String, Object> item = new HashMap<String, Object>();
+				item.put("id", roleMenu.getRoleid());
+					items.add(roleMenu.getRoleid());
+			}
+		}
+		return items;
+	}
+	
+	//编辑报表
+	@RequestMapping(value = "/saveReport")
+    @ResponseBody
+	public Map<String, Object> saveReport(HttpServletRequest request, IdaPmReportBo reportBo,String names){
+		Map<String, Object> map = new HashMap<String, Object>();
+		boolean result = false;
+		result = this.idaPmReportServiceImpl.updateReport(reportBo,names);
+		reportBo = null;
+		map.put("success", result);
+		return map;
+	}
+	 
+	
+	//查询报表属性
+	@RequestMapping(value = "/queryAttribute.do")
+    @ResponseBody
+	public Map<String, Object> queryAttribute(HttpServletRequest request,String reportid){
+		Map<String, Object> map = new HashMap<String, Object>();
+		List<RepAttributeRelaBo> repAttributeRelaList = this.idaPmReportServiceImpl.queryAttribute();
+		List<RepAttributeRelaBo> checkedlist = this.idaPmReportServiceImpl.queryAttributecheckedlist(reportid);
+		
+		if(repAttributeRelaList!=null&&repAttributeRelaList.size()>0){
+			map.put("success", true);
+			map.put("list", repAttributeRelaList);
+		}else{
+			map.put("success", false);
+		}
+		
+		if(checkedlist!=null&&checkedlist.size()>0){
+			map.put("checkedlist", checkedlist);
+		}else{
+			map.put("checkedlist", null);
+		}
+		return map;
+	}
+	
+	
+	//添加报表属性
+	@RequestMapping(value = "/saveAttribute.do")
+    @ResponseBody
+	public Map<String, Object> saveAttribute(HttpServletRequest request,String name){
+		Map<String, Object> map = new HashMap<String, Object>();
+		Boolean falg = this.idaPmReportServiceImpl.saveAttribute(name);
+		map.put("success", falg);
+		return map;
+	}
+}
